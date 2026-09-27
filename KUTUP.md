@@ -8,11 +8,12 @@ OnlyOffice's document converter `x2t`, from
 converts documents with it in the browser; the server never sees their
 content.
 
-- **Branch `kutup`** is what Kutup ships: CryptPad's `v9.3.0+0` (ONLYOFFICE
-  core 9.3.0.140), merged in over `v7.3+1`; Kutup's own changes go on it.
+- **Branch `kutup`** is what Kutup ships: **ONLYOFFICE core 9.4.0**
+  (`v9.4.0.131`, pulled with `git subtree pull`) with CryptPad's WebAssembly
+  changes carried over from their `v9.3.0+0`; Kutup's own changes go on it.
 - **`main`** follows CryptPad's `main`, for pulling their updates.
-- **Releases** are tagged `kutup-<CryptPad version>.<n>` (for example
-  `kutup-v9.3.0+0.1`). Each release notes the exact commit it was built from.
+- **Releases** are tagged `kutup-<version>.<n>` (for example
+  `kutup-v9.4.0.131.1`). Each release notes the exact commit it was built from.
 
 ## Build
 
