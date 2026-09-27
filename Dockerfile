@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM ubuntu:22.04
 SHELL ["/bin/bash", "-c"]
 
@@ -52,11 +53,16 @@ RUN . /emsdk/emsdk_env.sh \
  && emmake make install
 
 # emscriptens boost does not work because of missing symbols
+# Kutup: boost's CMake source release, checked by hash, instead of cloning
+# the repository and its ~150 submodules (GitHub refuses anonymous clones
+# partway through a run that large).
 WORKDIR /
-RUN git clone https://github.com/boostorg/boost.git
+ADD --checksum=sha256:2e64e5d79a738d0fa6fb546c6e5c2bd28f88d268a2a080546f74e5ff98f29d0e \
+    https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.tar.xz /boost-1.84.0.tar.xz
+RUN tar -xJf boost-1.84.0.tar.xz \
+ && mv boost-1.84.0 boost \
+ && rm boost-1.84.0.tar.xz
 WORKDIR /boost
-RUN git checkout boost-1.84.0
-RUN git submodule update --init --recursive
 RUN . /emsdk/emsdk_env.sh \
  && CXXFLAGS=-fms-extensions emcmake cmake '-DBOOST_EXCLUDE_LIBRARIES=context;cobalt;coroutine;fiber;log;thread;wave;type_erasure;serialization;locale;contract;graph'
 RUN . /emsdk/emsdk_env.sh \
