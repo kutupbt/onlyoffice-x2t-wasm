@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -32,15 +32,14 @@
 #ifndef _BUILD_GRAPHICS_STRUCTURES_H_
 #define _BUILD_GRAPHICS_STRUCTURES_H_
 
-#include "../common/Array.h"
-#include "../graphics/aggplustypes.h"
-#include "../agg-2.4/include/agg_color_rgba.h"
-#include "shading_info.h"
 #include <cmath>
 #include <string>
 #include <string.h>
 #include <stdlib.h>
-#include <iostream>
+
+#include "shading_info.h"
+#include "Matrix.h"
+#include "../common/IGrObject.h"
 
 // pen -----------------------------------------------------------
 const long c_ag_LineCapFlat = 0;
@@ -114,13 +113,16 @@ const long c_BrushTypeTensorCurveGradient = 6007;
 
 const long c_BrushTextureModeStretch = 0;
 const long c_BrushTextureModeTile = 1;
-const long c_BrushTextureModeTileCenter = 2;
+const long c_BrushTextureModeTileFlipX = 2;
+const long c_BrushTextureModeTileFlipY = 3;
+const long c_BrushTextureModeTileFlipXY = 4;
+const long c_BrushTextureModeTileCenter = 5;
 // --------------------------------------------------------------
+
+namespace Aggplus { class CImage; }
 
 namespace NSStructures
 {
-
-
 	class CPen
 	{
 	public:
@@ -222,7 +224,6 @@ namespace NSStructures
 		}
 		CPen(const CPen &other)
 		{
-			SetDefaultParams();
 			*this = other;
 		}
 		CPen &operator=(const CPen &other)
@@ -275,6 +276,9 @@ namespace NSStructures
 		long Alpha1;
 		long Alpha2;
 
+		Aggplus::CImage  *Image;
+		Aggplus::CMatrix Transform;
+
 		std::wstring TexturePath;
 		long TextureAlpha;
 		long TextureMode;
@@ -282,6 +286,13 @@ namespace NSStructures
 		int Rectable;
 		Aggplus::RectF Rect;
 		Aggplus::CDoubleRect Bounds;
+
+		int IsScale;
+		double ScaleX;
+		double ScaleY;
+
+		double OffsetX;
+		double OffsetY;
 
 		double LinearAngle;
 		std::vector<TSubColor> m_arrSubColors;
@@ -376,16 +387,16 @@ namespace NSStructures
 			TextureAlpha = dNewAlpha;
 		}
 
-        INT IsEqual(const CBrush *pBrush)
+		INT IsEqual(const CBrush *pBrush)
 		{
 			if (NULL == pBrush)
 				return FALSE;
 
-			return ((Type == pBrush->Type) &&
+			return ((Type == pBrush->Type) && (Image == pBrush->Image) && Aggplus::CMatrix::IsEqual(&Transform, &pBrush->Transform) &&
 					(Color1 == pBrush->Color1) && (Color2 == pBrush->Color2) &&
 					(Alpha1 == pBrush->Alpha1) && (Alpha2 == pBrush->Alpha2) && (LinearAngle == pBrush->LinearAngle) &&
 					(TexturePath == pBrush->TexturePath) && (TextureAlpha == pBrush->TextureAlpha) && (TextureMode == pBrush->TextureMode) &&
-                    (Rectable == pBrush->Rectable) && (Rect.Equals(pBrush->Rect)));
+					(Rectable == pBrush->Rectable) && (Rect.Equals(pBrush->Rect)));
 		}
 
 		void SetDefaultParams()
@@ -396,6 +407,9 @@ namespace NSStructures
 			Alpha1 = 255;
 			Color2 = 0;
 			Alpha2 = 255;
+
+			Image     = NULL;
+			Transform.SetElements(1., 0., 0., 1., 0., 0.);
 
 			TextureAlpha = 255;
 			TextureMode = c_BrushTextureModeStretch;
@@ -410,6 +424,13 @@ namespace NSStructures
 			Rect.Y = 0.0F;
 			Rect.Width = 0.0F;
 			Rect.Height = 0.0F;
+
+			IsScale = FALSE;
+			ScaleX = 1.0;
+			ScaleY = 1.0;
+
+			OffsetX = 0.0;
+			OffsetY = 0.0;
 
 			Bounds.left = 0;
 			Bounds.top = 0;
@@ -426,25 +447,7 @@ namespace NSStructures
 		}
 		CBrush(const CBrush &other)
 		{
-			Type = other.Type;
-
-			Color1 = other.Color1;
-			Alpha1 = other.Alpha1;
-			Color2 = other.Color2;
-			Alpha2 = other.Alpha2;
-
-			TexturePath = other.TexturePath;
-			TextureAlpha = other.TextureAlpha;
-			TextureMode = other.TextureMode;
-
-			Rectable = other.Rectable;
-			Rect = other.Rect;
-
-			Bounds = other.Bounds;
-
-			LinearAngle = other.LinearAngle;
-			m_arrSubColors = other.m_arrSubColors;
-            m_oGradientInfo = other.m_oGradientInfo;
+			*this = other;
 		}
 		CBrush &operator=(const CBrush &other)
 		{
@@ -455,6 +458,11 @@ namespace NSStructures
 			Color2 = other.Color2;
 			Alpha2 = other.Alpha2;
 
+			Image     = other.Image;
+			if (Image)
+				((IGrObject*)Image)->AddRef();
+			Transform = other.Transform;
+
 			TexturePath = other.TexturePath;
 			TextureAlpha = other.TextureAlpha;
 			TextureMode = other.TextureMode;
@@ -463,14 +471,23 @@ namespace NSStructures
 			Rect = other.Rect;
 			Bounds = other.Bounds;
 
+			IsScale = other.IsScale;
+			ScaleX = other.ScaleX;
+			ScaleY = other.ScaleY;
+
 			LinearAngle = other.LinearAngle;
 			m_arrSubColors = other.m_arrSubColors;
-            m_oGradientInfo = other.m_oGradientInfo;
+			m_oGradientInfo = other.m_oGradientInfo;
 
 			return *this;
 		}
 		virtual ~CBrush()
 		{
+			if (NULL != Image)
+			{
+				((IGrObject*)Image)->Release();
+				Image = NULL;
+			}
 		}
 
 		int IsTexture()

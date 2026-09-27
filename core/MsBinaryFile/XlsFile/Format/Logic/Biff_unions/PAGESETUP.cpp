@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -165,6 +165,41 @@ namespace XLS
 				return true;
 		}
 	}
+	return true;
+}
+
+const bool PAGESETUP::saveContent(BinProcessor& proc)
+{
+	if(m_Header != nullptr)
+		proc.mandatory(*m_Header);
+	else
+		proc.mandatory<Header>();
+	if(m_Footer != nullptr)
+		proc.mandatory(*m_Footer);
+	else
+		proc.mandatory<Footer>();
+	if(m_HCenter != nullptr)
+		proc.mandatory(*m_HCenter);
+	else
+		proc.mandatory<HCenter>();
+	if(m_VCenter != nullptr)
+		proc.mandatory(*m_VCenter);
+	else
+		proc.mandatory<VCenter>();
+
+	if(m_LeftMargin != nullptr)
+		proc.mandatory(*m_LeftMargin);
+	if(m_RightMargin != nullptr)
+		proc.mandatory(*m_RightMargin);
+	if(m_TopMargin != nullptr)
+		proc.mandatory(*m_TopMargin);
+	if(m_BottomtMargin != nullptr)
+		proc.mandatory(*m_BottomtMargin);
+
+	if(m_Setup != nullptr)
+		proc.mandatory(*m_Setup);
+	else
+		proc.mandatory<Setup>();
 	return true;
 }
 

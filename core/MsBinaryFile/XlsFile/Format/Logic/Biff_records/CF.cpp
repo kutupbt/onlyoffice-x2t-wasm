@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -77,6 +77,29 @@ void CF::readFields(CFRecord& record)
 	rgbdxf.serialize(strm);
 	
 	dxfId_ = global_info_->RegistrDxfn(strm.str());
+}
+
+void CF::writeFields(CFRecord& record)
+{
+    record << ct << cp;
+    record.reserveNunBytes(4);
+    auto ccePos = record.getRdPtr();
+    record << rgbdxf;
+    auto rgce1pos = record.getRdPtr();
+    auto dxfSize = rgce1pos - ccePos;
+    rgce1.save(record);
+    unsigned short rgceSize = record.getRdPtr() - rgce1pos;
+    record.RollRdPtrBack(rgceSize + dxfSize + 4);
+    record << rgceSize;
+    record.skipNunBytes(2 + rgceSize + dxfSize);
+
+    auto rgce2pos = record.getRdPtr();
+    rgce2.save(record);
+    rgceSize = record.getRdPtr() - rgce2pos;
+    record.RollRdPtrBack((record.getRdPtr() - ccePos) + 2);
+    record << rgceSize;
+    record.skipNunBytes((rgce2pos - ccePos) + rgceSize);
+
 }
 
 int CF::serialize(std::wostream & stream)

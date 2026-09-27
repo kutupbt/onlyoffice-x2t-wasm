@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -50,38 +50,39 @@ public:
 	BaseObjectPtr clone();
 	
 	void readFields(CFRecord& record);
+    void writeFields(CFRecord& record);
 
 	static const ElementType type = typeSxView;
 
 	Ref8U			ref;
-	RwU				rwFirstHead;
-	RwU				rwFirstData;
-	ColU			colFirstData;
-	short			iCache;
-	short			reserved;
+    RwU				rwFirstHead = 0;
+    RwU				rwFirstData = 0;
+    ColU			colFirstData = 0;
+    short			iCache = 0;
+    short			reserved = 0;
 	SXAxis			sxaxis4Data;
-	short			ipos4Data;
-	short			cDim;
-	unsigned short	cDimRw;
-	unsigned short	cDimCol;
-	unsigned short	cDimPg;
-	short			cDimData;
-	unsigned short	cRw;
-	unsigned short	cCol;
+	short			ipos4Data = -1;
+    short			cDim = 0;
+    unsigned short	cDimRw = 0;
+    unsigned short	cDimCol = 0;
+    unsigned short	cDimPg = 0;
+    short			cDimData = 0;
+    unsigned short	cRw = 0;
+    unsigned short	cCol = 0;
 
-	bool fRwGrand;
-	bool fColGrand;
-	bool fAutoFormat;
-	bool fAtrNum;
-	bool fAtrFnt;
-	bool fAtrAlc;
-	bool fAtrBdr;
-	bool fAtrPat;
-	bool fAtrProc;
+	bool fRwGrand = true;
+    bool fColGrand = false;
+	bool fAutoFormat = true;
+    bool fAtrNum = false;
+    bool fAtrFnt = false;
+    bool fAtrAlc = false;
+    bool fAtrBdr = false;
+    bool fAtrPat = false;
+    bool fAtrProc = false;
 
-	unsigned short	itblAutoFmt; //enum AutoFmt8
-	unsigned short	cchTableName;
-	unsigned short	cchDataName;
+	unsigned short	itblAutoFmt = 1; //enum AutoFmt8
+    unsigned short	cchTableName = 0;
+    unsigned short	cchDataName = 0;
 
 	XLUnicodeStringNoCch	stTable;
 	XLUnicodeStringNoCch	stData;

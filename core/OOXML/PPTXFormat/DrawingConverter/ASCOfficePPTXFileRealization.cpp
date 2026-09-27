@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,8 +31,6 @@
  */
 #include "ASCOfficePPTXFile.h"
 
-#include "../PPTXEvent.h"
-
 #if defined(_WIN32) || defined (_WIN64)
     #include <windows.h>
     #include <shellapi.h>
@@ -45,23 +43,10 @@
 #endif
 
 #include "../../Binary/Presentation/PPTXWriter.h"
-
-#include "../PPTXEvent.h"
 #include "../../../Common/OfficeFileErrorDescription.h"
 
 CPPTXFile::CPPTXFile()
 {
-#if defined(_WIN32) || defined (_WIN64)
-    WCHAR buffer[4096];
-    GetTempPathW(4096, buffer);
-    m_strTempDir = std::wstring(buffer);
-
-    GetLongPathName(m_strTempDir.c_str(), buffer, 4096);
-    m_strTempDir = std::wstring(buffer) + std::wstring(L"_PPTX\\");
-#else
-    m_strTempDir = NSDirectory::GetTempPath() + L"_PPTX/";
-#endif
-
     m_bIsUseSystemFonts = false;
 	m_bIsNoBase64 = false;
 	m_bIsMacro = false;
@@ -73,7 +58,7 @@ CPPTXFile::~CPPTXFile()
 {
 	RELEASEOBJECT(m_pPptxDocument);
 }
-_UINT32 CPPTXFile::LoadFromFile(std::wstring sSrcFileName, std::wstring sDstPath, std::wstring sXMLOptions)
+_UINT32 CPPTXFile::LoadFromFile(std::wstring sSrcFileName, std::wstring sDstPath)
 {
 	std::wstring localTempDir(sDstPath);
     if(!localTempDir.empty())
@@ -85,8 +70,10 @@ _UINT32 CPPTXFile::LoadFromFile(std::wstring sSrcFileName, std::wstring sDstPath
 	}
 	else
 	{
-        bool res = NSDirectory::CreateDirectory(m_strTempDir);
-        if (res == false) return AVS_FILEUTILS_ERROR_CONVERT;
+		if (m_strTempDir.empty()) m_strTempDir = NSDirectory::GetTempPath();
+		m_strTempDir = NSDirectory::CreateDirectoryWithUniqueName(m_strTempDir);
+
+		if (m_strTempDir.empty()) return AVS_FILEUTILS_ERROR_CONVERT;
 	}
 	localTempDir = m_strTempDir;
 
@@ -120,7 +107,7 @@ _UINT32 CPPTXFile::LoadFromFile(std::wstring sSrcFileName, std::wstring sDstPath
 
 	return 0;
 }
-_UINT32 CPPTXFile::SaveToFile(std::wstring sDstFileName, std::wstring sSrcPath, std::wstring sXMLOptions)
+_UINT32 CPPTXFile::SaveToFile(std::wstring sDstFileName, std::wstring sSrcPath)
 {
 	if (NULL == m_pPptxDocument)
 		return AVS_FILEUTILS_ERROR_CONVERT;
@@ -185,24 +172,24 @@ void CPPTXFile::SetMacroEnabled(bool val)
 {
 	m_bIsMacro = val;
 }
+bool CPPTXFile::GetMacroEnabled()
+{
+	return m_bIsMacro;
+}
 _UINT32 CPPTXFile::OpenFileToPPTY(std::wstring bsInput, std::wstring bsOutput)
 {
-    if (m_strTempDir.empty())
-	{
-        m_strTempDir = NSDirectory::GetTempPath();
-	}
+	if (m_strTempDir.empty()) m_strTempDir = NSDirectory::GetTempPath();
+	m_strTempDir = NSDirectory::CreateDirectoryWithUniqueName(m_strTempDir);
 
-	if (true == NSDirectory::CreateDirectory(m_strTempDir))
-	{
-		_UINT32 hr = OpenDirectoryToPPTY(bsInput, bsOutput);
+	if (m_strTempDir.empty()) return S_FALSE;
 
-		return hr;
-	}
-	else
-		return S_FALSE;
+	return OpenDirectoryToPPTY(bsInput, bsOutput);
 }
 _UINT32 CPPTXFile::OpenDirectoryToPPTY(std::wstring bsInput, std::wstring bsOutput)
 {
+	if (m_strTempDir.empty()) m_strTempDir = NSDirectory::GetTempPath();
+	m_strTempDir = NSDirectory::CreateDirectoryWithUniqueName(m_strTempDir);
+
 	OOX::CPath pathInputDirectory = bsInput;
 
 	RELEASEOBJECT(m_pPptxDocument);
@@ -274,7 +261,7 @@ _UINT32 CPPTXFile::ConvertPPTYToPPTX(std::wstring bsInput, std::wstring bsOutput
 		BYTE* pSrcBuffer = new BYTE[lFileSize];
 		oFileBinary.ReadFile(pSrcBuffer, (DWORD)lFileSize);
 	oFileBinary.CloseFile();
-	
+
 	std::wstring strBsInput = bsInput;
     std::wstring srcFolder = NSDirectory::GetFolderPath(strBsInput);
 
@@ -288,8 +275,8 @@ _UINT32 CPPTXFile::ConvertPPTYToPPTX(std::wstring bsInput, std::wstring bsOutput
 	{
 		hRes = S_FALSE;
 	}
-	
 	RELEASEARRAYOBJECTS(pSrcBuffer);
 	
+	m_bIsMacro = oWriter.GetMacroEnabled();
 	return hRes;
 }

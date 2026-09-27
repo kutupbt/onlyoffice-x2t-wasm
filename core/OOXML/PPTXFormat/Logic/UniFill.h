@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -30,8 +30,6 @@
  *
  */
 #pragma once
-#ifndef PPTX_LOGIC_UNIFILL_INCLUDE_H_
-#define PPTX_LOGIC_UNIFILL_INCLUDE_H_
 
 #include "./../WrapperWritingElement.h"
 #include "Fills/BlipFill.h"
@@ -47,7 +45,7 @@ namespace PPTX
 		class UniFill : public WrapperWritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(UniFill)
+			WritingElement_AdditionMethods(UniFill)
 
 			UniFill();
 			virtual OOX::EElementType getType() const;
@@ -60,6 +58,7 @@ namespace PPTX
 			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
 			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
 			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
+			XLS::BaseObjectPtr toXLS() const;
 
 			virtual bool is_init() const;
 			
@@ -70,15 +69,13 @@ namespace PPTX
 			const UniFill& operator+=(const UniFill& fill);
 			void Merge(UniFill& fill) const;
 
-			smart_ptr<WrapperWritingElement>	Fill;
+			smart_ptr<WrapperWritingElement> Fill;
 			enum Type {notInit, noFill, solidFill, gradFill, blipFill, pattFill, grpFill};
-			Type								m_type;
-			std::wstring						m_namespace;
+			Type m_type;
+			std::wstring m_namespace;
 
 		protected:
 			virtual void FillParentPointersForChilds();
 		};
 	} // namespace Logic
 } // namespace PPTX
-
-#endif // PPTX_LOGIC_UNIFILL_INCLUDE_H

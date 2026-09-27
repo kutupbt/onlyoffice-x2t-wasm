@@ -8,8 +8,6 @@ TEMPLATE = lib
 CONFIG += shared
 CONFIG += plugin
 
-CONFIG += core_static_link_libstd
-
 DEFINES += KERNEL_USE_DYNAMIC_LIBRARY_BUILDING
 
 # CONFIG
@@ -19,38 +17,42 @@ CORE_ROOT_DIR = $$PWD/..
 PWD_ROOT_DIR = $$PWD
 include(../Common/base.pri)
 
-CONFIG += build_all_zlib build_zlib_as_sources
+# CryptPad: This causes duplicate symbols when linking x2t
+# CONFIG += build_all_zlib build_zlib_as_sources
 include(../OfficeUtils/OfficeUtils.pri)
 
 CONFIG += core_static_link_xml_full
 include(../DesktopEditor/xml/build/qt/libxml2.pri)
 
-ADD_DEPENDENCY(UnicodeConverter)
+# CryptPad: UnicodeConverter is linked in a later step. Do not link here.
+# ADD_DEPENDENCY(UnicodeConverter)
 
 # CONFIG
 HEADERS += ./kernel_config.h
 
 # BLOCKER
 HEADERS += \
-    ./../DesktopEditor/graphics/TemporaryCS.h
+	./../DesktopEditor/graphics/TemporaryCS.h
 
 SOURCES += \
-    ./../DesktopEditor/graphics/TemporaryCS.cpp
+	./../DesktopEditor/graphics/TemporaryCS.cpp
 
 # THREAD
 core_android:DEFINES += NOT_USE_PTHREAD_CANCEL USE_FILE32API
 HEADERS += \
-    ./../DesktopEditor/graphics/BaseThread.h
+	./../DesktopEditor/graphics/BaseThread.h \
+	./../DesktopEditor/graphics/BaseThreadMonitor.h
 
 SOURCES += \
-    ./../DesktopEditor/graphics/BaseThread.cpp
+	./../DesktopEditor/graphics/BaseThread.cpp \
+	./../DesktopEditor/graphics/BaseThreadMonitor.cpp
 
 # TIMER
 HEADERS += \
-    ./../DesktopEditor/graphics/Timer.h
+	./../DesktopEditor/graphics/Timer.h
 
 SOURCES += \
-    ./../DesktopEditor/graphics/Timer.cpp
+	./../DesktopEditor/graphics/Timer.cpp
 
 # PATH
 HEADERS += ./../DesktopEditor/common/Path.h
@@ -89,12 +91,17 @@ SOURCES += ./../DesktopEditor/common/Directory.cpp
 HEADERS += ./../DesktopEditor/common/SystemUtils.h
 SOURCES += ./../DesktopEditor/common/SystemUtils.cpp
 
+# PROCESSENV
+HEADERS += ./../DesktopEditor/common/ProcessEnv.h
+SOURCES += ./../DesktopEditor/common/ProcessEnv.cpp
+
 core_windows {
-    LIBS += -lRpcrt4
-    LIBS += -lShell32
+	LIBS += -lRpcrt4
+	LIBS += -lShell32
+	!build_xp:LIBS += -lole32
 }
 
 core_ios {
-    OBJECTIVE_SOURCES += ./../DesktopEditor/common/File_ios.mm
-    LIBS += -framework Foundation
+	OBJECTIVE_SOURCES += ./../DesktopEditor/common/File_ios.mm
+	LIBS += -framework Foundation
 }

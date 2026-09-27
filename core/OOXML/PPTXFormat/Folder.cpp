@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -42,6 +42,8 @@
 #include "SlideLayout.h"
 #include "Slide.h"
 #include "NotesMaster.h"
+#include "NotesSlide.h"
+#include "HandoutMaster.h"
 
 #include <map>
 
@@ -72,6 +74,10 @@ namespace PPTX
 		if (_presentation.is_init())
 		{
 			_presentation->commentAuthors = _presentation->Get(OOX::Presentation::FileTypes::CommentAuthors).smart_dynamic_cast<PPTX::Authors>();
+            if (false == _presentation->commentAuthors.IsInit())
+            {
+                _presentation->commentAuthors = _presentation->Get(OOX::Presentation::FileTypes::ModernCommentAuthors).smart_dynamic_cast<PPTX::Authors>();
+            }
 			
 			if (_presentation->IsExist(OOX::FileTypes::VbaProject))
 			{
@@ -150,6 +156,18 @@ namespace PPTX
         for (std::map<std::wstring, smart_ptr<OOX::File>>::const_iterator pPair = map.m_map.begin(); pPair != map.m_map.end(); ++pPair)
         {
             const OOX::FileType& curType = pPair->second->type();
+
+            if (OOX::Presentation::FileTypes::HandoutMaster == curType)
+            {
+                smart_ptr<PPTX::HandoutMaster> pointer = pPair->second.smart_dynamic_cast<PPTX::HandoutMaster>();
+                if (pointer.is_init())
+                    pointer->ApplyRels();
+            }
+        }
+
+        for (std::map<std::wstring, smart_ptr<OOX::File>>::const_iterator pPair = map.m_map.begin(); pPair != map.m_map.end(); ++pPair)
+        {
+            const OOX::FileType& curType = pPair->second->type();
            
 			if (OOX::Presentation::FileTypes::NotesSlide == curType)
             {
@@ -185,18 +203,6 @@ namespace PPTX
 	{
 		return true;//FileContainer::exist(OOX::Presentation::FileTypes::Presentation);
 	}
-
-	//void Document::extractPictures(const OOX::CPath& path)
-	//{
-	//	OOX::CSystemUtility::CreateDirectories(path);
-	//	FileContainer::ExtractPictures(path);
-	//}
-
-	//void Document::extractPictures(const OOX::CPath& source, const OOX::CPath& path)
-	//{
-	//	//read(source);
-	//	extractPictures(path);
-	//}
 
 	long Document::CountFiles(const OOX::CPath& path)
 	{

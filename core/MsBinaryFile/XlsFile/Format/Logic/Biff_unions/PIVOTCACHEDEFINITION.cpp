@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -99,6 +99,20 @@ const bool PIVOTCACHEDEFINITION::loadContent(BinProcessor& proc)
 
 	return true;
 }
+const bool PIVOTCACHEDEFINITION::saveContent(BinProcessor& proc)
+{
+	if(m_SXStreamID == nullptr)
+        return false;
+    proc.mandatory(*m_SXStreamID);
+	if(m_SXVS != nullptr)
+		proc.mandatory(*m_SXVS);
+	else
+		proc.mandatory<SXVS>();
+    if(m_SXSRC != nullptr)
+        proc.mandatory(*m_SXSRC);
+    return true;
+}
+
 int PIVOTCACHEDEFINITION::serialize_definitions(std::wostream & strm)
 {
 	SXStreamID* streamId = dynamic_cast<SXStreamID*>(m_SXStreamID.get());
@@ -168,7 +182,7 @@ int PIVOTCACHEDEFINITION::serialize_definitions(std::wostream & strm)
 					FDB *field = dynamic_cast<FDB *>(pivot_cache->m_arFDB[i].get());
 					if (!field) continue;
 					
-					if (olap_view)
+					if ((olap_view) && (i < olap_view->m_arPIVOTVDTEX.size()))
 					{
 						PIVOTVDTEX *ex = dynamic_cast<PIVOTVDTEX*>(olap_view->m_arPIVOTVDTEX[i].get());
 						
@@ -187,7 +201,10 @@ int PIVOTCACHEDEFINITION::serialize_definitions(std::wostream & strm)
 
 					for (size_t i = 0; i < pivot_cache->m_arSXFORMULA.size(); i++)
 					{
-						pivot_cache->m_arSXFORMULA[i]->serialize(CP_XML_STREAM());
+						if (pivot_cache->m_arSXFORMULA[i])
+						{
+							pivot_cache->m_arSXFORMULA[i]->serialize(CP_XML_STREAM());
+						}
 					}
 				}
 			}

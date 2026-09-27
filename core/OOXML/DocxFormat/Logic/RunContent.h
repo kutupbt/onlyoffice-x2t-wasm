@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -33,11 +33,24 @@
 
 #include "../../DocxFormat/WritingElement.h"
 #include "../../Base/Nullable.h"
-#include "../../Common/SimpleTypes_Word.h"
+
 #include "../../Common/ComplexTypes.h"
-#include "../../PPTXFormat/Logic/Xfrm.h"
 
 // 2. Класс CRuby   17.3.3.25
+
+namespace PPTX
+{
+	namespace Logic
+	{
+		class Xfrm;
+	}
+}
+
+namespace SimpleTypes
+{
+	class COnOff;
+	class CRelationshipId;
+}
 
 namespace OOX
 {
@@ -49,7 +62,7 @@ namespace OOX
 		class CBr : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CBr)
+			WritingElement_AdditionMethods(CBr)
 			CBr(OOX::Document *pMain = NULL);
 			virtual ~CBr();
 
@@ -58,10 +71,8 @@ namespace OOX
 
 			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
-
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
 		public:
 
 			SimpleTypes::CBrClear m_oClear;
@@ -75,7 +86,7 @@ namespace OOX
 		class CContentPart : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CContentPart)
+			WritingElement_AdditionMethods(CContentPart)
 			CContentPart(OOX::Document *pMain = NULL);
 			virtual ~CContentPart();
 
@@ -84,14 +95,12 @@ namespace OOX
 
 			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
-
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
 		public:
-			std::wstring							m_namespace;
-			nullable<PPTX::Logic::Xfrm>				m_oXfrm;
-			//nullable<nvContentPartPr>				m_oNvContentPartPr;
+			std::wstring m_namespace;
+			nullable<PPTX::Logic::Xfrm> m_oXfrm;
+			//nullable<nvContentPartPr> m_oNvContentPartPr;
 			nullable<SimpleTypes::CRelationshipId > m_oId;
 
 		};
@@ -102,7 +111,7 @@ namespace OOX
 		class CCr : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CCr)
+			WritingElement_AdditionMethods(CCr)
 			CCr(OOX::Document *pMain = NULL);
 			virtual ~CCr();
 
@@ -119,7 +128,7 @@ namespace OOX
 		class CDayLong : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CDayLong)
+			WritingElement_AdditionMethods(CDayLong)
 			CDayLong(OOX::Document *pMain = NULL);
 			virtual ~CDayLong();
 
@@ -136,7 +145,7 @@ namespace OOX
 		class CDayShort : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CDayShort)
+			WritingElement_AdditionMethods(CDayShort)
 			CDayShort(OOX::Document *pMain = NULL);
 			virtual ~CDayShort();
 
@@ -153,25 +162,21 @@ namespace OOX
 		class CDelText : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CDelText)
+			WritingElement_AdditionMethods(CDelText)
 			CDelText(OOX::Document *pMain = NULL);
 			virtual ~CDelText();
 
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
-
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
 		public:
-			// Attributes
 			nullable<SimpleTypes::CXmlSpace> m_oSpace;
 
-			// Value
-            std::wstring                             m_sText;
+            std::wstring m_sText;
 
 		};
 
@@ -181,7 +186,7 @@ namespace OOX
 		class CLastRenderedPageBreak : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CLastRenderedPageBreak)
+			WritingElement_AdditionMethods(CLastRenderedPageBreak)
 			CLastRenderedPageBreak(OOX::Document *pMain = NULL);
 			virtual ~CLastRenderedPageBreak();
 
@@ -198,7 +203,7 @@ namespace OOX
 		class CMonthLong : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CMonthLong)
+			WritingElement_AdditionMethods(CMonthLong)
 			CMonthLong(OOX::Document *pMain = NULL);
 			virtual ~CMonthLong();
 
@@ -215,7 +220,7 @@ namespace OOX
 		class CMonthShort : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CMonthShort)
+			WritingElement_AdditionMethods(CMonthShort)
 			CMonthShort(OOX::Document *pMain = NULL);
 			virtual ~CMonthShort();
 
@@ -232,7 +237,7 @@ namespace OOX
 		class CNoBreakHyphen : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CNoBreakHyphen)
+			WritingElement_AdditionMethods(CNoBreakHyphen)
 			CNoBreakHyphen(OOX::Document *pMain = NULL);
 			virtual ~CNoBreakHyphen();
 
@@ -249,7 +254,7 @@ namespace OOX
 		class CPgNum : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CPgNum)
+			WritingElement_AdditionMethods(CPgNum)
 			CPgNum(OOX::Document *pMain = NULL);
 			virtual ~CPgNum();
 
@@ -266,23 +271,21 @@ namespace OOX
 		class CPTab : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CPTab)
+			WritingElement_AdditionMethods(CPTab)
 			CPTab(OOX::Document *pMain = NULL);
 			virtual ~CPTab();
 			
-		public:
-			virtual void         fromXML(XmlUtils::CXmlNode& oNode);
-			virtual void         fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void fromXML(XmlUtils::CXmlNode& oNode);
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
-
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 
 		public:
-			nullable<SimpleTypes::CPTabAlignment > m_oAlignment;
-			nullable<SimpleTypes::CPTabLeader    > m_oLeader;
+			nullable<SimpleTypes::CPTabAlignment> m_oAlignment;
+			nullable<SimpleTypes::CPTabLeader> m_oLeader;
 			nullable<SimpleTypes::CPTabRelativeTo> m_oRelativeTo;
 
 		};
@@ -293,15 +296,14 @@ namespace OOX
 		class CRuby : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CRuby)
+			WritingElement_AdditionMethods(CRuby)
 			CRuby(OOX::Document *pMain = NULL);
 			virtual ~CRuby();
 
-		public:
-			virtual void         fromXML(XmlUtils::CXmlNode& oNode);
-			virtual void         fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void fromXML(XmlUtils::CXmlNode& oNode);
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 		};
 
@@ -311,15 +313,14 @@ namespace OOX
 		class CSoftHyphen : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CSoftHyphen)
+			WritingElement_AdditionMethods(CSoftHyphen)
 			CSoftHyphen(OOX::Document *pMain = NULL);
 			virtual ~CSoftHyphen();
-			
-		public:
-			virtual void         fromXML(XmlUtils::CXmlNode& oNode);
-			virtual void         fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual void fromXML(XmlUtils::CXmlNode& oNode);
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
+
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 		};
 
@@ -329,23 +330,20 @@ namespace OOX
 		class CSym : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CSym)
+			WritingElement_AdditionMethods(CSym)
 			CSym(OOX::Document *pMain = NULL);
 			virtual ~CSym();
 			
-		public:
-			virtual void         fromXML(XmlUtils::CXmlNode& oNode);
-			virtual void         fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void fromXML(XmlUtils::CXmlNode& oNode);
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
-
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
 		public:
-			nullable<SimpleTypes::CShortHexNumber>		m_oChar;
-			nullable<std::wstring>						m_oFont;
+			nullable<SimpleTypes::CShortHexNumber> m_oChar;
+			nullable<std::wstring> m_oFont;
 
 		};
 
@@ -355,7 +353,7 @@ namespace OOX
 		class CText : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CText)
+			WritingElement_AdditionMethods(CText)
 			CText(OOX::Document *pMain = NULL);
 			virtual ~CText();
 
@@ -366,16 +364,11 @@ namespace OOX
 			virtual EElementType getType() const;
 
 			static void ReadAttributes(XmlUtils::CXmlLiteReader& oReader, nullable<SimpleTypes::CXmlSpace>& oSpace);
-
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
 		public:
-			// Attributes
 			nullable<SimpleTypes::CXmlSpace> m_oSpace;
-
-			// Value
-            std::wstring                             m_sText;
+            std::wstring m_sText;
 		};
 
 		//--------------------------------------------------------------------------------
@@ -384,15 +377,14 @@ namespace OOX
 		class CTab : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CTab)
+			WritingElement_AdditionMethods(CTab)
 			CTab(OOX::Document *pMain = NULL);
 			virtual ~CTab();
 
-		public:
-			virtual void         fromXML(XmlUtils::CXmlNode& oNode);
-			virtual void         fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void fromXML(XmlUtils::CXmlNode& oNode);
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 		};
 
@@ -402,15 +394,14 @@ namespace OOX
 		class CYearLong : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CYearLong)
+			WritingElement_AdditionMethods(CYearLong)
 			CYearLong(OOX::Document *pMain = NULL);
 			virtual ~CYearLong();
 			
-		public:
-			virtual void         fromXML(XmlUtils::CXmlNode& oNode);
-			virtual void         fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void fromXML(XmlUtils::CXmlNode& oNode);
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 		};
 
@@ -420,15 +411,14 @@ namespace OOX
 		class CYearShort : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CYearShort)
+			WritingElement_AdditionMethods(CYearShort)
 			CYearShort(OOX::Document *pMain = NULL);
 			virtual ~CYearShort();
 			
-		public:
-			virtual void         fromXML(XmlUtils::CXmlNode& oNode);
-			virtual void         fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void fromXML(XmlUtils::CXmlNode& oNode);
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 		};
 
@@ -438,14 +428,14 @@ namespace OOX
 		class CAnnotationRef : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CAnnotationRef)
+			WritingElement_AdditionMethods(CAnnotationRef)
 			CAnnotationRef(OOX::Document *pMain = NULL);
 			virtual ~CAnnotationRef();
 
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 		};
 
@@ -455,16 +445,15 @@ namespace OOX
 		class CCommentReference : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CCommentReference)
+			WritingElement_AdditionMethods(CCommentReference)
 			CCommentReference(OOX::Document *pMain = NULL);
 			virtual ~CCommentReference();
 
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
-
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 
@@ -478,14 +467,14 @@ namespace OOX
 		class CContinuationSeparator : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CContinuationSeparator)
+			WritingElement_AdditionMethods(CContinuationSeparator)
 			CContinuationSeparator(OOX::Document *pMain = NULL);
 			virtual ~CContinuationSeparator();
 
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 		};
 
@@ -495,25 +484,23 @@ namespace OOX
 		class CDelInstrText : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CDelInstrText)
+			WritingElement_AdditionMethods(CDelInstrText)
 			CDelInstrText(OOX::Document *pMain = NULL);
 			virtual ~CDelInstrText();
 
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 
 		public:
-			// Attributes
 			nullable<SimpleTypes::CXmlSpace> m_oSpace;
 
-			// Value
-            std::wstring                             m_sText;
+            std::wstring m_sText;
 
 		};
 
@@ -523,14 +510,14 @@ namespace OOX
 		class CEndnoteRef : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CEndnoteRef)
+			WritingElement_AdditionMethods(CEndnoteRef)
 			CEndnoteRef(OOX::Document *pMain = NULL);
 			virtual ~CEndnoteRef();
 
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 		};
 
@@ -540,7 +527,7 @@ namespace OOX
 		class CEndnoteReference : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CEndnoteReference)
+			WritingElement_AdditionMethods(CEndnoteReference)
 			CEndnoteReference(OOX::Document *pMain = NULL);
 			virtual ~CEndnoteReference();
 
@@ -549,13 +536,11 @@ namespace OOX
 
 			virtual std::wstring      toXML() const;
 			virtual EElementType getType() const;
-
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
 		public:
-			nullable<SimpleTypes::COnOff>			m_oCustomMarkFollows;
-			nullable<SimpleTypes::CDecimalNumber>	m_oId;
+			nullable<SimpleTypes::COnOff> m_oCustomMarkFollows;
+			nullable<SimpleTypes::CDecimalNumber> m_oId;
 
 		};
 
@@ -565,14 +550,14 @@ namespace OOX
 		class CFootnoteRef : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CFootnoteRef)
+			WritingElement_AdditionMethods(CFootnoteRef)
 			CFootnoteRef(OOX::Document *pMain = NULL);
 			virtual ~CFootnoteRef();
 
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 		};
 
@@ -582,22 +567,22 @@ namespace OOX
 		class CFootnoteReference : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CFootnoteReference)
+			WritingElement_AdditionMethods(CFootnoteReference)
 			CFootnoteReference(OOX::Document *pMain = NULL);
 			virtual ~CFootnoteReference();
 
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 
 		public:
-			nullable<SimpleTypes::COnOff>			m_oCustomMarkFollows;
-			nullable<SimpleTypes::CDecimalNumber>	m_oId;
+			nullable<SimpleTypes::COnOff> m_oCustomMarkFollows;
+			nullable<SimpleTypes::CDecimalNumber> m_oId;
 		};
 
 		//--------------------------------------------------------------------------------
@@ -606,25 +591,20 @@ namespace OOX
 		class CInstrText : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CInstrText)
+			WritingElement_AdditionMethods(CInstrText)
 			CInstrText(OOX::Document *pMain = NULL);
 			virtual ~CInstrText();
 
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
-
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
 		public:
-			// Attributes
 			nullable<SimpleTypes::CXmlSpace> m_oSpace;
-
-			// Value
-            std::wstring                             m_sText;
+            std::wstring m_sText;
 
 		};
 
@@ -634,14 +614,14 @@ namespace OOX
 		class CSeparator : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CSeparator)
+			WritingElement_AdditionMethods(CSeparator)
 			CSeparator(OOX::Document *pMain = NULL);
 			virtual ~CSeparator();
 
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			virtual std::wstring      toXML() const;
+			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 		};
 

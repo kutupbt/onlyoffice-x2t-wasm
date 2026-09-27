@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -115,6 +115,41 @@ void Sort::readFields(CFRecord& record)
 		}
 	}
 	record.skipNunBytes(1); // reserved
+}
+
+void Sort::writeFields(CFRecord& record)
+{
+    unsigned short flags = 0;
+
+    SETBIT(flags, 0, fCol);
+    SETBIT(flags, 1, fKey1Dsc);
+    SETBIT(flags, 2, fKey2Dsc);
+    SETBIT(flags, 3, fKey3Dsc);
+    SETBIT(flags, 4, fCaseSensitive);
+    SETBITS(flags, 5, 9, iOrder);
+    SETBIT(flags, 10, fAltMethod);
+    record << flags;
+
+    unsigned char cchKey1 = stKey1.size();
+    unsigned char cchKey2 = stKey2.size();
+    unsigned char cchKey3 = stKey3.size();
+    record << cchKey1 << cchKey2 << cchKey3;
+    if(cchKey1)
+    {
+        XLUnicodeStringNoCch stKey1_ = stKey1;
+        record << stKey1_;
+    }
+    if(cchKey2)
+    {
+        XLUnicodeStringNoCch stKey2_ = stKey2;
+        record << stKey2_;
+    }
+    if(cchKey3)
+    {
+        XLUnicodeStringNoCch stKey3_ = stKey3;
+        record << stKey3_;
+    }
+    record.reserveNunBytes(1);
 }
 
 } // namespace XLS

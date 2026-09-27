@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -99,11 +99,12 @@ namespace DocFileFormat
         XMLTools::XMLElement pgNumType	(L"w:pgNumType");
 
 		HeaderAndFooterTable* pTable = _ctx->_doc->headerAndFooterTable;
+        bool bHasEndnoteNumFmt = false;
 
 		if (pTable)
 		{
 			unsigned char fHF = _ctx->_doc->nWordVersion == 0 ? 255 : 0; //all headers & footers
-			for (std::list<SinglePropertyModifier>::iterator iter = sepx->grpprl->begin(); iter != sepx->grpprl->end(); ++iter)
+			for (std::vector<SinglePropertyModifier>::iterator iter = sepx->grpprl->begin(); iter != sepx->grpprl->end(); ++iter)
 			{
 				switch (iter->OpCode)
 				{
@@ -164,7 +165,7 @@ namespace DocFileFormat
 		std::wstring wsSprmSPgnStart;
 		int nProperty = 0; // for unknown
 
-		for (std::list<SinglePropertyModifier>::iterator iter = sepx->grpprl->begin(); iter != sepx->grpprl->end(); ++iter)
+		for (std::vector<SinglePropertyModifier>::iterator iter = sepx->grpprl->begin(); iter != sepx->grpprl->end(); ++iter)
 		{
 			switch (iter->OpCode)
 			{
@@ -327,8 +328,11 @@ namespace DocFileFormat
 				break;
 
 			case sprmSNfcEdnRef:
+            {
                 appendValueElement( &endnotePr, L"numFmt", NumberingMapping::GetNumberFormatWideString( FormatUtils::BytesToInt16( iter->Arguments, 0, iter->argumentsSize ) ), true );
-				break;
+                bHasEndnoteNumFmt = true;
+            }
+                break;
 
 			case sprmSNFtn:
                 appendValueElement( &footnotePr, L"numStart", FormatUtils::IntToWideString( FormatUtils::BytesToInt16( iter->Arguments, 0, iter->argumentsSize ) ), true );
@@ -374,10 +378,13 @@ namespace DocFileFormat
 				if (m_nColumns)	// there is at least one width set, so create the array
 				{
 					if (NULL == m_arrWidth)
-						m_arrWidth		=	new short [m_nColumns];
+						m_arrWidth = new short[m_nColumns];
 
-					unsigned char nInd	=	iter->Arguments[0];
-					m_arrWidth[nInd]	=	FormatUtils::BytesToInt16 (iter->Arguments, 1, iter->argumentsSize);
+					unsigned char nInd = iter->Arguments[0];
+					if (nInd < m_nColumns)
+					{
+						m_arrWidth[nInd] = FormatUtils::BytesToInt16(iter->Arguments, 1, iter->argumentsSize);
+					}
 				}
 			}
 			break;
@@ -485,12 +492,16 @@ namespace DocFileFormat
 				}
 			}
 		}
+        if (!bHasEndnoteNumFmt)
+        {
+            appendValueElement( &endnotePr, L"numFmt", L"decimal", true );
+        }
 
 		if (bWasSprmSFPgnRestart && false == wsSprmSPgnStart.empty() )
             appendValueAttribute( &pgNumType, L"w:start", wsSprmSPgnStart );
 
 		// build the columns
-		if (m_arrWidth)
+		if (m_arrWidth && m_nColumns > 0)
 		{
             XMLTools::XMLAttribute equalWidth( L"w:equalWidth", L"0" );
 			cols.AppendAttribute( equalWidth );

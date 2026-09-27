@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -40,7 +40,7 @@ Text::Text()
 	is_area			= false;
 	dlp				= false;
 	iReadingOrder	= 0;
-	icvText			= 0xff; 
+	icvText			= 0;
 }
 
 
@@ -90,6 +90,31 @@ void Text::readFields(CFRecord& record)
 	fShowPercent		= GETBIT(flags1, 12);
 	fShowBubbleSizes	= GETBIT(flags1, 13);
 	fShowLabel			= GETBIT(flags1, 14);
+
+}
+
+void Text::writeFields(CFRecord& record)
+{
+	unsigned short flags1 = 0;
+	unsigned short flags2 = 0;
+
+	SETBIT(flags1, 0, fAutoColor)
+	SETBIT(flags1, 1, fShowKey)
+	SETBIT(flags1, 2, fShowValue)
+	SETBIT(flags1, 4, fAutoText)
+	SETBIT(flags1, 5, fGenerated)
+	SETBIT(flags1, 6, fDeleted)
+	SETBIT(flags1, 7, fAutoMode)
+	SETBIT(flags1, 11, fShowLabelAndPerc)
+	SETBIT(flags1, 12, fShowPercent)
+	SETBIT(flags1, 13, fShowBubbleSizes)
+	SETBIT(flags1, 14, fShowLabel)
+	record << at  << vat << wBkgMode << rgbText << x << y << dx << dy << flags1;
+
+	SETBITS(flags2, 0, 3, dlp);
+	SETBITS(flags2, 14, 15, iReadingOrder);
+	record << icvText << flags2 << trot;
+
 
 }
 

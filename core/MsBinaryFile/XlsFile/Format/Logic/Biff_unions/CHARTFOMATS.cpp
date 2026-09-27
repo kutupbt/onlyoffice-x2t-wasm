@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -287,6 +287,58 @@ const bool CHARTFORMATS::loadContent(BinProcessor& proc)
 
 	return true;
 }
+
+const bool CHARTFORMATS::saveContent(BinProcessor& proc)
+{
+	if(m_ChartRect == nullptr)
+		return false;
+	proc.mandatory(*m_ChartRect);
+	proc.mandatory<Begin>();
+	for(auto i : m_arFONTLIST)
+	{
+		proc.mandatory(*i);
+	}
+	if(m_Scl != nullptr)
+		proc.mandatory(*m_Scl);
+	else
+		proc.mandatory<Scl>();
+	if(m_PlotGrowth != nullptr)
+		proc.mandatory(*m_PlotGrowth);
+	else
+		proc.mandatory<PlotGrowth>();
+	if(m_FRAME != nullptr)
+		proc.mandatory(*m_FRAME);
+	for(auto i : m_arSERIESFORMAT)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	for(auto i : m_arSS)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	if(m_ShtProps != nullptr)
+		proc.mandatory(*m_ShtProps);
+	else
+		proc.mandatory<ShtProps>();
+	for(auto i : m_arDFTTEXT)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	if(m_AxesUsed != nullptr)
+		proc.mandatory(*m_AxesUsed);
+	else
+		proc.mandatory<AxesUsed>();
+	for(auto i : m_arAXISPARENT)
+	if(i != nullptr)
+		proc.mandatory(*i);
+	if(m_CrtLayout12A != nullptr)
+		proc.mandatory(*m_CrtLayout12A);
+	if(m_DAT != nullptr)
+		proc.mandatory(*m_DAT);
+	for(auto i : m_arATTACHEDLABEL)
+		if(i!= nullptr)
+			proc.mandatory(*i);
+	proc.mandatory<End>();
+	return true;
+}
+
 BaseObjectPtr CHARTFORMATS::find_label( _UINT16 link_id, unsigned short ex)
 {
 	for (size_t i = 0 ; i < m_arATTACHEDLABEL.size(); i++)

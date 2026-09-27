@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -46,9 +46,11 @@
 #include "Worksheets/Worksheet.h"
 #include "CalcChain/CalcChain.h"
 #include "WorkbookComments.h"
+#include "Workbook/CustomsXml.h"
 #include "Comments/ThreadedComments.h"
 #include "Comments/Comments.h"
 #include "Controls/Controls.h"
+#include "Chart/Chart.h"
 
 #include "Pivot/PivotTable.h"
 #include "Pivot/PivotCacheDefinition.h"
@@ -56,6 +58,9 @@
 #include "Slicer/SlicerCache.h"
 #include "Slicer/Slicer.h"
 #include "NamedSheetViews/NamedSheetViews.h"
+#include "Timelines/Timeline.h"
+#include "RichData/RdRichData.h"
+#include "Workbook/Metadata.h"
 
 #include "Table/Table.h"
 #include "Table/QueryTable.h"
@@ -79,8 +84,8 @@ namespace OOX
 	{
 		smart_ptr<OOX::File> CreateFile(const OOX::CPath& oRootPath, const OOX::CPath& oPath, const OOX::Rels::CRelationShip& oRelation, OOX::Document *pMain)
 		{
-			OOX::CPath	oRelationFilename = oRelation.Filename();
-			CPath		oFileName;
+			OOX::CPath oRelationFilename = oRelation.Filename();
+			CPath oFileName;
 			
 			if (oRelation.IsExternal())
 			{
@@ -110,6 +115,8 @@ namespace OOX
                 return smart_ptr<OOX::File>(new CWorksheet( pMain, oRootPath, oFileName, oRelation.rId().ToString(), true ));
 			else if ( oRelation.Type() == FileTypes::Table )
 				return smart_ptr<OOX::File>(new CTableFile( pMain, oRootPath, oFileName ));
+			else if (oRelation.Type() == FileTypes::TableSingleCells)
+				return smart_ptr<OOX::File>(new CTableSingleCellsFile(pMain, oRootPath, oFileName));
 			else if ( oRelation.Type() == FileTypes::QueryTable )
 				return smart_ptr<OOX::File>(new CQueryTableFile( pMain, oRootPath, oFileName ));
 			else if ( oRelation.Type() == FileTypes::PivotTable )
@@ -136,7 +143,9 @@ namespace OOX
                 return smart_ptr<OOX::File>(new CExternalLink( pMain, oRootPath, oFileName, oRelation.rId().ToString() ));
 			else if ( oRelation.Type() == FileTypes::Connections )
 				return smart_ptr<OOX::File>(new CConnectionsFile( pMain, oRootPath, oFileName ));
-			
+			else if (oRelation.Type() == FileTypes::XmlMaps)
+				return smart_ptr<OOX::File>(new CXmlMapsFile(pMain, oRootPath, oFileName));
+
 			else if ( oRelation.Type() == OOX::FileTypes::Chart )
 				return smart_ptr<OOX::File>(new CChartFile( pMain, oRootPath, oFileName ));
 			else if ( oRelation.Type() == OOX::FileTypes::ChartEx )
@@ -175,6 +184,18 @@ namespace OOX
 				return smart_ptr<OOX::File>(new CCtrlPropFile( pMain, oRootPath, oFileName ));
 			else if (	oRelation.Type() == FileTypes::XlBinaryIndex)
 				return smart_ptr<OOX::File>(new UnknowTypeFile(pMain)); // ????
+			else if (	oRelation.Type() == FileTypes::Timeline)
+				return smart_ptr<OOX::File>(new CTimelineFile(pMain, oRootPath, oFileName));
+			else if (	oRelation.Type() == FileTypes::TimelineCache)
+				return smart_ptr<OOX::File>(new CTimelineCacheFile(pMain, oRootPath, oFileName));
+			else if (oRelation.Type() == FileTypes::Metadata)
+				return smart_ptr<OOX::File>(new CMetadataFile(pMain, oRootPath, oFileName));
+			else if (oRelation.Type() == FileTypes::RdRichValueStructure)
+				return smart_ptr<OOX::File>(new CRdRichValueStructureFile(pMain, oRootPath, oFileName));
+			else if (oRelation.Type() == FileTypes::RdRichValue)
+				return smart_ptr<OOX::File>(new CRdRichValueFile(pMain, oRootPath, oFileName));
+			else if (oRelation.Type() == FileTypes::RdRichValueTypes)
+				return smart_ptr<OOX::File>(new CRdRichValueTypesFile(pMain, oRootPath, oFileName));
 
 			return smart_ptr<OOX::File>( new UnknowTypeFile(pMain) );
 		}
@@ -235,6 +256,8 @@ namespace OOX
                 return smart_ptr<OOX::File>(new CWorksheet( pMain, oRootPath, oFileName, pRelation->rId().ToString(), true ));
 			else if ( pRelation->Type() == FileTypes::Table )
 				return smart_ptr<OOX::File>(new CTableFile( pMain, oRootPath, oFileName ));
+			else if (pRelation->Type() == FileTypes::TableSingleCells)
+				return smart_ptr<OOX::File>(new CTableSingleCellsFile(pMain, oRootPath, oFileName));
 			else if ( pRelation->Type() == FileTypes::QueryTable )
 				return smart_ptr<OOX::File>(new CQueryTableFile( pMain, oRootPath, oFileName ));
 			else if ( pRelation->Type() == FileTypes::PivotTable )
@@ -303,8 +326,22 @@ namespace OOX
 				return smart_ptr<OOX::File>(new WorkbookComments( pMain, oRootPath, oFileName));
 			else if (pRelation->Type() == FileTypes::XlBinaryIndex)
 				return smart_ptr<OOX::File>(new UnknowTypeFile(pMain)); // ????
+			else if (pRelation->Type() == FileTypes::Timeline)
+				return smart_ptr<OOX::File>(new CTimelineFile(pMain, oRootPath, oFileName));
+			else if (pRelation->Type() == FileTypes::TimelineCache)
+				return smart_ptr<OOX::File>(new CTimelineCacheFile(pMain, oRootPath, oFileName));
+			else if (pRelation->Type() == FileTypes::Metadata)
+				return smart_ptr<OOX::File>(new CMetadataFile(pMain, oRootPath, oFileName));
+			else if (pRelation->Type() == FileTypes::RdRichValueStructure)
+				return smart_ptr<OOX::File>(new CRdRichValueStructureFile(pMain, oRootPath, oFileName));
+			else if (pRelation->Type() == FileTypes::RdRichValue)
+				return smart_ptr<OOX::File>(new CRdRichValueFile(pMain, oRootPath, oFileName));
+			else if (pRelation->Type() == FileTypes::RdRichValueTypes)
+				return smart_ptr<OOX::File>(new CRdRichValueTypesFile(pMain, oRootPath, oFileName));
+			else if (pRelation->Type() == FileTypes::XmlMaps)
+			return smart_ptr<OOX::File>(new CXmlMapsFile(pMain, oRootPath, oFileName));
 
 			return smart_ptr<OOX::File>( new UnknowTypeFile(pMain) );
 		}
-	}
+	}                                                                                                                                               
 } // namespace OOX

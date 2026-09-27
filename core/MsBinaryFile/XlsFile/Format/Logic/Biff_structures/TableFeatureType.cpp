@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -144,6 +144,60 @@ void TableFeatureType::load(CFRecord& record)
 	}
 }
 
+void TableFeatureType::save(CFRecord& record)
+{
+	record << lt << idList << crwHeader << crwTotals << idFieldNext << cbFSData << rupBuild;
+	record.reserveNunBytes(2);
+	_UINT16 flags = 0;
+
+	SETBIT(flags, 1, fAutoFilter)
+	SETBIT(flags, 2, fPersistAutoFilter)
+	SETBIT(flags, 3, fShowInsertRow)
+	SETBIT(flags, 4, fInsertRowInsCells)
+	SETBIT(flags, 5, fLoadPldwIdDeleted)
+	SETBIT(flags, 6, fShownTotalRow)
+	SETBIT(flags, 8, fNeedsCommit)
+	SETBIT(flags, 9, fSingleCell)
+	SETBIT(flags, 11, fApplyAutoFilter)
+	SETBIT(flags, 12, fForceInsertToBeVis)
+	SETBIT(flags, 13, fCompressedXml)
+	SETBIT(flags, 14, fLoadCSPName)
+	SETBIT(flags, 15, fLoadPldwIdChanged)
+	record << flags;
+
+	flags = 0;
+
+	SETBITS(flags, 0, 4, verXL)
+	SETBIT(flags, 4, fLoadEntryId)
+	SETBIT(flags, 5, fLoadPllstclInvalid)
+	SETBIT(flags, 6, fGoodRupBld)
+	SETBIT(flags, 8, fPublished)
+	record << flags;
+	if(lt == 1)
+	{
+		record << lPosStmCache << cbStmCache << cchStmCache << lem;
+	}
+	else
+		record.reserveNunBytes(16);
+	record.reserveNunBytes(16); //rgbHashParam
+	record << rgbName;
+	cFieldData = arFieldData.size();
+	record << cFieldData;
+	if(fLoadCSPName)
+		record << cSPName;
+	if(fLoadEntryId)
+		record << entryId;
+	for(auto i : arFieldData)
+		if(i != nullptr)
+			i->save(record);
+
+	if(fLoadPldwIdDeleted)
+		idDeleted->save(record);
+	if(fLoadPldwIdChanged)
+		idChanged->save(record);
+	if(fLoadPllstclInvalid)
+		cellInvalid->save(record);
+}
 
 } // namespace XLS
 

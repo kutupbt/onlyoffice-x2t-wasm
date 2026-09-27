@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -356,6 +356,12 @@ namespace NSShaper
 		return ((FT_Face)face)->glyph->bitmap.buffer;
 	}
 
+	int FT_Get_Glyph_Render_BufferSize(void* face)
+	{
+		FT_GlyphSlot slot = ((FT_Face)face)->glyph;
+		return slot->bitmap.pitch * slot->bitmap.rows;
+	}
+
 	bool FT_Get_Glyph_Render_Params(void* face, int render_mode, CExternalPointer* result)
 	{
 		FT_GlyphSlot slot = ((FT_Face)face)->glyph;
@@ -445,7 +451,7 @@ namespace NSShaper
 		CheckUnicodeFaceName(face, family_name, family_name_len);
 
 		unsigned int nLen1 = (unsigned int)family_name_len;
-		unsigned int nLen2 = (unsigned int)strlen(face->style_name);
+		unsigned int nLen2 = (unsigned int)((face->style_name != NULL) ? strlen(face->style_name) : 0);
 
 		unsigned int nLen = 28 + nLen1 + 1 + nLen2 + 1 + 1 + (int)face->num_fixed_sizes;
 
@@ -685,6 +691,13 @@ namespace NSShaper
 				g_userfeatures[nTag].end = HB_FEATURE_GLOBAL_END;
 			}
 			g_userfeatures_init = true;
+		}
+
+		// Turn on ligatures on arabic script
+		if (nScript == HB_SCRIPT_ARABIC ||
+			nScript == HB_SCRIPT_SYRIAC)
+		{
+			nFeatures |= 1;
 		}
 
 		// font

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -49,31 +49,32 @@ public:
 	static const ElementType type = typeFeat11WSSListInfo;
 
 	virtual void load(CFRecord& record);
+	virtual void save(CFRecord& record);
 
-	_UINT32			LCID;
-	_UINT32			cDec;
+	_UINT32			LCID = 0;
+	_UINT32			cDec = 0;
 
-	bool			fPercent;
-	bool			fDecSet;
-	bool			fDateOnly;
-	unsigned char	fReadingOrder;
-	bool			fRichText;
-	bool			fUnkRTFormatting;
-	bool			fAlertUnkRTFormatting;
-	bool			fReadOnly;
-	bool			fRequired;
-	bool			fMinSet;
-	bool			fMaxSet;
-	bool			fDefaultSet;
-	bool			fDefaultDateToday;
-	bool			fLoadFormula;
-	bool			fAllowFillIn;
+	bool			fPercent = false;
+	bool			fDecSet = false;
+	bool			fDateOnly = false;
+	unsigned char	fReadingOrder = 0;
+	bool			fRichText = false;
+	bool			fUnkRTFormatting = false;
+	bool			fAlertUnkRTFormatting = false;
+	bool			fReadOnly = false;
+	bool			fRequired = false;
+	bool			fMinSet = false;
+	bool			fMaxSet = false;
+	bool			fDefaultSet = false;
+	bool			fDefaultDateToday = false;
+	bool			fLoadFormula = false;
+	bool			fAllowFillIn = false;
 
-	unsigned char		bDefaultType;
+	unsigned char		bDefaultType = 0;
 	BiffStructurePtr	rgbDV;
 	XLUnicodeString		strFormula;
 //------------------------------------------------------
-	short lfdt;
+	short lfdt = 0x00000005;
 };
 
 } // namespace XLS

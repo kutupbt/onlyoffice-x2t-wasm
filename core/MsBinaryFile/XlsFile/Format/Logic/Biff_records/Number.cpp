@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -58,7 +58,21 @@ void Number::readFields(CFRecord& record)
 {
 	global_info_ = record.getGlobalWorkbookInfo();
 
-	record >> cell >> num;
+	if (record.getDataSize() == 15)
+	{
+		//wrong version !! 
+		int store = global_info_->Version;
+		global_info_->Version = 0x0200;
+		
+		record >> cell >> num;
+
+		global_info_->Version = store;
+	}
+	else
+	{ // sizeof record == 14
+		record >> cell >> num;
+	}
+
 
 	_INT32 val = 0;
 	if (record.getDataSize() >= 18)//SchetPrintForm.xls
@@ -66,6 +80,12 @@ void Number::readFields(CFRecord& record)
 		record >> val;
 	}
 }
+
+void Number::writeFields(CFRecord& record)
+{
+    record << cell << num;
+}
+
 const CellRef Number::getLocation() const
 {
 	return cell.getLocation();
@@ -94,7 +114,7 @@ int Number::serialize(std::wostream & stream)
 	return 0;
 }
 //---------------------------------------------------------------------------------
-Integer_BIFF2::Integer_BIFF2()
+Integer_BIFF2::Integer_BIFF2() : num(0)
 {}
 Integer_BIFF2::~Integer_BIFF2()
 {}
@@ -103,10 +123,26 @@ BaseObjectPtr Integer_BIFF2::clone()
 	return BaseObjectPtr(new Integer_BIFF2(*this));
 }
 void Integer_BIFF2::readFields(CFRecord& record)
-{
+{//only version 0x0200 
 	global_info_ = record.getGlobalWorkbookInfo();
 
-	record >> cell >> num;
+	int store = global_info_->Version;
+	global_info_->Version = 0x0200;
+
+	record >> cell;
+
+	if (record.getRdPtr() + 2 < record.getDataSize())
+	{
+		record >> num;
+	}
+	else
+	{
+		_INT16 num_2byte = 0;
+		record >> num_2byte;
+		num = num_2byte;
+	}
+	
+	global_info_->Version = store;
 }
 const CellRef Integer_BIFF2::getLocation() const
 {

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -41,14 +41,6 @@
 namespace ComplexTypes
 {
 #define ComplexTypes_AdditionConstructors(Class) \
-	Class(XmlUtils::CXmlNode& oNode)\
-	{\
-		FromXML( oNode );\
-	}\
-	Class(XmlUtils::CXmlLiteReader& oReader)\
-	{\
-		FromXML( oReader );\
-	}\
 	const Class& operator =(const XmlUtils::CXmlNode &oNode)\
 	{\
 		FromXML( (XmlUtils::CXmlNode &)oNode );\
@@ -148,7 +140,8 @@ namespace ComplexTypes
 			virtual void FromXML(XmlUtils::CXmlNode& oNode);
 			virtual void FromXML(XmlUtils::CXmlLiteReader& oReader);
 			virtual std::wstring ToString() const;
-
+			
+			std::wstring ToString(bool noAlpha) const;
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 
@@ -253,6 +246,8 @@ namespace ComplexTypes
 			virtual void FromXML(XmlUtils::CXmlNode& oNode);
 			virtual void FromXML(XmlUtils::CXmlLiteReader& oReader);
 			virtual std::wstring ToString() const;
+			
+			std::wstring ToString(bool noAlpha) const;
 
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
@@ -424,10 +419,10 @@ namespace ComplexTypes
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 
 		public:
-			nullable<SimpleTypes::CThemeColor           > m_oThemeColor;
-			nullable<SimpleTypes::CUcharHexNumber       > m_oThemeShade;
-			nullable<SimpleTypes::CUcharHexNumber       > m_oThemeTint;
-			nullable<SimpleTypes::CHexColor             > m_oVal;
+			nullable<SimpleTypes::CThemeColor> m_oThemeColor;
+			nullable<SimpleTypes::CUcharHexNumber> m_oThemeShade;
+			nullable<SimpleTypes::CUcharHexNumber> m_oThemeTint;
+			nullable<SimpleTypes::CHexColor> m_oVal;
 		};
 
 		//--------------------------------------------------------------------------------
@@ -1081,21 +1076,21 @@ namespace ComplexTypes
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 
 		public:
-			nullable<SimpleTypes::COnOff              > m_oAnchorLock;
-			nullable<SimpleTypes::CDropCap            > m_oDropCap;
-			nullable<SimpleTypes::CTwipsMeasure       > m_oH;
-			nullable<SimpleTypes::CHAnchor            > m_oHAnchor;
-			nullable<SimpleTypes::CHeightRule         > m_oHRule;
-			nullable<SimpleTypes::CTwipsMeasure       > m_oHSpace;
-			nullable<SimpleTypes::CDecimalNumber      > m_oLines;
-			nullable<SimpleTypes::CVAnchor            > m_oVAnchor;
-			nullable<SimpleTypes::CTwipsMeasure       > m_oVSpace;
-			nullable<SimpleTypes::CTwipsMeasure       > m_oW;
-			nullable<SimpleTypes::CWrap               > m_oWrap;
-			nullable<SimpleTypes::CSignedTwipsMeasure > m_oX;
-			nullable<SimpleTypes::CXAlign             > m_oXAlign;
-			nullable<SimpleTypes::CSignedTwipsMeasure > m_oY;
-			nullable<SimpleTypes::CYAlign             > m_oYAlign;
+			nullable<SimpleTypes::COnOff>				m_oAnchorLock;
+			nullable<SimpleTypes::CDropCap>				m_oDropCap;
+			nullable<SimpleTypes::CTwipsMeasure>		m_oH;
+			nullable<SimpleTypes::CHAnchor>				m_oHAnchor;
+			nullable<SimpleTypes::CHeightRule>			m_oHRule;
+			nullable<SimpleTypes::CTwipsMeasure>		m_oHSpace;
+			nullable<SimpleTypes::CDecimalNumber>		m_oLines;
+			nullable<SimpleTypes::CVAnchor>				m_oVAnchor;
+			nullable<SimpleTypes::CTwipsMeasure>		m_oVSpace;
+			nullable<SimpleTypes::CTwipsMeasure>		m_oW;
+			nullable<SimpleTypes::CWrap>				m_oWrap;
+			nullable<SimpleTypes::CSignedTwipsMeasure>	m_oX;
+			nullable<SimpleTypes::CXAlign>				m_oXAlign;
+			nullable<SimpleTypes::CSignedTwipsMeasure>	m_oY;
+			nullable<SimpleTypes::CYAlign>				m_oYAlign;
 		};
 
 		//--------------------------------------------------------------------------------

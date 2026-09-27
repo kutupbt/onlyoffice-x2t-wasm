@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -104,7 +104,7 @@ void CXpsFile::SetTempDirectory(const std::wstring& wsPath)
     m_pInternal->m_wsTempFolder = new CFolderSystem(wsTempFolder);
 }
 bool CXpsFile::LoadFromFile(const std::wstring& wsSrcFileName, const std::wstring& wsXmlOptions,
-                            const std::wstring& owner_password, const std::wstring& user_password)
+							const wchar_t* owner_password, const wchar_t* user_password)
 {
 	Close();
 
@@ -122,7 +122,7 @@ bool CXpsFile::LoadFromFile(const std::wstring& wsSrcFileName, const std::wstrin
 	return true;
 }
 bool CXpsFile::LoadFromMemory(BYTE* data, DWORD length, const std::wstring& options,
-                              const std::wstring& owner_password, const std::wstring& user_password)
+							  const wchar_t* owner_password, const wchar_t* user_password)
 {
     Close();
 
@@ -173,7 +173,7 @@ void CXpsFile::GetPageInfo(int nPageIndex, double* pdWidth, double* pdHeight, do
 	*pdDpiX   = 25.4;
 	*pdDpiY   = 25.4;
 }
-void CXpsFile::DrawPageOnRenderer(IRenderer* pRenderer, int nPageIndex, bool* pBreak)
+void CXpsFile::DrawPageOnRenderer(IRenderer* pRenderer, int nPageIndex, bool* pBreak, COfficeDrawingPageParams* pParams)
 {
     if (!m_pInternal->m_pDocument)
 		return;

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -193,6 +193,58 @@ const bool DBQUERY::loadContent(BinProcessor& proc)
 		elements_.pop_front();
 	}
 	return true;
+}
+
+const bool DBQUERY::saveContent(BinProcessor& proc)
+{
+    if(m_DbQry == nullptr)
+        return false;
+    auto cstSQLSav = 0;
+    {
+        auto castedPtr = static_cast<DbOrParamQry*>(m_DbQry.get());
+        castedPtr->typeRecord = 2;
+        cstSQLSav = castedPtr->query.cstSQLSav;
+    }
+    proc.mandatory(*m_DbQry);
+    for(auto i = 0; i < m_arSXString.size(); i++)
+    {
+        if(i== m_arSXString.size() -1 - cstSQLSav)
+            break;
+        SXString str;
+        str.segment = m_arSXString.at(i);
+        str.cch = m_arSXString.at(i).size();
+        proc.mandatory(str);
+    }
+    if(m_DbParam != nullptr)
+    {
+        {
+            auto castedPtr = static_cast<DbOrParamQry*>(m_DbParam.get());
+            castedPtr->typeRecord = 1;
+        }
+        proc.mandatory(*m_DbParam);
+        for(auto i : m_arParams)
+        {
+             SXString str;
+            str.segment = i.string;
+            str.cch = i.string.size();
+            proc.mandatory(str);
+
+            auto castedPtr = static_cast<DbOrParamQry*>(i.param.get());
+            castedPtr->typeRecord = 1;
+            proc.mandatory(*i.param);
+        }
+
+    }
+    for(auto i = (m_arSXString.size() -1 - cstSQLSav); i < m_arSXString.size(); i++)
+    {
+        if(i < 0)
+            break;
+        SXString str;
+        str.segment = m_arSXString.at(i);
+        str.cch = m_arSXString.at(i).size();
+        proc.mandatory(str);
+    }
+    return true;
 }
 
 int DBQUERY::serialize(std::wostream & strm)

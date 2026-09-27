@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -47,12 +47,6 @@
 
 #include "../../Base/Unit.h"
 
-// как все протестируем - уберем
-#define SUPPORT_OLD_SVG_CONVERTATION
-#ifdef SUPPORT_OLD_SVG_CONVERTATION
-#include "../../../HtmlRenderer/include/ASCSVGWriter.h"
-#endif
-
 namespace NSShapeImageGen
 {
 	const long c_nMaxImageSize = 2000;
@@ -69,20 +63,18 @@ namespace NSShapeImageGen
 		m_pFontManager = NULL;
 	}
 
-	CMediaInfo CMediaManager::WriteImage(CBgraFrame& oImage, double& x, double& y, double& width, double& height)
+	CMediaInfo CMediaManager::WriteImage(CBgraFrame& oImage, double& width, double& height)
 	{
-		CMediaInfo info;
-		
-		if (height < 0)
-		{
-			FlipY(oImage);
-			height = -height;
-			y -= height;
-		}
-		
 		return GenerateImageID(oImage, (std::max)(1.0, width), (std::max)(1.0, height));
 	}
-	CMediaInfo CMediaManager::WriteImage(const std::wstring& strFile, double& x, double& y, double& width, double& height, const std::wstring& strAdditionalFile, int typeAdditionalFile)
+	CMediaInfo CMediaManager::WriteImage(const std::string& strFile, double& width, double& height, const std::wstring& strAdditionalFile, int typeAdditionalFile)
+	{
+		if (width < 0 && height < 0)
+			return GenerateImageID(strFile, L"", -1, -1, strAdditionalFile, typeAdditionalFile);
+
+		return GenerateImageID(strFile, L"", (std::max)(1.0, width), (std::max)(1.0, height), strAdditionalFile, typeAdditionalFile);
+	}
+	CMediaInfo CMediaManager::WriteImage(const std::wstring& strFile, double& width, double& height, const std::wstring& strAdditionalFile, int typeAdditionalFile)
 	{
 		bool bIsDownload = false;
 		int n1 = (int)strFile.find(L"www");
@@ -261,6 +253,15 @@ namespace NSShapeImageGen
 				
 				result = true;
 			}
+			else if (checker.eFileType == _CXIMAGE_FORMAT_GIF)
+			{
+				oInfo.m_eType = itGIF;
+
+				OOX::CPath pathSaveItem = m_strDstMedia + FILE_SEPARATOR_STR + oInfo.GetPath2();
+				CDirectory::CopyFile(strFileSrc, pathSaveItem.GetPath());
+
+				result = true;
+			}
 			else if (checker.eFileType == _CXIMAGE_FORMAT_PNG)
 			{
 				oInfo.m_eType = itPNG;
@@ -284,6 +285,15 @@ namespace NSShapeImageGen
 				oInfo.m_eType = itEMF;
 
 				OOX::CPath pathSaveItem =  m_strDstMedia + FILE_SEPARATOR_STR + oInfo.GetPath2();
+				CDirectory::CopyFile(strFileSrc, pathSaveItem.GetPath());
+
+				result = true;
+			}
+			else if (checker.eFileType == _CXIMAGE_FORMAT_SVG)
+			{
+				oInfo.m_eType = itSVG;
+					
+				OOX::CPath pathSaveItem = m_strDstMedia + FILE_SEPARATOR_STR + oInfo.GetPath2();
 				CDirectory::CopyFile(strFileSrc, pathSaveItem.GetPath());
 
 				result = true;
@@ -397,7 +407,34 @@ namespace NSShapeImageGen
 
 		return oInfo;
 	}
+	CMediaInfo CMediaManager::GenerateImageID(std::string strFileName, const std::wstring & strUrl, double dWidth, double dHeight, const std::wstring& strAdditionalFile, int typeAdditionalFile)
+	{
+		if (0 == strFileName.find("data:base64,"))
+		{
+			int nHeaderSize = 12;
+			int nBase64DataSize = (int)strFileName.length() - nHeaderSize;
 
+			int dstLen = NSBase64::Base64DecodeGetRequiredLength(nBase64DataSize);
+			BYTE* pDstBuffer = new BYTE[dstLen];
+			NSBase64::Base64Decode(strFileName.c_str() + nHeaderSize, nBase64DataSize, pDstBuffer, &dstLen);
+
+			CImageFileFormatChecker checker;
+			std::wstring sImageExtension = checker.DetectFormatByData(pDstBuffer, dstLen);
+			std::wstring tempFilePath = m_strTempMedia + FILE_SEPARATOR_STR;
+
+			std::wstring strFileNameNew = NSFile::CFileBinary::CreateTempFileWithUniqueName(tempFilePath, L"img") + L"." + sImageExtension;
+
+			NSFile::CFileBinary oTempFile;
+			oTempFile.CreateFile(strFileNameNew);
+			oTempFile.WriteFile((void*)pDstBuffer, (DWORD)dstLen);
+			oTempFile.CloseFile();
+
+			RELEASEARRAYOBJECTS(pDstBuffer);
+		
+			return GenerateImageID(strFileNameNew, strUrl, dWidth, dHeight, strAdditionalFile, typeAdditionalFile);
+		}
+		return CMediaInfo();
+	}
 	CMediaInfo CMediaManager::GenerateImageID(std::wstring strFileName, const std::wstring & strUrl, double dWidth, double dHeight, const std::wstring& strAdditionalFile, int typeAdditionalFile)
 	{
 		if (0 == strFileName.find(L"data:base64,"))
@@ -431,8 +468,8 @@ namespace NSShapeImageGen
 		CMediaInfo oInfo;
 		std::map<std::wstring, CMediaInfo>::iterator pPair = m_mapMediaFiles.find(sMapKey);
 
-		LONG lWidth		= (LONG)(dWidth * 96 / 25.4);
-		LONG lHeight	= (LONG)(dHeight * 96 / 25.4);
+		LONG lWidth = (LONG)(dWidth * 4 / 3);
+		LONG lHeight = (LONG)(dHeight * 4 / 3);// px
 
 		if (m_mapMediaFiles.end() == pPair)
 		{
@@ -475,16 +512,14 @@ namespace NSShapeImageGen
 				CDirectory::CopyFile(strFileName, pathSaveItem.GetPath());
 
 				::MetaFile::IMetaFile* pMetafile = MetaFile::Create(m_pFontManager->GetApplication());
+
 				if (pMetafile->LoadFromFile(strFileName.c_str()))
 				{
 					// пробуем сохранить в svg напрямую из метафайлов
-					std::wstring sInternalSvg = pMetafile->ConvertToSvg();
+					std::wstring sInternalSvg = pMetafile->ConvertToSvg(lWidth, lHeight);
 
 					if (!sInternalSvg.empty())
 					{
-						// тут размер не проверяем. сохраняем как есть
-						oInfo.m_eType = itSVG;
-
 						NSFile::CFileBinary::SaveToFile(strSaveItemWE + L".svg", sInternalSvg);
 						m_mapMediaFiles.insert(std::make_pair(sMapKey, oInfo));
 
@@ -492,80 +527,8 @@ namespace NSShapeImageGen
 						return oInfo;
 					}
 
-					double x = 0, y = 0, w = 0, h = 0;
-					pMetafile->GetBounds(&x, &y, &w, &h);
-
-					// ограничиваем размеры
-					int nMaxSize = 1000;
-					int nMinSize = 10;
-					double dKoef = (double)nMaxSize / ((w >= h) ? w : h);
-
-					int nPixW = (int)(dKoef * w + 0.5);
-					int nPixH = (int)(dKoef * h + 0.5);
-
-				#ifdef SUPPORT_OLD_SVG_CONVERTATION
-					// пробуем сохранить в svg. большие/сложные файлы
-					// сохраняем в растр
-					NSHtmlRenderer::CASCSVGWriter oWriterSVG;
-					oWriterSVG.SetFontManager(m_pFontManager);
-					oWriterSVG.put_Width(nPixW);
-					oWriterSVG.put_Height(nPixH);
-
-					bool bRes = true;					
-					try
-					{
-						bRes = pMetafile->DrawOnRenderer(&oWriterSVG, 0, 0, nPixW, nPixH);
-					}
-					catch (...)
-					{
-						bRes = false;
-					}
-
-					if (bRes)
-					{
-						bool bIsComplex = false;
-
-						// растровые - сложные
-						oWriterSVG.IsRaster(&bIsComplex);
-
-						if (!bIsComplex)
-						{
-							LONG lSvgDataSize = 0;
-							oWriterSVG.GetSVGDataSize(&lSvgDataSize);
-
-							// больше 5 метров - сложные
-							bIsComplex = (lSvgDataSize > 5 * 1024 * 1024);
-						}
-
-						if (!bIsComplex)
-						{
-							oInfo.m_eType = itSVG;
-
-							oWriterSVG.SaveFile(strSaveItemWE + L".svg");
-							m_mapMediaFiles.insert(std::make_pair(sMapKey, oInfo));
-
-							RELEASEOBJECT(pMetafile);
-							return oInfo;
-						}
-					}
-				#endif
-
-					// не смогли (или не захотели? (SUPPORT_OLD_SVG_CONVERTATION)) сконвертировать в svg.
+					// не смогли сконвертировать в svg.
 					// пробуем в png
-					if (lWidth <= 0 || lHeight <= 0)
-					{
-						// ограничиваем размеры в растре.
-						if ((nMinSize <= w && w <= nMaxSize) && (nMinSize <= h && h <= nMaxSize))
-						{
-							lWidth = -1;
-							lHeight = -1;
-						}
-						else
-						{
-							lWidth = nPixW;
-							lHeight = nPixH;
-						}
-					}
 
 					std::wstring strSaveItem = strSaveItemWE + L".png";
 					pMetafile->ConvertToRaster(strSaveItem.c_str(), 4 /*CXIMAGE_FORMAT_PNG*/,  lWidth, lHeight);
@@ -650,68 +613,5 @@ namespace NSShapeImageGen
 				return itPNG;
 		}
 		return itJPG;
-	}
-	void CMediaManager::FlipY(CBgraFrame& punkImage)
-	{
-		BYTE* pBuffer	= punkImage.get_Data();
-		LONG lWidth		= punkImage.get_Width();
-		LONG lHeight	= punkImage.get_Height();
-		LONG lStride	= punkImage.get_Stride();
-
-		if (lStride < 0)
-			lStride = -lStride;
-		
-		if ((lWidth * 4) != lStride)
-			return;
-
-		BYTE* pBufferMem = new BYTE[lStride];
-
-		BYTE* pBufferEnd = pBuffer + lStride * (lHeight - 1);
-
-		LONG lCountV = lHeight / 2;
-
-		for (LONG lIndexV = 0; lIndexV < lCountV; ++lIndexV)
-		{
-			memcpy(pBufferMem, pBuffer, lStride);
-			memcpy(pBuffer, pBufferEnd, lStride);
-			memcpy(pBufferEnd, pBufferMem, lStride);
-			
-			pBuffer		+= lStride;
-			pBufferEnd	-= lStride;
-		}
-
-		RELEASEARRAYOBJECTS(pBufferMem);
-	}
-	void CMediaManager::FlipX(CBgraFrame& punkImage)
-	{
-		BYTE* pBuffer	= punkImage.get_Data();
-		LONG lWidth		= punkImage.get_Width();
-		LONG lHeight	= punkImage.get_Height();
-		LONG lStride	= punkImage.get_Stride();
-
-		if (lStride < 0)
-			lStride = -lStride;
-		
-		if ((lWidth * 4) != lStride)
-		{
-			return;
-		}
-
-		DWORD* pBufferDWORD	= (DWORD*)pBuffer;
-
-		LONG lW2 = lWidth / 2;
-		for (LONG lIndexV = 0; lIndexV < lHeight; ++lIndexV)
-		{
-			DWORD* pMem1 = pBufferDWORD;
-			DWORD* pMem2 = pBufferDWORD + lWidth - 1;
-			
-			LONG lI = 0;
-			while (lI < lW2)
-			{
-				DWORD dwMem = *pMem1;
-				*pMem1++ = *pMem2;
-				*pMem2-- = dwMem;
-			}
-		}
 	}
 }

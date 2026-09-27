@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -59,12 +59,14 @@ void table_table_attlist::add_attributes( const xml::attributes_wc_ptr & Attribu
 	CP_APPLY_ATTR(L"table:protection-key-digest-algorithm",	table_protection_key_digest_algorithm_);
 
     CP_APPLY_ATTR(L"table:print",			table_print_, true);
-    CP_APPLY_ATTR(L"table:print-ranges",	table_print_ranges_);
-	
-	CP_APPLY_ATTR(L"table:use-first-row-styles",		table_use_first_row_styles_,false);
-	CP_APPLY_ATTR(L"table:use-banding-rows-styles",		table_use_banding_rows_styles_,false);
-	CP_APPLY_ATTR(L"table:use-banding-columns-styles",	table_use_banding_columns_styles_,false);
-	CP_APPLY_ATTR(L"table:use-first-column-styles",		table_use_first_column_styles_,false);
+    CP_APPLY_ATTR(L"table:print-ranges",    table_print_ranges_);
+    
+	CP_APPLY_ATTR(L"table:use-first-row-styles",		table_use_first_row_styles_, false);
+    CP_APPLY_ATTR(L"table:use-last-row-styles",         table_use_last_row_styles_, false);
+	CP_APPLY_ATTR(L"table:use-banding-rows-styles",		table_use_banding_rows_styles_, false);
+    CP_APPLY_ATTR(L"table:use-last-column-styles",      table_use_last_column_styles_, false);
+	CP_APPLY_ATTR(L"table:use-banding-columns-styles",	table_use_banding_columns_styles_, false);
+	CP_APPLY_ATTR(L"table:use-first-column-styles",		table_use_first_column_styles_, false);
 
 	CP_APPLY_ATTR(L"table:is-sub-table",	table_is_sub_table_);
 }
@@ -127,7 +129,7 @@ const wchar_t * table_table_source::name = L"table-source";
 
 void table_table_source::add_attributes( const xml::attributes_wc_ptr & Attributes )
 {
-    table_table_source_attlist_.add_attributes(Attributes);
+    attlist_.add_attributes(Attributes);
     table_linked_source_attlist_.add_attributes(Attributes);
 }
 
@@ -214,7 +216,11 @@ void table_table::add_child_element( xml::sax * Reader, const std::wstring & Ns,
     {
         CP_CREATE_ELEMENT(office_forms_);    
     }
-	else 
+    else if CP_CHECK_NAME(L"calcext", L"sparkline-groups")
+    {
+        CP_CREATE_ELEMENT(sparkline_groups_);
+    }
+    else
         CP_NOT_APPLICABLE_ELM();
 }
 
@@ -235,7 +241,7 @@ const wchar_t * table_table_column::name = L"table-column";
 
 void table_table_column::add_attributes( const xml::attributes_wc_ptr & Attributes )
 {
-    table_table_column_attlist_.add_attributes(Attributes);
+    attlist_.add_attributes(Attributes);
 }
 
 void table_table_column::add_child_element( xml::sax * Reader, const std::wstring & Ns, const std::wstring & Name)
@@ -256,7 +262,7 @@ void table_table_columns::add_child_element( xml::sax * Reader, const std::wstri
 {
     if CP_CHECK_NAME(L"table", L"table-column")
     {
-         CP_CREATE_ELEMENT(table_table_column_);
+         CP_CREATE_ELEMENT(content_);
     }
     else
         CP_NOT_APPLICABLE_ELM();
@@ -275,7 +281,12 @@ void table_table_header_columns::add_child_element( xml::sax * Reader, const std
 {
     if CP_CHECK_NAME(L"table", L"table-column")
     {
-         CP_CREATE_ELEMENT(table_table_column_);
+         CP_CREATE_ELEMENT(content_);
+         table_table_column* col = dynamic_cast<table_table_column*>(content_.back().get());
+         if (col)
+         {
+             col->bHeader = true;
+         }
     }
     else
         CP_NOT_APPLICABLE_ELM();
@@ -426,8 +437,9 @@ void table_table_cell::add_child_element( xml::sax * Reader, const std::wstring 
 		text::p *p = dynamic_cast<text::p*>(content_.elements_.back().get());
 		if (p)
 		{
-			is_present_hyperlink_ = p->paragraph_.is_present_hyperlink_;
-		}
+			is_present_hyperlink_ |= p->paragraph_.is_present_hyperlink_;
+            count_paragraph++;
+         }
 	}
 }
 
@@ -541,7 +553,7 @@ const wchar_t * table_table_rows::name = L"table-rows";
 
 std::wostream & table_table_rows::text_to_stream(std::wostream & _Wostream, bool bXmlEncode) const
 {
-    return CP_SERIALIZE_TEXT(table_table_row_, bXmlEncode);  
+    return CP_SERIALIZE_TEXT(content_, bXmlEncode);
 }
 
 void table_table_rows::add_attributes( const xml::attributes_wc_ptr & Attributes )
@@ -550,7 +562,7 @@ void table_table_rows::add_attributes( const xml::attributes_wc_ptr & Attributes
 
 void table_table_rows::add_child_element( xml::sax * Reader, const std::wstring & Ns, const std::wstring & Name)
 {
-	CP_CREATE_ELEMENT(table_table_row_);        
+	CP_CREATE_ELEMENT(content_);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -560,7 +572,7 @@ const wchar_t * table_table_header_rows::name = L"table-header-rows";
 
 std::wostream & table_table_header_rows::text_to_stream(std::wostream & _Wostream, bool bXmlEncode) const
 {
-    return serialize_elements_text(_Wostream, table_table_row_, bXmlEncode);  
+    return serialize_elements_text(_Wostream, content_, bXmlEncode);
 }
 
 void table_table_header_rows::add_attributes( const xml::attributes_wc_ptr & Attributes )
@@ -571,9 +583,9 @@ void table_table_header_rows::add_child_element( xml::sax * Reader, const std::w
 {
     if CP_CHECK_NAME(L"table", L"table-row")
     {
-        CP_CREATE_ELEMENT(table_table_row_);      
+        CP_CREATE_ELEMENT(content_);
 
-		table_table_row* row = dynamic_cast<table_table_row*>(table_table_row_.back().get());
+		table_table_row* row = dynamic_cast<table_table_row*>(content_.back().get());
 		if (row)
 			row->bHeader = true;
 	}
@@ -630,7 +642,8 @@ void table_rows::remove_equals_empty()
 		table_table_row *prev = dynamic_cast<table_table_row*>(table_table_row_[i-1].get());
 		table_table_row *next = dynamic_cast<table_table_row*>(table_table_row_[i].get());
 
-		if (prev->content_.size() > 1 || next->content_.size() > 1) break;
+		if (prev->content_.size() > 1 || next->content_.size() > 1 ) break;
+        if (prev->content_.empty() || next->content_.empty()) break;
 
 		if (prev->attlist_.table_style_name_.get_value_or(L"") != next->attlist_.table_style_name_.get_value_or(L"")) break;
 

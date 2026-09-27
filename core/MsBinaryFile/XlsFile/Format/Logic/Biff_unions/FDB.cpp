@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -175,6 +175,34 @@ const bool FDB::loadContent(BinProcessor& proc)
 
 	return true;
 }
+const bool FDB::saveContent(BinProcessor& proc)
+{
+	if(m_SXFDB == nullptr)
+		return false;
+	proc.mandatory(*m_SXFDB);
+	if(m_SXFDBType != nullptr)
+		proc.mandatory(*m_SXFDBType);
+	else
+		proc.mandatory<SXFDBType>();
+	if(m_SXFMLA != nullptr)
+		proc.mandatory(*m_SXFMLA);
+	else
+	{
+		for(auto i : m_arGRPSXOPER)
+			if(i != nullptr)
+				proc.mandatory(*i);
+		if(m_SXRANGE != nullptr)
+			proc.mandatory(*m_SXRANGE);
+		else
+			for(auto i : m_arSxIsxoper)
+				if(i != nullptr)
+					proc.mandatory(*i);
+	}
+	for(auto i : m_arSRCSXOPER)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	return true;
+}
 
 int FDB::serialize(std::wostream & strm, bool bSql, bool bDBB)
 {
@@ -184,6 +212,9 @@ int FDB::serialize(std::wostream & strm, bool bSql, bool bDBB)
 	if (!fdb || !fdb_type) return 0;
 	
 	global_info->arPivotCacheSxNames.push_back(fdb->stFieldName.value());
+
+	if (false == bSql)
+		fdb_type->wTypeSql = global_info->RegisterNumFormat(fdb_type->wTypeSql, L""); // return update
 
 	CP_XML_WRITER(strm)
 	{
@@ -199,17 +230,19 @@ int FDB::serialize(std::wostream & strm, bool bSql, bool bDBB)
 			}
 			else
 			{
-				CP_XML_ATTR(L"numFmtId", fdb_type->wTypeSql);	
+				CP_XML_ATTR(L"numFmtId", fdb_type->wTypeSql);	 // todooo ->used
 			}
 			if (m_SXVDTEx)
 			{
 				SXVDTEx *olap_info = dynamic_cast<SXVDTEx*>(m_SXVDTEx.get());
-				if ((olap_info) && (olap_info->isxth >= 0))
+				if ((olap_info) && (olap_info->isxth >= 0) && (olap_info->isxth < m_arPIVOTTH.size()))
 				{					
 					PIVOTTH* ht = dynamic_cast<PIVOTTH*>(m_arPIVOTTH[olap_info->isxth].get());
-					SXTH* sxTH = dynamic_cast<SXTH*>(ht->m_SXTH.get());
-					
-					CP_XML_ATTR(L"caption", sxTH->stDisplay.value());	
+					SXTH* sxTH = ht ? dynamic_cast<SXTH*>(ht->m_SXTH.get()) : NULL;
+					if (sxTH)
+					{
+						CP_XML_ATTR(L"caption", sxTH->stDisplay.value());
+					}
 					
 					CP_XML_ATTR(L"hierarchy", olap_info->isxth);	
 					CP_XML_ATTR(L"level", olap_info->isxtl);	
@@ -330,7 +363,8 @@ int FDB::serialize(std::wostream & strm, bool bSql, bool bDBB)
 
 					for (size_t i = 0; i < m_arSRCSXOPER.size(); i++)
 					{
-						m_arSRCSXOPER[i]->serialize(CP_XML_STREAM());
+						if (m_arSRCSXOPER[i])
+							m_arSRCSXOPER[i]->serialize(CP_XML_STREAM());
 					}
 				}
 			}
@@ -349,12 +383,16 @@ int FDB::serialize(std::wostream & strm, bool bSql, bool bDBB)
 
 					if (m_SXRANGE)
 						m_SXRANGE->serialize(CP_XML_STREAM());
+					
 					CP_XML_NODE(L"groupItems")
 					{
 						CP_XML_ATTR(L"count", m_arGRPSXOPER.size());	
 						for (size_t i = 0; i < m_arGRPSXOPER.size(); i++)
 						{
-							m_arGRPSXOPER[i]->serialize(CP_XML_STREAM());
+							if (m_arGRPSXOPER[i])
+							{
+								m_arGRPSXOPER[i]->serialize(CP_XML_STREAM());
+							}
 						}
 					}
 				}
@@ -379,6 +417,8 @@ int FDB::serialize_record(std::wostream & strm)
 			for (size_t i = 0; i < m_arSRCSXOPER.size(); i++)
 			{
 				SXOPER* oper = dynamic_cast<SXOPER*>(m_arSRCSXOPER[i].get());
+				if (!oper) continue;
+
 				oper->serialize_record(CP_XML_STREAM());
 			}
 		}

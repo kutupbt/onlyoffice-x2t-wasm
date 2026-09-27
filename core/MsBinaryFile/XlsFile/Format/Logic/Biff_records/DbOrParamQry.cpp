@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -80,6 +80,29 @@ void DbOrParamQry::readFields(CFRecord& record)
 		query.fSavePwd			= GETBIT(flags, 7);
 		query.fTablesOnlyHTML	= GETBIT(flags, 8);	
 	}
+}
+
+void DbOrParamQry::writeFields(CFRecord& record)
+{
+    unsigned short	flags = 0;
+    if (typeRecord == 2)
+    {
+        SETBITS(flags, 0, 2, query.dbt)
+        SETBIT(flags, 3, query.fOdbcConn)
+        SETBIT(flags, 4, query.fSql)
+        SETBIT(flags, 5, query.fSqlSav)
+        SETBIT(flags, 6, query.fWeb)
+        SETBIT(flags, 7, query.fSavePwd)
+        SETBIT(flags, 8, query.fTablesOnlyHTML)
+
+        record << flags << query.cparams << query.cstQuery << query.cstWebPost << query.cstSQLSav << query.cstOdbcConn;
+    }
+    else
+    {
+        SETBITS(flags, 0, 1, param.pbt)
+        SETBIT(flags, 2, param.fNonDefaultName)
+        record << param.wTypeSql << flags << param.grbit << param.fVal;
+    }
 }
 
 } // namespace XLS

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -73,6 +73,29 @@ void FeatHdr::readFields(CFRecord& record)
 				}
 				break;
 		}
+	}
+
+}
+
+void FeatHdr::writeFields(CFRecord& record)
+{
+	FrtHeader frtHeader(rt_FeatHdr);
+	record << frtHeader << isf;
+	unsigned char reserved = 1;
+	record << reserved << cbHdrData;
+	if(cbHdrData = 0)
+		return;
+	switch(isf)
+	{
+	case 0x0002://ISFPROTECTION:
+		record << protection;
+		break;
+	case 0x0004://ISFFACTOID:
+		if(is_contained_in_Globals)
+		{
+			record << prop;
+		}
+		break;
 	}
 
 }

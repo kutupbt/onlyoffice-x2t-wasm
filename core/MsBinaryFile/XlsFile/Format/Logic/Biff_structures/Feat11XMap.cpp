@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -48,6 +48,11 @@ void Feat11XMapEntry2::load(CFRecord& record)
 {
 	record >> dwMapId >> rgbXPath;
 }
+void Feat11XMapEntry2::save(CFRecord& record)
+{
+	record << dwMapId << rgbXPath;
+}
+
 //----------------------------------------------------------------------
 Feat11XMapEntry::Feat11XMapEntry()
 {
@@ -66,6 +71,15 @@ void Feat11XMapEntry::load(CFRecord& record)
 	fLoadXMap		= GETBIT(flags, 1);
 	fCanBeSingle	= GETBIT(flags, 2);
 }
+
+void Feat11XMapEntry::save(CFRecord& record)
+{
+	_UINT32 flags = 0;
+	SETBIT(flags, 1, fLoadXMap)
+	SETBIT(flags, 2, fCanBeSingle)
+	record << flags << entry;
+}
+
 //----------------------------------------------------------------------
 Feat11XMap::Feat11XMap()
 {
@@ -89,6 +103,14 @@ void Feat11XMap::load(CFRecord& record)
 		rgXmap.push_back(entry);
 
 	}
+}
+
+void Feat11XMap::save(CFRecord& record)
+{
+	_UINT16 iXmapMac = rgXmap.size();
+	record << iXmapMac;
+	for(auto i : rgXmap)
+		i.save(record);
 }
 
 

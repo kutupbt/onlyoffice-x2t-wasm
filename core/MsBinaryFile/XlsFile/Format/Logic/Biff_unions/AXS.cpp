@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -150,6 +150,28 @@ const bool AXS::loadContent(BinProcessor& proc)
 		count = proc.repeated<ContinueFrt12>(0, 0);
 	}
 	
+	return true;
+}
+
+const bool AXS::saveContent(BinProcessor& proc)
+{
+	if(m_IFmtRecord != nullptr)
+		proc.mandatory(*m_IFmtRecord);
+	if(m_Tick != nullptr)
+		proc.mandatory(*m_Tick);
+	if(m_FontX != nullptr)
+		proc.mandatory(*m_FontX);
+	for(auto i : m_AxisLine_Format)
+	{
+		if(i.axisLine != nullptr)
+			proc.mandatory(*i.axisLine);
+		if(i.lineFormat != nullptr)
+			proc.mandatory(*i.lineFormat);
+	}
+	if(m_AreaFormat != nullptr)
+		proc.mandatory(*m_AreaFormat);
+	if(m_GELFRAME != nullptr)
+		proc.optional(*m_GELFRAME);
 	return true;
 }
 

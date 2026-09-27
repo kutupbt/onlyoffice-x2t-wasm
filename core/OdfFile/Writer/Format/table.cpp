@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -250,6 +250,10 @@ void table_table::add_child_element( const office_element_ptr & child_element)
 	{
 		table_conditional_formats_ = child_element;
 	}
+	else if (type_ == typeCalcextSparklineGroups)
+	{
+		table_sparkline_groups_ = child_element;
+	}
 }
 
 void table_table::serialize(std::wostream & _Wostream)
@@ -269,8 +273,9 @@ void table_table::serialize(std::wostream & _Wostream)
 			table_columns_and_groups_.serialize(CP_XML_STREAM());
 			table_rows_and_groups_.serialize(CP_XML_STREAM());
 			
-			if (table_named_expressions_)	table_named_expressions_->serialize(CP_XML_STREAM());
+			if (table_named_expressions_) table_named_expressions_->serialize(CP_XML_STREAM());
 			if (table_conditional_formats_)	table_conditional_formats_->serialize(CP_XML_STREAM());
+			if (table_sparkline_groups_) table_sparkline_groups_->serialize(CP_XML_STREAM());
 		}
 	}
 }
@@ -463,18 +468,21 @@ void table_columns_no_group::add_child_element( const office_element_ptr & child
 }
 void table_columns_no_group::serialize(std::wostream & _Wostream)
 {
-  //  CP_XML_WRITER(_Wostream)
-  //  {
-		//CP_XML_NODE_SIMPLE()
-  //      {
-			table_columns_1_.serialize(_Wostream);
+	CP_XML_WRITER(_Wostream)
+	{
+		table_columns_1_.serialize(_Wostream);
  			
-			if (table_table_header_columns_)
-				table_table_header_columns_->serialize(_Wostream);
-			
-			table_columns_2_.serialize(_Wostream);			
-	//	}
-	//}
+		if (table_table_header_columns_)
+		{
+			table_table_header_columns_->serialize(_Wostream);
+		}
+		else
+		{
+			//CP_XML_NODE(L"table:table-header-columns");
+		}
+
+		table_columns_2_.serialize(_Wostream);
+	}
 }
 _CP_PTR(table_columns_no_group) table_columns_no_group::create(odf_conversion_context * Context)
 {
@@ -687,7 +695,7 @@ void table_table_rows::serialize(std::wostream & strm)
         {
 			for (size_t i = 0; i < content_.size(); i++)
 			{
-				content_[i]->serialize(strm);
+				content_[i]->serialize(CP_XML_STREAM());
 			}
 		}
 	}	

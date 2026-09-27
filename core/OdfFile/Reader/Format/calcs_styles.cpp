@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -39,11 +39,11 @@ namespace cpdoccore {
 
 namespace odf_reader {
 
-text_format_properties_content_ptr calc_text_properties_content(const std::vector<const style_text_properties*> & textProps)
+text_format_properties_ptr calc_text_properties_content(const std::vector<const style_text_properties*> & textProps)
 {
-	if (textProps.empty()) return text_format_properties_content_ptr();
+	if (textProps.empty()) return text_format_properties_ptr();
 
-	text_format_properties_content_ptr result = boost::make_shared<text_format_properties_content>();
+	text_format_properties_ptr result = boost::make_shared<text_format_properties>();
  	
 	for (size_t i = 0; i < textProps.size(); i++)
     {
@@ -53,32 +53,35 @@ text_format_properties_content_ptr calc_text_properties_content(const std::vecto
     return result;
 }
 
-text_format_properties_content_ptr calc_text_properties_content(const style_instance * styleInstance)
+text_format_properties_ptr calc_text_properties_content(const style_instance * styleInstance)
 {
     std::vector<const style_text_properties*> textProps;
 
     while (styleInstance)
     {
-        if (const style_content * content = styleInstance->content())
-            if (const style_text_properties * textProp = content->get_style_text_properties())
+		if (const style_content * content = styleInstance->content())
+		{
+			const style_text_properties * textProp = content->get_style_text_properties();
+			if (textProp)
 			{
-                textProps.insert(textProps.begin(), textProp);
+				textProps.insert(textProps.begin(), textProp);
 			}
+		}
 		
         styleInstance = styleInstance->parent();
     }
     return calc_text_properties_content(textProps);
 }
 
-text_format_properties_content_ptr calc_text_properties_content(const std::vector<const style_instance *> & styleInstances)
+text_format_properties_ptr calc_text_properties_content(const std::vector<const style_instance *> & styleInstances)
 {
-	if (styleInstances.empty()) return text_format_properties_content_ptr();
+	if (styleInstances.empty()) return text_format_properties_ptr();
 
-	text_format_properties_content_ptr result = boost::make_shared<text_format_properties_content>();
+	text_format_properties_ptr result = boost::make_shared<text_format_properties>();
 
  	for (size_t i = 0; i < styleInstances.size(); i++)
     {
-		text_format_properties_content_ptr props = calc_text_properties_content(styleInstances[i]);
+		text_format_properties_ptr props = calc_text_properties_content(styleInstances[i]);
 		if (props)
 		{
 			result->apply_from(*props.get());
@@ -88,20 +91,25 @@ text_format_properties_content_ptr calc_text_properties_content(const std::vecto
 }
 
 //////////////
-graphic_format_properties calc_graphic_properties_content(const std::vector<const graphic_format_properties*> & graphicProps)
+graphic_format_properties_ptr calc_graphic_properties_content(const std::vector<const graphic_format_properties*> & graphicProps)
 {
-    graphic_format_properties result;
+	if (graphicProps.empty()) return graphic_format_properties_ptr();
+	
+	graphic_format_properties_ptr result = boost::make_shared<graphic_format_properties>();
+
  	for (size_t i = 0; i < graphicProps.size(); i++)
     {
         if (graphicProps[i])
-			result.apply_from(graphicProps[i]);
+			result->apply_from(graphicProps[i]);
     }
     return result;
 }
 
-graphic_format_properties calc_graphic_properties_content(const style_instance * styleInstance)
+graphic_format_properties_ptr calc_graphic_properties_content(const style_instance * styleInstance, bool noParentStandard)
 {
-    std::vector<const graphic_format_properties*> graphicProps;
+	if (!styleInstance) return graphic_format_properties_ptr();
+	
+	std::vector<const graphic_format_properties*> graphicProps;
     while (styleInstance)
     {
         if (const style_content * content = styleInstance->content())
@@ -110,24 +118,24 @@ graphic_format_properties calc_graphic_properties_content(const style_instance *
                 graphicProps.insert(graphicProps.begin(), graphicProp);
 			}
 		
-        styleInstance = styleInstance->parent();
+        styleInstance = (noParentStandard && L"standard" == XmlUtils::GetLower(styleInstance->parent_name())) ? NULL : styleInstance->parent();
 	}
     return calc_graphic_properties_content(graphicProps);
 }
 
-graphic_format_properties calc_graphic_properties_content(const std::vector<const style_instance *> & styleInstances)
+graphic_format_properties_ptr calc_graphic_properties_content(const std::vector<const style_instance *> & styleInstances, bool noParentStandard)
 {
-    graphic_format_properties result;
+	if (styleInstances.empty()) return graphic_format_properties_ptr();
 
- 	for (size_t i = 0; i < styleInstances.size(); i++)
+	graphic_format_properties_ptr result = boost::make_shared<graphic_format_properties>();
+	
+	for (size_t i = 0; i < styleInstances.size(); i++)
 	{
-		graphic_format_properties f = calc_graphic_properties_content(styleInstances[i]);
-        result.apply_from(&f);
+		graphic_format_properties_ptr f = calc_graphic_properties_content(styleInstances[i], noParentStandard);
+		result->apply_from(f.get());
     }
     return result;
 }
-
-////
 
 paragraph_format_properties calc_paragraph_properties_content(const std::vector<const style_paragraph_properties*> & parProps)
 {
@@ -195,21 +203,27 @@ void calc_tab_stops(const style_instance * styleInstance, oox::tabs_context & co
         styleInstance = styleInstance->parent();
     }
 	double margin_left = 0;
+    double margin_right = 0;
 
 	for (size_t i = 0; i < parProps.size(); i++)
 	{
 		if (parProps[i]->content_.fo_margin_left_)
 			margin_left = 20.0 * parProps[i]->content_.fo_margin_left_->get_length().get_value_unit(odf_types::length::pt);
+
+        if( parProps[i]->content_.fo_margin_right_)
+        {
+            margin_right= 20.0 * parProps[i]->content_.fo_margin_right_->get_length().get_value_unit(odf_types::length::pt);
+        }
 		
-		if (parProps[i]->content_.style_tab_stops_)
-		{
-			style_tab_stops *tab_stops = dynamic_cast<style_tab_stops*>(parProps[i]->content_.style_tab_stops_.get());
-			context.reset();
-			for (size_t j = 0; j < tab_stops->content_.size(); j++)
-			{
-				context.add(tab_stops->content_[j], margin_left);
-			}
-		}
+        if ( parProps[i]->content_.style_tab_stops_ )
+        {
+            style_tab_stops *tab_stops = dynamic_cast<style_tab_stops*>(parProps[i]->content_.style_tab_stops_.get());
+            context.reset();
+            for (size_t j = 0; j < tab_stops->content_.size(); j++)
+            {
+                context.add(tab_stops->content_[j], margin_left, margin_right);
+            }
+        }
 	}
 }
 

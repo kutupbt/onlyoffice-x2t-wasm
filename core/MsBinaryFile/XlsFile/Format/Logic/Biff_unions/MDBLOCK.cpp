@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -64,6 +64,41 @@ const bool MDBLOCK::loadContent(BinProcessor& proc)
 	m_MDB = elements_.back();	elements_.pop_back();
 	proc.repeated<ContinueFrt12>(0, 0);
 	return true;
+}
+
+const bool MDBLOCK::saveContent(BinProcessor& proc)
+{
+	if(m_MDB == nullptr)
+		return false;
+	proc.mandatory(*m_MDB);
+	auto castedPtr = static_cast<MDB*>(m_MDB.get());
+	auto maxElemCount = 1026; //max size for one record storage
+	if(castedPtr->rgmdir.size() > maxElemCount)
+	{
+		auto arraySize = castedPtr->rgmdir.size();
+		auto Stpos = maxElemCount;
+		while(Stpos+1 < arraySize)
+		{
+			auto tempLen = 0;
+			if(arraySize < Stpos + maxElemCount)
+				tempLen = arraySize - Stpos;
+			else
+				tempLen = maxElemCount;
+			{
+				ContinueFrt12 continueRecord;
+				continueRecord.rgb.reserve(tempLen*8);
+				CFRecord TempRecord(rt_ContinueFrt12, proc.getGlobalWorkbookInfo());
+				for(auto i = Stpos; i < Stpos+ tempLen; i++)
+					TempRecord << *(castedPtr->rgmdir[i]);
+				auto copyData = TempRecord.getCurStaticData<char>() - TempRecord.getRdPtr();
+				memcpy(continueRecord.rgb.data(), copyData, tempLen*8);
+				proc.mandatory(continueRecord);
+			}
+			Stpos+=tempLen;
+		}
+	}
+	return true;
+
 }
 
 } // namespace XLS

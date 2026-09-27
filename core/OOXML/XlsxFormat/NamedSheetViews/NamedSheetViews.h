@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,8 +31,17 @@
  */
 #pragma once
 
-#include "../CommonInclude.h"
+#include "../../Base/Nullable.h"
+#include "../WritingElement.h"
+#include "../../DocxFormat/IFileContainer.h"
 
+namespace SimpleTypes
+{
+	namespace Spreadsheet
+	{
+		class CSortMethod;
+	}
+}
 namespace OOX
 {
 	namespace Drawing
@@ -58,8 +67,8 @@ namespace OOX
 		class CSortRule : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CSortRule)
-			CSortRule(){}
+			WritingElement_AdditionMethods(CSortRule)
+			CSortRule(OOX::Document* pMain = NULL) : WritingElement(pMain) {}
 			virtual ~CSortRule(){}
 			virtual void fromXML(XmlUtils::CXmlNode& node){}
 			virtual std::wstring toXML() const{return L"";}
@@ -73,10 +82,8 @@ namespace OOX
 			{
 				return et_x_SortRule;
 			}
-			//Attributes
 			nullable_uint m_oColId;
 			nullable_string m_oId;
-			//Members
 			nullable<CDxf> m_oDxf;
 //			nullable<CRichSortCondition> m_oRichSortCondition;
 			nullable<CSortCondition> m_oSortCondition;
@@ -84,8 +91,8 @@ namespace OOX
 		class CSortRules : public WritingElementWithChilds<CSortRule>
 		{
 		public:
-			WritingElement_AdditionConstructors(CSortRules)
-			CSortRules(){}
+			WritingElement_AdditionMethods(CSortRules)
+			CSortRules(OOX::Document* pMain = NULL) : WritingElementWithChilds<CSortRule>(pMain) {}
 			virtual ~CSortRules(){}
 			virtual void fromXML(XmlUtils::CXmlNode& node){}
 			virtual std::wstring toXML() const{return L"";}
@@ -99,17 +106,17 @@ namespace OOX
 			{
 				return et_x_SortRules;
 			}
-			//Attributes
+
 			nullable<SimpleTypes::Spreadsheet::CSortMethod> m_oSortMethod;//none
 			nullable_bool m_oCaseSensitive;//False
-			//Members
+
 			nullable<OOX::Drawing::COfficeArtExtensionList> m_oExtLst;
 		};
 		class CColumnFilter : public WritingElementWithChilds<CFilterColumn>
 		{
 		public:
-			WritingElement_AdditionConstructors(CColumnFilter)
-			CColumnFilter(){}
+			WritingElement_AdditionMethods(CColumnFilter)
+			CColumnFilter(OOX::Document* pMain = NULL) : WritingElementWithChilds<CFilterColumn>(pMain) {}
 			virtual ~CColumnFilter(){}
 			virtual void fromXML(XmlUtils::CXmlNode& node){}
 			virtual std::wstring toXML() const{return L"";}
@@ -133,8 +140,8 @@ namespace OOX
 		class CNsvFilter : public WritingElementWithChilds<CColumnFilter>
 		{
 		public:
-			WritingElement_AdditionConstructors(CNsvFilter)
-			CNsvFilter(){}
+			WritingElement_AdditionMethods(CNsvFilter)
+			CNsvFilter(OOX::Document* pMain = NULL) : WritingElementWithChilds<CColumnFilter>(pMain) {}
 			virtual ~CNsvFilter(){}
 			virtual void fromXML(XmlUtils::CXmlNode& node){}
 			virtual std::wstring toXML() const{return L"";}
@@ -148,19 +155,18 @@ namespace OOX
 			{
 				return et_x_NsvFilter;
 			}
-			//Attributes
 			nullable_string m_oFilterId;
 			nullable_string m_oRef;
 			nullable_uint m_oTableId;
-			//Members
+
 			nullable<CSortRules> m_oSortRules;
 			nullable<OOX::Drawing::COfficeArtExtensionList> m_oExtLst;
 		};
 		class CNamedSheetView : public WritingElementWithChilds<CNsvFilter>
 		{
 		public:
-			WritingElement_AdditionConstructors(CNamedSheetView)
-			CNamedSheetView(){}
+			WritingElement_AdditionMethods(CNamedSheetView)
+			CNamedSheetView(OOX::Document* pMain = NULL) : WritingElementWithChilds<CNsvFilter>(pMain) {}
 			virtual ~CNamedSheetView(){}
 			virtual void fromXML(XmlUtils::CXmlNode& node){}
 			virtual std::wstring toXML() const{return L"";}
@@ -183,8 +189,8 @@ namespace OOX
 		class CNamedSheetViews : public WritingElementWithChilds<CNamedSheetView>
 		{
 		public:
-			WritingElement_AdditionConstructors(CNamedSheetViews)
-			CNamedSheetViews(){}
+			WritingElement_AdditionMethods(CNamedSheetViews)
+			CNamedSheetViews(OOX::Document* pMain = NULL) : WritingElementWithChilds<CNamedSheetView>(pMain) {}
 			virtual ~CNamedSheetViews(){}
 			virtual void fromXML(XmlUtils::CXmlNode& node){}
 			virtual std::wstring toXML() const{return L"";}

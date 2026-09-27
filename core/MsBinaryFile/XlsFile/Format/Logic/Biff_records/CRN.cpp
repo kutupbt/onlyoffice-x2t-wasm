@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -52,6 +52,12 @@ BaseObjectPtr CRN::clone()
 void CRN::readFields(CFRecord& record)
 {
 	record >> colLast >> colFirst >> row;
+	if(colFirst > colLast)
+	{
+		colFirst = 0;
+		colLast = 0;
+		return;
+	}
 	
 	for(int i = 0; i < colLast - colFirst + 1; ++i)
 	{
@@ -61,7 +67,20 @@ void CRN::readFields(CFRecord& record)
 		SerArPtr ser(SerAr::createSerAr(rec_type));
 		record >> *ser;
 		crnOper.push_back(ser);
+		if(record.getRdPtr() >= record.getDataSize())
+		{
+			colLast = colFirst + i;
+			break;
+		}
 	}
+}
+
+void CRN::writeFields(CFRecord& record)
+{
+    record << colLast << colFirst << row;
+    for(auto i : crnOper)
+        if(i != nullptr)
+            i->save(record);
 }
 
 } // namespace XLS

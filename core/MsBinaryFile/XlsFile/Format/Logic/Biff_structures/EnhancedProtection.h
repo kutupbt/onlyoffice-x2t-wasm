@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -49,23 +49,23 @@ public:
 	static const ElementType	type = typeEnhancedProtection;
 
 	virtual void load(CFRecord& record);
+	virtual void save(CFRecord& record);
 
-
-	bool iprotObjects;
-	bool iprotScenarios;
-	bool iprotFormatCells;
-	bool iprotFormatColumns;
-	bool iprotFormatRows;
-	bool iprotInsertColumns;
-	bool iprotInsertRows;
-	bool iprotInsertHyperlinks;
-	bool iprotDeleteColumns;
-	bool iprotDeleteRows;
-	bool iprotSelLockedCells;
-	bool iprotSort;
-	bool iprotAutoFilter;
-	bool iprotPivotTables;
-	bool iprotSelUnlockedCells;
+	bool iprotObjects = false;
+	bool iprotScenarios = false;
+	bool iprotFormatCells = false;
+	bool iprotFormatColumns = false;
+	bool iprotFormatRows = false;
+	bool iprotInsertColumns = false;
+	bool iprotInsertRows = false;
+	bool iprotInsertHyperlinks = false;
+	bool iprotDeleteColumns = false;
+	bool iprotDeleteRows = false;
+	bool iprotSelLockedCells = false;
+	bool iprotSort = false;
+	bool iprotAutoFilter = false;
+	bool iprotPivotTables = false;
+	bool iprotSelUnlockedCells = false;
 };
 
 } // namespace XLS

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -48,29 +48,30 @@ public:
 	BaseObjectPtr clone();
 	
 	void readFields(CFRecord& record);
+	void writeFields(CFRecord& record);
 
 	static const ElementType type = typeSXFDB;
 
-	bool			fAllAtoms;
-	bool			fSomeUnhashed;
-	bool			fUsed;
-	bool			fHasParent;
-	bool			fRangeGroup;
-	bool			fNumField;
-	bool			fTextEtcField;
-	bool			fnumMinMaxValid;
-	bool			fShortIitms;
-	bool			fNonDates;
-	bool			fDateInField;
-	bool			fServerBased;
-	bool			fCantGetUniqueItems;
-	bool			fCalculatedField;
-	unsigned short	ifdbParent;
-	unsigned short	ifdbBase;
-	unsigned short	citmUnq;
-	unsigned short	csxoper;
-	unsigned short	cisxoper;
-	unsigned short	catm;
+	bool			fAllAtoms = false;
+	bool			fSomeUnhashed = false;
+	bool			fUsed = false;
+	bool			fHasParent = false;
+	bool			fRangeGroup = false;
+	bool			fNumField = false;
+	bool			fTextEtcField = false;
+	bool			fnumMinMaxValid = false;
+	bool			fShortIitms = false;
+	bool			fNonDates = false;
+	bool			fDateInField = false;
+	bool			fServerBased = false;
+	bool			fCantGetUniqueItems = false;
+	bool			fCalculatedField = false;
+	unsigned short	ifdbParent = 0;
+	unsigned short	ifdbBase = 0;
+	unsigned short	citmUnq = 0;
+	unsigned short	csxoper = 0;
+	unsigned short	cisxoper = 0;
+	unsigned short	catm = 0;
 	XLUnicodeString	stFieldName;
 };
 

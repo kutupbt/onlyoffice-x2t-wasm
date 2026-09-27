@@ -22,17 +22,17 @@ namespace MetaFile
 			m_pMetaFileRenderer->End();
 	}
 
-	void CWmfInterpretatorRender::DrawBitmap(double dX, double dY, double dW, double dH, BYTE *pBuffer, unsigned int unWidth, unsigned int unHeight)
+	void CWmfInterpretatorRender::DrawBitmap(double dX, double dY, double dW, double dH, BYTE *pBuffer, unsigned int unWidth, unsigned int unHeight, unsigned int unBlendMode)
 	{
 		if (NULL != m_pMetaFileRenderer)
-			m_pMetaFileRenderer->DrawBitmap(dX, dY, dW, dH, pBuffer, unWidth, unHeight);
+			m_pMetaFileRenderer->DrawBitmap(dX, dY, dW, dH, pBuffer, unWidth, unHeight, unBlendMode);
 	}
 
 	void CWmfInterpretatorRender::DrawString(std::wstring &wsText, unsigned int unCharsCount, double dX, double dY, double *pDx,
-											 int iGraphicsMode, double dXScale, double dYScale)
+	                                         int iGraphicsMode, double dXScale, double dYScale, bool bUseGID)
 	{
 		if (NULL != m_pMetaFileRenderer)
-			m_pMetaFileRenderer->DrawString(wsText, unCharsCount, dX, dY, pDx, iGraphicsMode, dXScale, dYScale);
+			m_pMetaFileRenderer->DrawString(wsText, unCharsCount, dX, dY, pDx, iGraphicsMode, dXScale, dYScale, bUseGID);
 	}
 
 	void CWmfInterpretatorRender::DrawDriverString(const std::wstring& wsString, const std::vector<TPointD>& arPoints)
@@ -107,10 +107,10 @@ namespace MetaFile
 			m_pMetaFileRenderer->ExcludeClip(oClip, oBB);
 	}
 
-	void CWmfInterpretatorRender::PathClip(IPath *pPath, int nClipMode, TXForm *pTransform)
+	void CWmfInterpretatorRender::PathClip(const CPath &oPath, int nClipMode, TXForm *pTransform)
 	{
 		if (NULL != m_pMetaFileRenderer)
-			m_pMetaFileRenderer->PathClip(pPath, nClipMode, pTransform);
+			m_pMetaFileRenderer->PathClip(oPath, nClipMode, pTransform);
 	}
 
 	void CWmfInterpretatorRender::StartClipPath(unsigned int unMode, int nFillMode)
@@ -131,7 +131,7 @@ namespace MetaFile
 			m_pMetaFileRenderer->UpdateDC();
 	}
 
-	void CWmfInterpretatorRender::SetTransform(double &dM11, double &dM12, double &dM21, double &dM22, double &dX, double &dY)
+	void CWmfInterpretatorRender::SetTransform(const double& dM11, const double& dM12, const double& dM21, const double& dM22, const double& dX, const double& dY)
 	{
 		if (NULL != m_pMetaFileRenderer)
 			m_pMetaFileRenderer->SetTransform(dM11, dM12, dM21, dM22, dX, dY);
@@ -146,5 +146,29 @@ namespace MetaFile
 	CMetaFileRenderer *CWmfInterpretatorRender::GetRenderer() const
 	{
 		return m_pMetaFileRenderer;
+	}
+	
+	void CWmfInterpretatorRender::HANDLE_META_EXCLUDECLIPRECT(short shLeft, short shTop, short shRight, short shBottom)
+	{
+		if (NULL != m_pMetaFileRenderer)
+			m_pMetaFileRenderer->NeedUpdateClip();
+	}
+	
+	void CWmfInterpretatorRender::HANDLE_META_INTERSECTCLIPRECT(short shLeft, short shTop, short shRight, short shBottom)
+	{
+		if (NULL != m_pMetaFileRenderer)
+			m_pMetaFileRenderer->NeedUpdateClip();
+	}
+	
+	void CWmfInterpretatorRender::HANDLE_META_OFFSETCLIPRGN(short shOffsetX, short shOffsetY)
+	{
+		if (NULL != m_pMetaFileRenderer)
+			m_pMetaFileRenderer->NeedUpdateClip();
+	}
+	
+	void CWmfInterpretatorRender::HANDLE_META_RESTOREDC()
+	{
+		if (NULL != m_pMetaFileRenderer)
+			m_pMetaFileRenderer->NeedUpdateClip();
 	}
 }

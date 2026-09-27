@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -150,6 +150,48 @@ const bool FEAT11::loadContent(BinProcessor& proc)
 		}
 		elements_.pop_front();
 	}
+	return true;
+}
+
+const bool FEAT11::saveContent(BinProcessor& proc)
+{
+	if(m_FeatHdr11 != nullptr)
+		proc.mandatory(*m_FeatHdr11);
+	else
+		proc.mandatory<FeatHdr11>();
+	for(auto i : m_arFEAT)
+	{
+		if(i.m_Feature != nullptr)
+			proc.mandatory(*i.m_Feature);
+		for(auto j : i.m_arList12)
+			proc.mandatory(*j);
+		if(i.m_AutoFilter12 != nullptr)
+		{
+			proc.mandatory(*i.m_AutoFilter12);
+			auto castedPtr = static_cast<AutoFilter12*>(i.m_AutoFilter12.get());
+			if(castedPtr->cCriteria > 0 && castedPtr->ft == 0)
+			{
+				for(auto j : castedPtr->arAF12Criteries)
+				{
+					CFRecord binDataRec(rt_ContinueFrt12, proc.getGlobalWorkbookInfo());
+					j->save(binDataRec);
+					ContinueFrt12 tempRecord;
+					tempRecord.frtHeader.grbitFrt.fFrtRef = castedPtr->frtRefHeader.grbitFrt.fFrtRef;
+					tempRecord.frtHeader.ref8 = castedPtr->frtRefHeader.ref8;
+					tempRecord.rgb.resize(binDataRec.getRdPtr());
+					auto copyData = binDataRec.getCurStaticData<char>() - binDataRec.getRdPtr();
+					memcpy(tempRecord.rgb.data(), copyData, binDataRec.getRdPtr());
+					proc.mandatory(tempRecord);
+				}
+			}
+		}
+		for(auto j : i.m_arList12_2)
+			if(j != nullptr)
+				proc.mandatory(*j);
+		if(i.m_SORTDATA12 != nullptr)
+			proc.mandatory(*i.m_SORTDATA12);
+	}
+
 	return true;
 }
 

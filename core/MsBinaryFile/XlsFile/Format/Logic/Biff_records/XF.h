@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -54,26 +54,29 @@ namespace XLS
 
 		BaseObjectPtr clone();
 		
-		virtual void readFields(CFRecord& record);
+		void readFields(CFRecord& record) override;
+		void writeFields(CFRecord& record) override;
 
 		int serialize(std::wostream & stream);
 
 		static const ElementType type = typeXF;
 
-		_UINT16		font_index;
-		_UINT16		ifmt;
+        _UINT16		font_index = 0;
 		
-		_UINT16		ixfParent;
+		_UINT16		ifmt = 164; //used
+        std::wstring format_code = L"";
+		
+		_UINT16		ixfParent = 0xFFF;
 
-		bool fLocked = false;
+		bool fLocked = true;
 		bool fHidden = false;
-		bool fStyle = false;
+		bool fStyle = true;
 		bool f123Prefix = false;
 
 	//-----------------------------
-		unsigned char	alc = 0xff;
+		unsigned char	alc = 0;
 		bool			fWrap = false;
-		unsigned char	alcV = 0xff;
+		unsigned char	alcV = 2;
 		bool			fJustLast = false;
 		unsigned short	trot = 0;
 		unsigned char	cIndent = 0;
@@ -105,9 +108,9 @@ namespace XLS
 		BiffStructurePtrVector ext_props;
 		BiffStructurePtrVector xf_props;
 
-		size_t border_x_id;
-		size_t fill_x_id;
-		size_t font_x_id;
+        size_t border_x_id = 0;
+        size_t fill_x_id = 0;
+        size_t font_x_id = 0;
 		
 		void Update(ExtProp* extProp); // xls ext style
 		void Update(XFProp* xfProps); // xlsx style

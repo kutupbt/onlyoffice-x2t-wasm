@@ -16,7 +16,15 @@
 static tsize_t 
 _tiffReadProcEx(thandle_t fd, tdata_t buf, tsize_t size)
 {
-	return (tsize_t)((CxFile*)fd)->Read(buf, 1, size);
+	tsize_t nReadCount = (tsize_t)((CxFile*)fd)->Read(buf, 1, size);
+
+	if (nReadCount < size)
+	{
+		memset(static_cast<char*>(buf) + nReadCount, 0, size - nReadCount);
+		return size;
+	}
+
+	return nReadCount;
 }
 
 static tsize_t
@@ -155,7 +163,7 @@ _TIFFmemcmp(const tdata_t p1, const tdata_t p2, tsize_t c)
 	return (memcmp(p1, p2, (size_t) c));
 }
 
-#ifndef _IOS
+#if !defined(_IOS) && !defined(DISABLE_IMAGE_EXCEPTIONS)
 static void
 Win32WarningHandler(const char* module, const char* fmt, va_list ap)
 {

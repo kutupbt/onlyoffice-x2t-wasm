@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -108,7 +108,10 @@ namespace PdfWriter
 		if (m_pFontFile && m_pFontFileDict)
 		{
 			CStream* pStream = m_pFontFileDict->GetStream();
-			m_pFontFile->WriteTTF(pStream);
+			if (m_pFontFile->GetOpenTypeCFF())
+				m_pFontFile->WriteOTF(pStream);
+			else
+				m_pFontFile->WriteTTF(pStream);
 			m_pFontFileDict->Add("Length1", pStream->Size());
 			m_pFontFileDict->SetFilter(STREAM_FILTER_FLATE_DECODE);
 		}
@@ -176,6 +179,13 @@ namespace PdfWriter
 
 		m_nLineHeight = yMax - yMin;
 		m_nAscent     = yMax;
+
+		m_dHeight  = pFace->height;
+		m_dDescent = pFace->descender;
+		m_dAscent  = pFace->ascender;
+		m_dUnitsPerEm = pFace->units_per_EM;
+		m_dMaxY = pFace->bbox.yMax;
+		m_dMinY = pFace->bbox.yMin;
 
 		CArrayObject* pBBox = new CArrayObject();
 		pBBox->Add(xMin);

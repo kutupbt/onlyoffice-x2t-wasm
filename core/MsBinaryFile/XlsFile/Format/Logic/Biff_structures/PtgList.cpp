@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,6 +31,8 @@
  */
 
 #include "PtgList.h"
+#include "PtgArea3d.h"
+#include "PtgExtraList.h"
 #include "../../../../../OOXML/Base/Unit.h"
 
 namespace XLS
@@ -66,6 +68,25 @@ void PtgList::loadFields(CFRecord& record)
     record >> listIndex >> colFirst >> colLast;
 }
 
+void PtgList::writeFields(CFRecord& record)
+{
+	//record.skipNunBytes(1); // eptg Reserved
+	global_info = record.getGlobalWorkbookInfo();
+	record << ixti;
+	unsigned short flags = 0;
+
+	SETBITS(flags, 0, 1, columns)
+	SETBITS(flags, 2, 6, rowType)
+	SETBIT(flags, 7, squareBracketSpace)
+	SETBIT(flags, 8, commaSpace)
+	SETBITS(flags, 10, 11, type_)
+	SETBIT(flags, 12, invalid)
+	SETBIT(flags, 13, nonresident)
+
+	record << flags;
+	record << listIndex << colFirst << colLast;
+}
+
 void PtgList::assemble(AssemblerStack& ptg_stack, PtgQueue& extra_data, bool full_ref)
 {
     //ptg_stack.push(L""); tblExpenses[[#This Row],[Hotel]:[Transport]]
@@ -77,6 +98,11 @@ void PtgList::assemble(AssemblerStack& ptg_stack, PtgQueue& extra_data, bool ful
     if (tableIndex != global_info->mapTableNames.end())
     {
         tableName = tableIndex->second;
+    }
+    else if(nonresident && !extra_data.empty())
+    {
+        auto extraList = static_cast<PtgExtraList*>(extra_data.front().get());
+        tableName = extraList->table;
     }
     else
     {
@@ -97,7 +123,6 @@ void PtgList::assemble(AssemblerStack& ptg_stack, PtgQueue& extra_data, bool ful
     {
         switch (rowType)
         {
-            case 0x00:
             case 0x04: formula += L"[#Data]"; break;
             case 0x01: formula += L"[#All]"; break;
             case 0x02: formula += L"[#Headers]"; break;
@@ -115,7 +140,14 @@ void PtgList::assemble(AssemblerStack& ptg_stack, PtgQueue& extra_data, bool ful
                 case 0x00: break;
                 case 0x01:
                 case 0x02:
-                formula += L",[" + arrColumn->second[colFirst] + L"]"; if(columns == 0x01) break;
+                if(colFirst >= arrColumn->second.size())
+                    break;
+                if(rowType != 0x00)
+                    formula += L",";
+                formula += L"['" + arrColumn->second[colFirst] + L"]";
+                if(columns == 0x01) break;
+                if(colLast >= arrColumn->second.size())
+                    break;
                 formula += L":[" + arrColumn->second[colLast] + L"]"; break;
             }
         }
@@ -124,6 +156,38 @@ void PtgList::assemble(AssemblerStack& ptg_stack, PtgQueue& extra_data, bool ful
     formula += L']';
 
     ptg_stack.push(formula);
+}
+
+Ptg* PtgList::toArea()
+{
+	Ref8 tableRef;
+	auto tableRefIndex = XLS::GlobalWorkbookInfo::mapTableRefsStatic.find(listIndex);
+	if(tableRefIndex != XLS::GlobalWorkbookInfo::mapTableRefsStatic.end())
+	{
+		tableRef.fromString(tableRefIndex->second);
+		tableRef.columnFirst += colFirst;
+		tableRef.columnLast = tableRef.columnFirst + (colLast - colFirst);
+		if(rowType == 0x2) //headers
+			tableRef.rowLast = tableRef.rowFirst;
+		else if(rowType == 0x0) //data
+			tableRef.rowFirst++;
+		else if(rowType == 0x6) //dataheaders
+			tableRef.rowLast--;
+		else if(rowType == 0x0C) // datatotals
+			tableRef.rowFirst--;
+		else if(rowType == 0x8) //totals
+			tableRef.rowFirst = tableRef.rowLast;
+	}
+	PtgArea3d* listArea = new PtgArea3d(0x3B, CellRef());
+	listArea->ixti = ixti;
+	listArea->area = tableRef;
+	listArea->area.rowFirstRelative = false;
+	listArea->area.rowLastRelative = false;
+	listArea->area.columnFirstRelative = false;
+	listArea->area.columnLastRelative = false;
+	Ptg* ptr = listArea;
+
+	return ptr;
 }
 
 } // namespace XLS

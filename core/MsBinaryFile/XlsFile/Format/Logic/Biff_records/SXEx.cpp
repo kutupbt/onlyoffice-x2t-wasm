@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -104,6 +104,61 @@ void SXEx::readFields(CFRecord& record)
 	
 	int skip = record.getDataSize() - record.getRdPtr();
 	record.skipNunBytes(skip);
+}
+
+void SXEx::writeFields(CFRecord& record)
+{
+	if(stError.getSize())
+		cchErrorString = stError.getSize();
+	if(stDisplayNull.getSize())
+		cchNullString = stDisplayNull.getSize();
+	if(stTag.getSize())
+		cchTag = stTag.getSize();
+    record << csxformat << cchErrorString << cchNullString << cchTag << csxselect;
+    _UINT32 flags = 0;
+    SETBIT(flags, 0, fAcrossPageLay)
+    SETBITS(flags, 1, 9, cWrapPage)
+    SETBIT(flags, 16, fEnableWizard)
+    SETBIT(flags, 17, fEnableDrilldown)
+    SETBIT(flags, 18, fEnableFieldDialog)
+    SETBIT(flags, 19, fPreserveFormatting)
+    SETBIT(flags, 20, fMergeLabels)
+    SETBIT(flags, 21, fDisplayErrorString)
+    SETBIT(flags, 22, fDisplayNullString)
+    SETBIT(flags, 23, fSubtotalHiddenPageItems)
+    record << crwPage << ccolPage << flags;
+	if(stPageFieldStyle.getSize())
+		cchPageFieldStyle = stPageFieldStyle.getSize();
+	if(stTableStyle.getSize())
+		cchTableStyle  = stTableStyle.getSize();
+	if(stVacateStyle.getSize())
+		cchVacateStyle = stVacateStyle.getSize();
+    record << cchPageFieldStyle << cchTableStyle << cchVacateStyle;
+    if (cchErrorString > 0 && cchErrorString != 0xffff)
+    {
+        record >> stError;
+    }
+    if (cchNullString > 0 && cchNullString != 0xffff)
+    {
+        record << stDisplayNull;
+    }
+    if (cchTag > 0 && cchTag != 0xffff)
+    {
+        record << stTag;
+    }
+    if (cchPageFieldStyle > 0 && cchPageFieldStyle != 0xffff)
+    {
+        record << stPageFieldStyle;
+    }
+    if (cchTableStyle > 0 && cchTableStyle != 0xffff)
+    {
+        record << cchTableStyle;
+    }
+    if (cchVacateStyle > 0 && cchVacateStyle != 0xffff)
+    {
+        record << cchVacateStyle;
+    }
+
 }
 
 } // namespace XLS

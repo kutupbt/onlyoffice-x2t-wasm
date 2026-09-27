@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -54,6 +54,22 @@ void DXFALC::load(CFRecord& record)
 	iReadingOrder	= static_cast<unsigned char>(GETBITS(flags, 22, 23));
 
 	record >> iIndent;
+}
+
+void DXFALC::save(CFRecord& record)
+{
+    _UINT32 flags = 0;
+    SETBITS(flags, 0, 2, alc)
+    SETBIT(flags, 3, fWrap)
+    SETBITS(flags, 4, 6, alcv)
+    SETBIT(flags, 7, fJustLast)
+    SETBITS(flags, 8, 15, trot)
+    SETBITS(flags, 16, 19, cIndent)
+    SETBIT(flags, 20, fShrinkToFit)
+    SETBIT(flags, 21, fMergeCell)
+    SETBITS(flags, 22, 23, iReadingOrder)
+
+    record << flags << iIndent;
 }
 
 int DXFALC::serialize(std::wostream & stream)

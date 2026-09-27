@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -50,20 +50,21 @@ public:
 	BaseObjectPtr clone();
 
 	void readFields(CFRecord& record);
+	void writeFields(CFRecord& record);
 
 	static const ElementType	type = typeAutoFilter12;
 
 	FrtRefHeader frtRefHeader;
 	
-	_UINT16		iEntry;
-	_UINT32		fHideArrow;
-	_UINT32		ft;
-	_UINT32		cft;
-	_UINT32		cCriteria;
-	_UINT32		cDateGroupings;
-	_UINT32		idList;
+	_UINT16		iEntry = 0;
+	_UINT32		fHideArrow = 0;
+	_UINT32		ft = 0;
+	_UINT32		cft = 0;
+	_UINT32		cCriteria = 0;
+	_UINT32		cDateGroupings = 0;
+	_UINT32		idList = 0;
 
-	std::wstring			guidSview;
+	std::wstring			guidSview = L"";
 	BiffStructurePtr		rgb;
 	
 	BiffStructurePtrVector arAF12Criteries;

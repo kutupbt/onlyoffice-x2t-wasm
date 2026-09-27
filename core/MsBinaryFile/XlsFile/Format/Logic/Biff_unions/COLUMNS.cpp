@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -68,6 +68,11 @@ const bool COLUMNS::loadContent(BinProcessor& proc)
 	}
 	int count = (global_info_->Version == 0x0200) ? proc.repeated<ColWidth>(0, 255) : proc.repeated<ColInfo>(0, 255);
 
+	if (count < 1)
+	{//version 0x0400 ???? ColWidth 
+		count = (global_info_->Version == 0x0200) ? proc.repeated<ColInfo>(0, 255) : proc.repeated<ColWidth>(0, 255);
+	}
+
 	int last_add = 0;
 
 	for (std::list<XLS::BaseObjectPtr>::iterator it = elements_.begin(); it != elements_.end(); ++it)
@@ -87,7 +92,18 @@ const bool COLUMNS::loadContent(BinProcessor& proc)
 
 	return def_ok || (count > 0);
 }
-
+const bool COLUMNS::saveContent(BinProcessor& proc)
+{
+	if(m_DefColWidth != nullptr)
+		proc.mandatory(*m_DefColWidth);
+	else
+		proc.mandatory<DefColWidth>();
+	for(auto i : m_colInfos)
+	{
+		proc.mandatory(*i);
+	}
+	return true;
+}
 int COLUMNS::serialize(std::wostream & stream)
 {
 	if (elements_.size() < 1) return 0;

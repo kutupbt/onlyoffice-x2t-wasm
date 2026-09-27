@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -56,6 +56,11 @@ void BoolErr::readFields(CFRecord& record)
 	record >> cell >> bes;
 }
 
+void BoolErr::writeFields(CFRecord& record)
+{
+    record << cell << bes;
+}
+
 const CellRef BoolErr::getLocation() const
 {
 	return cell.getLocation();
@@ -71,12 +76,39 @@ int BoolErr::serialize(std::wostream & stream)
 		CP_XML_NODE(L"c")
 		{
 			CP_XML_ATTR(L"r", ref);
+			if (bes.fError)
+				CP_XML_ATTR(L"t", L"e");
+			else
+				CP_XML_ATTR(L"t", L"b");
 
 			if (cell.ixfe - global_info_->cellStyleXfs_count > 0)
 			{
 				CP_XML_ATTR(L"s", cell.ixfe - global_info_->cellStyleXfs_count);
 			}
-		}			
+			CP_XML_NODE(L"v")
+			{
+				if (bes.fError)
+				{
+					switch (bes.bBoolErr)
+					{
+					case 0x00: CP_XML_STREAM() << L"#NULL!"; break;
+					case 0x07: CP_XML_STREAM() << L"#DIV/0!"; break;
+					case 0x0F: CP_XML_STREAM() << L"#VALUE!"; break;
+					case 0x17: CP_XML_STREAM() << L"#REF!"; break;
+					case 0x1D: CP_XML_STREAM() << L"#NAME?"; break;
+					case 0x24: CP_XML_STREAM() << L"#NUM!"; break;
+					case 0x2A: CP_XML_STREAM() << L"#N/A"; break;
+					case 0x2B: CP_XML_STREAM() << L"#GETTING_DATA"; break;
+					default:
+						break;
+					}
+				}
+				else
+				{
+					CP_XML_STREAM() << std::to_wstring(bes.bBoolErr);
+				}
+			}
+		}
 	}
 	return 0;
 }

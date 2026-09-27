@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -30,10 +30,15 @@
  *
  */
 #include "Controls.h"
+
 #include "../DrawingConverter/ASCOfficeDrawingConverter.h"
 #include "../../DocxFormat/Media/ActiveX.h"
+#include "../../DocxFormat/VmlDrawing.h"
+#include "../../../DesktopEditor/common/Directory.h"
 
 #include "../Slide.h"
+#include "../SlideLayout.h"
+#include "../SlideMaster.h"
 
 namespace PPTX
 {
@@ -43,20 +48,21 @@ namespace PPTX
 		{
 			arrControls.clear();
 
-			XmlUtils::CXmlNodes oNodes;
+			std::vector<XmlUtils::CXmlNode> oNodes;
 			if (node.GetNodes(L"*", oNodes))
 			{
-				int nCount = oNodes.GetCount();
-				for (int i = 0; i < nCount; ++i)
+				size_t nCount = oNodes.size();
+				for (size_t i = 0; i < nCount; ++i)
 				{
-					XmlUtils::CXmlNode oNode;
-					oNodes.GetAt(i, oNode);
+					XmlUtils::CXmlNode& oNode = oNodes[i];
 
 					std::wstring strName = XmlUtils::GetNameNoNS(oNode.GetName());
 
 					if (strName == L"control")
 					{
-						Control elem(oNode);
+						Control elem;
+						elem = oNode;
+
 						arrControls.push_back(elem);
 					}
 					else if (L"AlternateContent" == strName)
@@ -80,12 +86,16 @@ namespace PPTX
 							XmlUtils::CXmlNode oNodeChoiceControl;
 							if (oNodeChoice.GetNode(L"p:control", oNodeChoiceControl))
 							{
-								Control elem(oNodeChoiceControl);
+								Control elem;
+								elem = oNodeChoiceControl;
+
 								arrControls.push_back(elem);
 								continue;
 							}
 						}
-						Control elem(oNodeFallbackControl);
+						Control elem;
+						elem = oNodeFallbackControl;
+
 						arrControls.push_back(elem);
 					}
 				}
@@ -189,23 +199,23 @@ namespace PPTX
 
 			pWriter->EndNode(L"p:control");
 		}
-		std::wstring Control::GetVmlXmlBySpid(std::wstring spid, smart_ptr<OOX::IFileContainer> & rels)  const
+		std::wstring Control::GetVmlXmlBySpid(std::wstring spid, OOX::IFileContainer*& rels)  const
 		{
 			std::wstring xml;
 			if(parentFileIs<PPTX::Slide>() && parentFileAs<PPTX::Slide>().Vml.IsInit())
 			{
 				xml		= parentFileAs<PPTX::Slide>().GetVmlXmlBySpid(spid);
-				rels	= parentFileAs<PPTX::Slide>().Vml.smart_dynamic_cast<OOX::IFileContainer>();
+				rels	= parentFileAs<PPTX::Slide>().Vml.GetPointer();
 			}
 			else if(parentFileIs<PPTX::SlideLayout>() && parentFileAs<PPTX::SlideLayout>().Vml.IsInit())
 			{
 				xml= parentFileAs<PPTX::SlideLayout>().GetVmlXmlBySpid(spid);
-				rels	= parentFileAs<PPTX::SlideLayout>().Vml.smart_dynamic_cast<OOX::IFileContainer>();
+				rels	= parentFileAs<PPTX::SlideLayout>().Vml.GetPointer();
 			}
 			else if(parentFileIs<PPTX::SlideMaster>() && parentFileAs<PPTX::SlideMaster>().Vml.IsInit())
 			{
 				xml = parentFileAs<PPTX::SlideMaster>().GetVmlXmlBySpid(spid);
-				rels	= parentFileAs<PPTX::SlideMaster>().Vml.smart_dynamic_cast<OOX::IFileContainer>();
+				rels	= parentFileAs<PPTX::SlideMaster>().Vml.GetPointer();
 			}
 
 			return xml;
@@ -227,7 +237,7 @@ namespace PPTX
 				std::wstring s = *spid;
 				if (s.length() < 8) s = L"_x0000_s" + s;
 
-				smart_ptr<OOX::IFileContainer> rels;
+				OOX::IFileContainer* rels = NULL;
 				std::wstring xml = GetVmlXmlBySpid(s, rels);
 
 				if (false == xml.empty())
@@ -241,21 +251,21 @@ namespace PPTX
 					RELEASEOBJECT(oDrawingConverter.m_pBinaryWriter->m_pCommon->m_pMediaManager);
 					oDrawingConverter.m_pBinaryWriter->m_pCommon->m_pMediaManager = pWriter->m_pCommon->m_pMediaManager;
 
-					std::wstring *main_props = NULL;
-
-					oDrawingConverter.SetRels(rels);
+					oDrawingConverter.SetRelsPtr(rels);
 
 					std::vector<nullable<PPTX::Logic::SpTreeElem>> elements;
-					oDrawingConverter.ConvertVml(temp, elements);
+					nullable<OOX::WritingElement> anchor;
+					
+					oDrawingConverter.ConvertVml(temp, elements, anchor);
 					oDrawingConverter.m_pBinaryWriter->m_pCommon->m_pMediaManager = NULL;
 
-					smart_ptr<OOX::IFileContainer> rels_old = pWriter->GetRels();
-					pWriter->SetRels(rels);
+					OOX::IFileContainer* rels_old = pWriter->GetRelsPtr();
+					pWriter->SetRelsPtr(rels);
 					for (size_t i = 0; i < elements.size(); ++i)
 					{
 						pWriter->WriteRecord2(0, elements[i]);
 					}
-					pWriter->SetRels(rels_old);
+					pWriter->SetRelsPtr(rels_old);
 				}
 			}
 

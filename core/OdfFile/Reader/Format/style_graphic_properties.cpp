@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -55,11 +55,16 @@ void graphic_format_properties::add_attributes( const xml::attributes_wc_ptr & A
 	CP_APPLY_ATTR(L"draw:fit-to-contour",				draw_fit_to_contour_);
 	CP_APPLY_ATTR(L"style:shrink-to-fit",				style_shrink_to_fit_);
 	CP_APPLY_ATTR(L"draw:fit-to-size",					draw_fit_to_size_str_);
+	CP_APPLY_ATTR(L"draw:ole-draw-aspect",				draw_ole_draw_aspect_);
 
 	CP_APPLY_ATTR(L"draw:stroke",						draw_stroke_); 
 	CP_APPLY_ATTR(L"draw:stroke-dash",					draw_stroke_dash_); 
 	CP_APPLY_ATTR(L"draw:marker-start",					draw_marker_start_); 
 	CP_APPLY_ATTR(L"draw:marker-end",					draw_marker_end_); 
+	CP_APPLY_ATTR(L"draw:marker-start-width",			draw_marker_start_width_);
+	CP_APPLY_ATTR(L"draw:marker-end-width",				draw_marker_end_width_);
+
+	CP_APPLY_ATTR(L"draw:stroke-gradient-name",			draw_stroke_gradient_name_);
 
 	CP_APPLY_ATTR(L"svg:stroke-color",					svg_stroke_color_); 
 	CP_APPLY_ATTR(L"svg:stroke-width",					svg_stroke_width_);	
@@ -118,22 +123,25 @@ void graphic_format_properties::apply_to(std::vector<_property> & properties)
 		if (!draw_stroke_dash_->empty())
 			properties.push_back(_property(L"stroke-dash",	draw_stroke_dash_.get()));
 	}
+	if (draw_stroke_gradient_name_) properties.push_back(_property(L"stroke-gradient-name", draw_stroke_gradient_name_.get()));
 	if (svg_stroke_width_)	properties.push_back(_property(L"stroke-width",	svg_stroke_width_->get_length().get_value_unit(odf_types::length::pt) ));
 	if (svg_stroke_opacity_)properties.push_back(_property(L"stroke-opacity",svg_stroke_opacity_->get_percent().get_value()));	
 	if (draw_marker_start_)
 	{
 		properties.push_back(_property(L"marker-start",	draw_marker_start_->get() ));
 	}
+	if (draw_marker_start_width_)
+	{
+		properties.push_back(_property(L"marker-start-width", draw_marker_start_width_->get_value_unit(odf_types::length::pt)));
+	}
 	if (draw_marker_end_)
 	{
-		//const std::wstring style_name = draw_marker_end_->get();
-		//if (!style_name.empty())
-		////if (office_element_ptr style = styles.find_by_style_name(style_name))
-		//{
-			properties.push_back(_property(L"marker-end",	draw_marker_end_->get() ));
-		//}
+		properties.push_back(_property(L"marker-end", draw_marker_end_->get() ));
 	}
-	
+	if (draw_marker_end_width_)
+	{
+		properties.push_back(_property(L"marker-end-width", draw_marker_end_width_->get_value_unit(odf_types::length::pt)));
+	}
 	if (draw_textarea_horizontal_align_)properties.push_back(_property(L"textarea-horizontal_align",draw_textarea_horizontal_align_->get_type() ));
 	if (draw_textarea_vertical_align_)	properties.push_back(_property(L"textarea-vertical_align",	draw_textarea_vertical_align_->get_type() ));
 
@@ -146,7 +154,7 @@ void graphic_format_properties::apply_to(std::vector<_property> & properties)
 
 	if (common_draw_fill_attlist_.draw_color_mode_)
 	{
-		properties.push_back(_property(L"color-mode", *common_draw_fill_attlist_.draw_color_mode_));
+		properties.push_back(_property(L"color-mode", (int)common_draw_fill_attlist_.draw_color_mode_->get_type()));
 	}
 	if (common_draw_fill_attlist_.draw_luminance_)
 	{
@@ -182,24 +190,33 @@ void graphic_format_properties::apply_to(std::vector<_property> & properties)
 		if (common_padding_attlist_.fo_padding_bottom_) 
 			properties.push_back(_property(L"text-padding-bottom",	common_padding_attlist_.fo_padding_bottom_->get_value_unit(length::emu)));
 	}
-	if (fo_wrap_option_)	
+	if (fo_wrap_option_)
+	{
+		if(fo_wrap_option_->get_type() == odf_types::wrap_option::type::NoWrap)
+			fo_wrap_option_->set_type(odf_types::wrap_option::type::no_wrap_in_fo_wrap_option);
 		properties.push_back(_property(L"text-wrap", (int)fo_wrap_option_->get_type()));
+	}
 }
-void graphic_format_properties::apply_from(const graphic_format_properties * Other)
+void graphic_format_properties::apply_from(const graphic_format_properties *Other)
 {
 	if (Other == NULL) return;
+
+	_CP_APPLY_PROP3(draw_stroke_gradient_name_);
 
 	_CP_APPLY_PROP3(draw_stroke_); 
 	_CP_APPLY_PROP3(draw_stroke_dash_); 
 	_CP_APPLY_PROP3(draw_marker_start_); 
 	_CP_APPLY_PROP3(draw_marker_end_); 
-	_CP_APPLY_PROP3(draw_textarea_horizontal_align_); 
+	_CP_APPLY_PROP3(draw_marker_start_width_);
+	_CP_APPLY_PROP3(draw_marker_end_width_);
+	_CP_APPLY_PROP3(draw_textarea_horizontal_align_);
 	_CP_APPLY_PROP3(draw_textarea_vertical_align_); 
 	_CP_APPLY_PROP3(draw_auto_grow_height_);
 	_CP_APPLY_PROP3(draw_auto_grow_width_);
 	_CP_APPLY_PROP3(draw_fit_to_size_);
 	_CP_APPLY_PROP3(draw_fit_to_contour_);
 	_CP_APPLY_PROP3(style_shrink_to_fit_);
+	_CP_APPLY_PROP3(draw_ole_draw_aspect_);
 	
 	_CP_APPLY_PROP3(svg_stroke_color_); 
 	_CP_APPLY_PROP3(svg_stroke_width_);	
@@ -209,7 +226,8 @@ void graphic_format_properties::apply_from(const graphic_format_properties * Oth
     _CP_APPLY_PROP3(fo_min_height_);
     _CP_APPLY_PROP3(fo_max_width_);
     _CP_APPLY_PROP3(fo_max_height_);
-	_CP_APPLY_PROP3(fo_wrap_option_);
+	
+	fo_wrap_option_ = Other->fo_wrap_option_;
 
     _CP_APPLY_PROP3(style_print_content_);
     _CP_APPLY_PROP3(style_protect_);
@@ -244,6 +262,7 @@ void graphic_format_properties::apply_from(const graphic_format_properties * Oth
      
 
     _CP_APPLY_PROP(style_background_image_,	Other->style_background_image_);
+	_CP_APPLY_PROP(style_columns_, Other->style_columns_);
 }
 
 
@@ -258,10 +277,10 @@ void style_graphic_properties::add_attributes( const xml::attributes_wc_ptr & At
 
 void style_graphic_properties::add_child_element( xml::sax * Reader, const std::wstring & Ns, const std::wstring & Name)
 {
-     if (L"style" == Ns && L"background-image" == Name)
-    {
+    if (L"style" == Ns && L"background-image" == Name)
         CP_CREATE_ELEMENT(content_.style_background_image_);
-    }
+	else if(L"style" == Ns && L"columns" == Name)
+		CP_CREATE_ELEMENT(content_.style_columns_);
 
 	//if (CP_CHECK_NAME(L"text", L"list-style") 	
 	//	styles_.add_child_element(Reader, Ns, Name, getContext()); он тут и не нужен по сути... описание есть и в другом сместе

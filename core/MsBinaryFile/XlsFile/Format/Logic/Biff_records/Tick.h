@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -50,28 +50,29 @@ public:
 	BaseObjectPtr clone();
 	
 	void readFields(CFRecord& record);
+	void writeFields(CFRecord& record);
 
 	static const ElementType	type = typeTick;
 
 	int serialize(std::wostream & _stream);
 
 //-----------------------------
-	unsigned char	tktMajor;
-	unsigned char	tktMinor;
-	unsigned char	tlt;
-	unsigned char	wBkgMode;
+	unsigned char	tktMajor = 0;
+	unsigned char	tktMinor = 0;
+	unsigned char	tlt = 0;
+	unsigned char	wBkgMode = 1;
 	LongRGB rgb;
 
-	bool fAutoCo;
-	bool fAutoMode;
-	unsigned char	rot;
-	bool fAutoRot;
-	unsigned char	iReadingOrder;
+	bool fAutoCo = true;
+	bool fAutoMode = false;
+	unsigned char	rot = 0;
+	bool fAutoRot = false;
+	unsigned char	iReadingOrder = 0;
 
-	_UINT16 icv;
-	_UINT16 trot;
+	_UINT16 icv = 0;
+	_UINT16 trot = 0;
 
-	int _rott;
+	int _rott = 0;
 };
 
 } // namespace XLS

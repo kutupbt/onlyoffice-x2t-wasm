@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -164,7 +164,7 @@ void CXmlWriter::WriteAttributeCSS_double1_pt(const std::wstring& strAttributeNa
 {
 	m_oWriter.WriteString(strAttributeName);
 	m_oWriter.AddSize(20);
-	std::wstring s = XmlUtils::DoubleToString(val, L"%.1lf");
+	std::wstring s = XmlUtils::DoubleToString(val, L"%.2lf");
 	m_oWriter.AddCharNoCheck(WCHAR(':'));
 	m_oWriter.WriteString(s);
 	m_oWriter.AddCharNoCheck(WCHAR('p'));
@@ -172,7 +172,7 @@ void CXmlWriter::WriteAttributeCSS_double1_pt(const std::wstring& strAttributeNa
 	m_oWriter.AddCharNoCheck(WCHAR(';'));
 }
 
-void CXmlWriter::WriteAttribute(const std::wstring& strAttributeName, const std::wstring& val)
+void CXmlWriter::WriteAttribute(const std::wstring& strAttributeName,  const std::wstring& val)
 {
 	m_oWriter.WriteString(g_bstr_node_space);
 	m_oWriter.WriteString(strAttributeName);
@@ -197,6 +197,24 @@ void CXmlWriter::WriteAttribute2(const std::wstring& strAttributeName, const std
 	m_oWriter.WriteString(g_bstr_node_equal);
 	m_oWriter.WriteString(g_bstr_node_quote);
 	m_oWriter.WriteEncodeXmlString(val);
+	m_oWriter.WriteString(g_bstr_node_quote);
+}
+void CXmlWriter::WriteAttribute2(const std::wstring& strAttributeName, const std::string& val)
+{
+	m_oWriter.WriteString(g_bstr_node_space);
+	m_oWriter.WriteString(strAttributeName);
+	m_oWriter.WriteString(g_bstr_node_equal);
+	m_oWriter.WriteString(g_bstr_node_quote);
+	m_oWriter.WriteEncodeXmlString(val);
+	m_oWriter.WriteString(g_bstr_node_quote);
+}
+void CXmlWriter::WriteAttributeUtf8(const std::wstring& strAttributeName, const std::string& val)
+{
+	m_oWriter.WriteString(g_bstr_node_space);
+	m_oWriter.WriteString(strAttributeName);
+	m_oWriter.WriteString(g_bstr_node_equal);
+	m_oWriter.WriteString(g_bstr_node_quote);
+	m_oWriter.WriteUtf8EncodeXmlString(val);
 	m_oWriter.WriteString(g_bstr_node_quote);
 }
 void CXmlWriter::WriteAttribute(const std::wstring& strAttributeName, const double& val)
@@ -427,6 +445,16 @@ void CXmlWriter::WriteAttribute2(const std::wstring& strName, const nullable_str
 {
 	if (value.IsInit())
 		WriteAttribute2(strName, *value);
+}
+void CXmlWriter::WriteAttribute2(const std::wstring& strName, const nullable_astring& value)
+{
+	if (value.IsInit())
+		WriteAttribute2(strName, *value);
+}
+void CXmlWriter::WriteAttributeUtf8(const std::wstring& strName, const nullable_astring& value)
+{
+	if (value.IsInit())
+		WriteAttributeUtf8(strName, *value);
 }
 void CXmlWriter::WriteAttribute(const std::wstring& strName, const nullable_bool& value)
 {

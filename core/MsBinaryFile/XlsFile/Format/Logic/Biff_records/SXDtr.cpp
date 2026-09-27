@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,6 +31,7 @@
  */
 
 #include "SXDtr.h"
+#include "../../../../../OOXML/Binary/Sheets/Reader/CellFormatController/DateReader.h"
 
 namespace XLS
 {
@@ -52,6 +53,11 @@ void SXDtr::readFields(CFRecord& record)
 {
 	record >> yr >> mon >> dom >> hr >> min >> sec;
 }
+
+void SXDtr::writeFields(CFRecord& record)
+{
+	record << yr << mon << dom << hr << min << sec;
+}
 	
 std::wstring SXDtr::value()
 {
@@ -65,6 +71,21 @@ std::wstring SXDtr::value()
 		 << (hr < 10 ? L"0" : L"") << hr << L":" << (min < 10 ? L"0" : L"") << min << L":" << (sec < 10 ? L"0" : L"") << sec;
 
 	return s.str();
+}
+
+void SXDtr::fromString(const std::wstring &strDate)
+{
+	DateReader reader;
+	tm dateTime;
+	if(reader.parseIsoDate(strDate, dateTime))
+	{
+		yr = dateTime.tm_year + 1900;
+		mon = dateTime.tm_mon + 1;
+		dom = dateTime.tm_mday + 1;
+		hr = dateTime.tm_hour;
+		min = dateTime.tm_min;
+		sec = dateTime.tm_sec;
+	}
 }
 
 } // namespace XLS

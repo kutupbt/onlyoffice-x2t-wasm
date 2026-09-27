@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -38,9 +38,8 @@ namespace XLS
 
 #pragma pack(1)
 
-struct CFExFilterParams : public BiffStructure_NoVtbl
+struct CFExFilterParams
 {
-private:
 	bool fTop : 1;
 	bool fPercent : 1;
 	unsigned short iParam;
@@ -53,52 +52,49 @@ private:
 };
 
 
-struct CFExTextTemplateParams : public BiffStructure_NoVtbl
+struct CFExTextTemplateParams
 {
-private:
 	unsigned short ctp;
 
 private:
-	_UINT16 reserved_1;
-	_UINT32 reserved_2;
-	_UINT32 reserved_3;
-	_UINT32 reserved_4;
+	_UINT16 reserved_1 = 0;
+	_UINT32 reserved_2 = 0;
+	_UINT32 reserved_3 = 0;
+	_UINT32 reserved_4 = 0;
 };
 
 
-struct CFExDateTemplateParams : public BiffStructure_NoVtbl
+struct CFExDateTemplateParams
 {
-private:
 	unsigned short dateOp;
 
 private:
-	_UINT16 reserved_1;
-	_UINT32 reserved_2;
-	_UINT32 reserved_3;
-	_UINT32 reserved_4;
+	_UINT16 reserved_1 = 0;
+	_UINT32 reserved_2 = 0;
+	_UINT32 reserved_3 = 0;
+	_UINT32 reserved_4 = 0;
 };
 
 
-struct CFExAveragesTemplateParams : public BiffStructure_NoVtbl
+struct CFExAveragesTemplateParams
 {
-private:
-	unsigned short iParam;
+	unsigned short iParam = 0;
 
 private:
-	unsigned short reserved_1;
-	_UINT32 reserved_2;
-	_UINT32 reserved_3;
-	_UINT32 reserved_4;
+	unsigned short reserved_1 = 0;
+	_UINT32 reserved_2 = 0;
+	_UINT32 reserved_3 = 0;
+	_UINT32 reserved_4 = 0;
 };
 
 
-struct CFExDefaultTemplateParams : public BiffStructure_NoVtbl
+struct CFExDefaultTemplateParams
 {
 private:
-	_UINT32 unused1;
-	_UINT32 unused2;
-	_UINT32 unused3;
-	_UINT32 unused4;
+	_UINT32 unused1 = 0;
+	_UINT32 unused2 = 0;
+	_UINT32 unused3 = 0;
+	_UINT32 unused4 = 0;
 };
 
 
@@ -107,9 +103,11 @@ class CFExTemplateParams : public BiffStructure
 	BASE_STRUCTURE_DEFINE_CLASS_NAME(CFExTemplateParams)
 
 public:
+	CFExTemplateParams();
 	BiffStructurePtr clone();
 
 	virtual void load(CFRecord& record);
+    virtual void save(CFRecord& record);
 
 
 	static const ElementType	type = typeCFExTemplateParams;

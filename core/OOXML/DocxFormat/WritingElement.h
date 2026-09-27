@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -32,8 +32,8 @@
 #pragma once
 
 #include "../../DesktopEditor/xml/include/xmlutils.h"
-#include "../../MsBinaryFile/XlsFile/Format/Logic/BaseObject.h"
 #include "../Base/SmartPtr.h"
+#include "../../OdfFile/Common/logging.h"
 
 namespace NSBinPptxRW
 {
@@ -41,42 +41,39 @@ namespace NSBinPptxRW
 	class CBinaryFileReader;
 	class CXmlWriter;
 }
+
 namespace OOX
 {
-#define WritingElement_AdditionConstructors(Class) \
-	explicit Class(XmlUtils::CXmlNode& oNode)\
-	{\
-	m_pMainDocument = NULL;\
-	fromXML( oNode );\
-}\
-	explicit Class(const XmlUtils::CXmlNode& node)\
-	{\
-	m_pMainDocument = NULL;\
-	fromXML(const_cast<XmlUtils::CXmlNode&> (node));\
-}\
-	Class(XmlUtils::CXmlLiteReader& oReader)\
-	{\
-	m_pMainDocument = NULL;\
-	fromXML( oReader );\
-}\
+#define AssignPtrXmlContentNoMain(Ptr, Class, Content) \
+{\
+	Ptr = new Class();\
+	Class *pClass = dynamic_cast<Class*>(Ptr);\
+	*pClass = Content;\
+}
+#define AssignPtrXmlContent(Ptr, Class, Content) \
+{\
+	Ptr = new Class(WritingElement::m_pMainDocument);\
+	Class *pClass = dynamic_cast<Class*>(Ptr);\
+	*pClass = Content;\
+}
+
+#define WritingElement_AdditionMethods(Class) \
 	const Class& operator =(const XmlUtils::CXmlNode &oNode)\
 	{\
-	m_pMainDocument = NULL;\
 	fromXML( (XmlUtils::CXmlNode &)oNode );\
 	return *this;\
 }\
 	const Class& operator =(const XmlUtils::CXmlLiteReader& oReader)\
 	{\
-	m_pMainDocument = NULL;\
 	fromXML( (XmlUtils::CXmlLiteReader&)oReader );\
 	return *this;\
 }\
-	const Class& operator =(XmlUtils::CXmlNode& node)				\
-	{																\
+	const Class& operator =(XmlUtils::CXmlNode& node)\
+	{\
 	m_pMainDocument = NULL;\
-	fromXML(node);												\
-	return *this;												\
-}																\
+	fromXML(node);\
+	return *this;\
+}\
 
 #define WritingElement_XlsbConstructors(Class) \
 	explicit Class(XLS::BaseObjectPtr& obj)\
@@ -119,7 +116,15 @@ namespace OOX
 #define WritingElement_WriteNode_2( oValue ) \
 	if ( oValue.IsInit() )\
 	sResult += oValue->toXML();
-	//-----------------------------------------------------------------------------------------------
+
+#define WritingElement_WriteNode_3( sStartNodeString, oValue ) \
+	if ( oValue.IsInit() )\
+	{\
+	sResult += sStartNodeString;\
+	sResult += oValue->ToString(false);\
+	sResult += _T("/>");\
+}
+//-----------------------------------------------------------------------------------------------
 #define WritingElement_ReadAttributes_ReadSingle2(Reader, AttrName, Value) \
 	if ( Reader.GetAttributesCount() > 0 ){\
 	if ( Reader.MoveToFirstAttribute() ){\
@@ -184,7 +189,11 @@ namespace OOX
 	{\
 	Value = Reader.GetText();\
 }
-
+#define WritingElement_ReadAttributesA_Read_ifChar(Reader, AttrName, Value) \
+	if ( strcmp(AttrName, wsName) == 0 )\
+	{\
+	Value = Reader.GetTextA();\
+}
 #define WritingElement_ReadAttributes_Read_else_if(Reader, AttrName, Value) \
 	else if ( AttrName == wsName )\
 	Value = Reader.GetText();
@@ -192,6 +201,10 @@ namespace OOX
 #define WritingElement_ReadAttributes_Read_else_ifChar(Reader, AttrName, Value) \
 	else if ( strcmp(AttrName, wsName) == 0 )\
 	Value = Reader.GetText();
+
+#define WritingElement_ReadAttributesA_Read_else_ifChar(Reader, AttrName, Value) \
+	else if ( strcmp(AttrName, wsName) == 0 )\
+	Value = Reader.GetTextA();
 
 #define WritingElement_ReadAttributes_ReadSingle(Reader, AttrName, Value) \
 	if ( AttrName == wsName )\
@@ -501,6 +514,7 @@ namespace OOX
 		et_graphicFrame,	// <...:graphicFrame>
 		et_pic,				// <...:pic>
 		et_cxnSp,			// <...:cxnSp>
+		et_oleobject,
 		
 		et_p_cNvPicPr,        // <p:cNvPicPr>
 		et_p_cNvPr,            // <p:cNvPr>
@@ -791,6 +805,7 @@ namespace OOX
 		et_w_bdo, // <w:bdo>
 		et_w_binData, // <w:binData>
 		et_w_bgPict,  // <w:bgPict>
+		et_w_docSuppData,  // <w:docSuppData> 
 		et_w_bookmarkEnd, // <w:bookmarkEnd>
 		et_w_bookmarkStart, // <w:bookmarkStart>
 		et_w_br, // <w:br>
@@ -1169,6 +1184,10 @@ namespace OOX
 		et_ct_alternatecontent,
 		et_ct_alternatecontentchoice,
 		et_ct_alternatecontentfallback,
+		et_ct_CategoryFilterExceptions,
+		et_ct_CategoryFilterException,
+		et_ct_SeriesDataLabelsRange,
+		et_ct_SeriesFiltering,
 
 		et_ct_TickMarks,
 		et_ct_Gridlines,
@@ -1222,6 +1241,7 @@ namespace OOX
 		et_x_WorkbookPr,
 		et_x_WorkbookProtection,
 		et_x_WorkbookView, // <workbookView>
+		et_x_FileSharing,
 		et_x_DefinedNames, // <definedNames>
 		et_x_DefinedName, // <definedName>
 		et_x_Sheets, // <sheets>
@@ -1331,6 +1351,7 @@ namespace OOX
 		et_x_TableColumns,
 		et_x_TableColumn,
 		et_x_TableStyleInfo,
+		et_x_xmlColumnPr,
 		et_x_AltTextTable,
 		et_x_SortState,
 		et_x_SortCondition,
@@ -1371,6 +1392,7 @@ namespace OOX
 		et_x_ExternalSheetData,
 		et_x_ExternalRow,
 		et_x_ExternalCell,
+		et_x_AlternateUrls,
 		et_x_OleLink,
 		et_x_OleItems,
 		et_x_OleItem,
@@ -1397,6 +1419,9 @@ namespace OOX
 		et_x_FormControlPr,
 		et_x_ListItems,
 		et_x_ListItem,
+
+		et_x_UserProtectedRange,
+		et_x_UserProtectedRanges,
 
 		et_x_WorkbookPivotCache,
 		et_x_WorkbookPivotCaches,
@@ -1490,7 +1515,139 @@ namespace OOX
 		et_x_SparklineGroup,
 		et_x_Sparklines,
 		et_x_Sparkline,
-		et_x_Style2003
+
+		et_x_Style2003,
+
+		et_x_TimelineCachePivotTable,
+		et_x_TimelineRange,
+		et_x_TimelineCachePivotTables,
+		et_x_Timeline,
+		et_x_Timelines,
+		et_x_TimelineCacheDefinition,
+		et_x_TimelinePivotFilter,
+		et_x_TimelineState,
+		et_x_TimelineRefs,
+		et_x_TimelineRef,
+		et_x_TimelineCacheRefs,
+		et_x_TimelineCacheRef,	
+		et_x_Timeslicer,
+		et_x_TimelineStyles,
+		et_x_TimelineStyle,
+		et_x_TimelineStyleElement,
+
+		et_x_Metadata,
+		et_x_FutureMetadata,
+		et_x_FutureMetadataBlock,
+		et_x_MetadataType,
+		et_x_MetadataTypes,
+		et_x_MetadataBlocks,
+		et_x_MetadataBlock,
+		et_x_MetadataRecord,
+		et_x_MetadataString,
+		et_x_MetadataStrings,
+		et_x_MdxMetadata,
+		et_x_Mdx,
+		et_x_MdxTuple,
+		et_x_MetadataStringIndex,
+		et_x_MdxSet,
+		et_x_MdxMemeberProp,
+		et_x_MdxKPI,
+		et_x_DynamicArrayProperties,
+		et_x_RichValueBlock,
+		et_x_MapInfo,
+		et_x_Schema,
+		et_x_Map,
+		et_x_DataBinding,
+		et_x_SingleXmlCells,
+		et_x_SingleXmlCell,
+		et_x_xmlCellPr,
+		et_x_xmlPr,
+
+		et_x_RichValueData,
+		et_x_RichValue,
+		et_x_RichValueFallback,
+		et_x_RichValueStructures,
+		et_x_RichValueStructure,
+		et_x_RichValueKey,
+		et_x_RichValueTypesInfo,
+		et_x_RichValueTypes,
+		et_x_RichValueType,
+		et_x_RichValueGlobalType,
+		et_x_RichValueTypeKeyFlags,
+		et_x_RichValueTypeReservedKey,
+		et_x_RichValueTypeReservedKeyFlag,
+
+		et_dr_Masters,
+		et_dr_Pages,
+		et_dr_DocumentSettings,
+		et_dr_ColorEntry,
+		et_dr_Colors,
+		et_dr_FaceName,
+		et_dr_FaceNames,
+		et_dr_StyleSheet,
+		et_dr_StyleSheets,
+		et_dr_EventItem,
+		et_dr_EventList,
+		et_dr_DocumentSheet,
+		et_dr_HeaderFooter,
+		et_dr_Shapes,
+		et_dr_Shape,
+		et_dr_Cell,
+		et_dr_Trigger,
+		et_dr_Section,
+		et_dr_Row,
+		et_dr_Text,
+		et_dr_text_cp,
+		et_dr_text_pp,
+		et_dr_text_tp,
+		et_dr_text_fld,
+		et_dr_text_text,
+		et_dr_ForeignData,
+		et_dr_Rel,
+		et_dr_RefBy,
+		et_dr_Connects,
+		et_dr_Connect,
+		et_dr_Page,
+		et_dr_Master,
+		et_dr_PageSheet,
+		et_dr_Icon,
+		et_dr_DataConnections,
+		et_dr_DataConnection,
+		et_dr_DataRecordSets,
+		et_dr_DataRecordSet,
+		et_dr_DataColumns,
+		et_dr_DataColumn,
+		et_dr_PrimaryKey,
+		et_dr_RowKeyValue,
+		et_dr_RowMap,
+		et_dr_RefreshConflict,
+		et_dr_AutoLinkComparison,
+		et_dr_ADOData,
+		et_dr_Windows,
+		et_dr_Window,
+		et_dr_SnapAngles,
+		et_dr_SnapAngle,
+		et_dr_PublishSettings,
+		et_dr_PublishedPage,
+		et_dr_RefreshableData,
+		et_dr_Solutions,
+		et_dr_Solution,
+		et_dr_Issues,
+		et_dr_Issue,
+		et_dr_IssueTarget,
+		et_dr_RuleInfo,
+		et_dr_Rule,
+		et_dr_RuleSet,
+		et_dr_RuleSets,
+		et_dr_CRuleFormula,
+		et_dr_RuleSetFlags,
+		et_dr_ValidationProperties,
+		et_dr_Comments,
+		et_dr_CommentList,
+		et_dr_AuthorList,
+		et_dr_CommentEntry,
+		et_dr_AuthorEntry
+
 	};
 
 	class File;
@@ -1502,12 +1659,13 @@ namespace OOX
 		virtual ~Document();
 
 		std::wstring m_sDocumentPath;
+		std::wstring m_sTempPath;
 		std::map<std::wstring, NSCommon::smart_ptr<OOX::File>> m_mapContent;
 	};
 
 	class WritingElement
 	{
-	public:
+	public:		
 		WritingElement(OOX::Document *pMain = NULL);
 		virtual ~WritingElement();
 

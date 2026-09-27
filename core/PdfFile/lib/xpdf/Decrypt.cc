@@ -17,6 +17,14 @@
 #include "gmempp.h"
 #include "Decrypt.h"
 
+#ifdef USE_OPENSSL_HASH
+#include "../../../Common/3dParty/openssl/openssl/crypto/sha/sha512.c"
+#include "../../../Common/3dParty/openssl/openssl/crypto/mem_clr.c"
+#else
+#define SHA384 sha384
+#define SHA512 sha512
+#endif
+
 static void aes256KeyExpansion(DecryptAES256State *s,
 			       Guchar *objKey, int objKeyLen);
 static void aes256DecryptBlock(DecryptAES256State *s, Guchar *in, GBool last);
@@ -185,8 +193,16 @@ GBool Decrypt::makeFileKey(int encVersion, int encRevision, int keyLength,
       delete userPassword2;
     }
 
+	// try using the supplied owner password
+	if (ownerPassword && makeFileKey2(encVersion, encRevision, keyLength, ownerKey, userKey,
+			permissions, fileID, ownerPassword, fileKey,
+			encryptMetadata)) {
+		*ownerPasswordOk = gTrue;
+		return gTrue;
+	}
+
     // try using the supplied user password
-    return makeFileKey2(encVersion, encRevision, keyLength, ownerKey, userKey,
+	return makeFileKey2(encVersion, encRevision, keyLength, ownerKey, userKey,
 			permissions, fileID, userPassword, fileKey,
 			encryptMetadata);
   }
@@ -230,11 +246,11 @@ void Decrypt::r6Hash(Guchar *key, int keyLen, const char *pwd, int pwdLen,
       keyLen = 32;
       break;
     case 1:
-      sha384(key1, n, key);
+      SHA384(key1, n, key);
       keyLen = 48;
       break;
     case 2:
-      sha512(key1, n, key);
+      SHA512(key1, n, key);
       keyLen = 64;
       break;
     }

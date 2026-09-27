@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -42,7 +42,7 @@ CDjVuFile::~CDjVuFile()
 		delete m_pImplementation;
 }
 bool CDjVuFile::LoadFromFile(const std::wstring& file, const std::wstring& options,
-                                const std::wstring& owner_password, const std::wstring& user_password)
+							 const wchar_t* owner_password, const wchar_t* user_password)
 {
     if (m_pImplementation)
         return m_pImplementation->LoadFromFile(file, options);
@@ -50,7 +50,7 @@ bool CDjVuFile::LoadFromFile(const std::wstring& file, const std::wstring& optio
     return false;
 }
 bool CDjVuFile::LoadFromMemory(BYTE* data, DWORD length, const std::wstring& options,
-                               const std::wstring& owner_password, const std::wstring& user_password)
+							   const wchar_t* owner_password, const wchar_t* user_password)
 {
     if (m_pImplementation)
         return m_pImplementation->LoadFromMemory(data, length, options);
@@ -93,7 +93,7 @@ void CDjVuFile::GetPageInfo(int nPageIndex, double* pdWidth, double* pdHeight, d
 	if (m_pImplementation)
 		m_pImplementation->GetPageInfo(nPageIndex, pdWidth, pdHeight, pdDpiX, pdDpiY);
 }
-void CDjVuFile::DrawPageOnRenderer(IRenderer* pRenderer, int nPageIndex, bool* pBreak)
+void CDjVuFile::DrawPageOnRenderer(IRenderer* pRenderer, int nPageIndex, bool* pBreak, COfficeDrawingPageParams* pParams)
 {
 	if (m_pImplementation)
 		m_pImplementation->DrawPageOnRenderer(pRenderer, nPageIndex, pBreak);
@@ -120,4 +120,16 @@ BYTE* CDjVuFile::GetLinks (int nPageIndex)
     if (m_pImplementation)
         return m_pImplementation->GetPageLinks(nPageIndex);
     return NULL;
+}
+
+unsigned char* CDjVuFile::ConvertToPixels(
+	int nPageIndex,
+	int nRasterW, int nRasterH, bool bIsFlip,
+	NSFonts::IFontManager* pFonts,
+	int nBackgroundColor, bool bIsDarkMode,
+	int nBackgroundOpacity)
+{
+	if (m_pImplementation)
+		return m_pImplementation->ConvertToPixels(nPageIndex, nRasterW, nRasterH, !bIsFlip);
+	return NULL;
 }

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -130,7 +130,9 @@ namespace PdfWriter
 			pStream->WriteReal(dW);
 			pStream->WriteStr(" 0 0 ");
 			pStream->WriteReal(dH);
-			pStream->WriteStr(" 0 0 cm\12");
+			pStream->WriteStr(" 0 ");
+			pStream->WriteReal(dH);
+			pStream->WriteStr(" cm\12");
 			pStream->WriteStr("/X1 Do\12");
 			pStream->WriteStr("Q\12");
 
@@ -138,7 +140,7 @@ namespace PdfWriter
 			pStream->WriteStr(" 0 0 ");
 			pStream->WriteReal(-dH);
 			pStream->WriteStr(" 0 ");
-			pStream->WriteReal(2 * dH);
+			pStream->WriteReal(dH);
 			pStream->WriteStr(" cm\12");
 			pStream->WriteStr("/X1 Do\12");
 		}
@@ -152,7 +154,9 @@ namespace PdfWriter
 			pStream->WriteReal(dW);
 			pStream->WriteStr(" 0 0 ");
 			pStream->WriteReal(dH);
-			pStream->WriteStr(" 0 0 cm\12");
+			pStream->WriteStr(" 0 ");
+			pStream->WriteReal(dH);
+			pStream->WriteStr(" cm\12");
 			pStream->WriteStr("/X1 Do\12");
 			pStream->WriteStr("Q\12");
 
@@ -161,7 +165,7 @@ namespace PdfWriter
 			pStream->WriteStr(" 0 0 ");
 			pStream->WriteReal(-dH);
 			pStream->WriteStr(" 0 ");
-			pStream->WriteReal(2 * dH);
+			pStream->WriteReal(dH);
 			pStream->WriteStr(" cm\12");
 			pStream->WriteStr("/X1 Do\12");
 			pStream->WriteStr("Q\12");
@@ -172,7 +176,9 @@ namespace PdfWriter
 			pStream->WriteReal(dH);
 			pStream->WriteStr(" ");
 			pStream->WriteReal(2 * dW);
-			pStream->WriteStr(" 0 cm\12");
+			pStream->WriteStr(" ");
+			pStream->WriteReal(dH);
+			pStream->WriteStr(" cm\12");
 			pStream->WriteStr("/X1 Do\12");
 			pStream->WriteStr("Q\12");
 
@@ -182,7 +188,7 @@ namespace PdfWriter
 			pStream->WriteStr(" ");
 			pStream->WriteReal(2 * dW);
 			pStream->WriteStr(" ");
-			pStream->WriteReal(2 * dH);
+			pStream->WriteReal(dH);
 			pStream->WriteStr(" cm\12");
 			pStream->WriteStr("/X1 Do\12");
 		}

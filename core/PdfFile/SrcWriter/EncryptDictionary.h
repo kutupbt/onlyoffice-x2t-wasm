@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -33,8 +33,6 @@
 #define _PDF_WRITER_SRC_ENCRYPT_DICTIONARY_H
 
 #include "Objects.h"
-
-#include "../../DesktopEditor/xmlsec/src/include/Certificate.h"
 
 namespace PdfWriter
 {
@@ -61,7 +59,7 @@ namespace PdfWriter
 		{
 			return m_pEncrypt;
 		}
-		void UpdateKey(int nCryptAlgorithm);
+		bool UpdateKey(int nCryptAlgorithm);
 	private:
 		CEncrypt* m_pEncrypt;
 		std::string PadOrTrancatePassword(const std::wstring & wsPassword);
@@ -72,25 +70,26 @@ namespace PdfWriter
 	public:
 		CSignatureDict(CXref* pXref);
 		~CSignatureDict();
-		EDictType GetDictType() const
+		EDictType GetDictType() const override
 		{
 			return dict_type_SIGNATURE;
 		}
 
-		void SetByteRange(int nLen1, int nOffset2);
-		void ByteRangeOffset(int nBegin, int nEnd);
+		void WriteToStream(CStream* pStream, CEncrypt* pEncrypt) override;
 		void WriteToStream(CStream* pStream, int nFileEnd);
-		void SetCert(ICertificate* pCert);
+		bool FinalizeSignature(CStream* pStream, BYTE* pSignedData, DWORD dwDataLength);
 
+		void SetContentsSize(unsigned int nSize);
 		void SetName(const std::string& sName);
+		void SetLocation(const std::string& sLocation);
 		void SetReason(const std::string& sReason);
 		void SetContact(const std::string& sContacts);
 		void SetDate();
 	private:
-		ICertificate* m_pCertificate;
+		unsigned int m_nContentsSize; // Размер Contents
 
-		int m_nLen1;    // Длина  первого интервала сигнатуры
-		int m_nOffset2; // Начало второго интервала сигнатуры
+		int m_nLen1;    // Длина  первого интервала
+		int m_nOffset2; // Начало второго интервала
 
 		int m_nByteRangeBegin; // Смещение начала массива ByteRange
 		int m_nByteRangeEnd;   // Смещение конца  массива ByteRange

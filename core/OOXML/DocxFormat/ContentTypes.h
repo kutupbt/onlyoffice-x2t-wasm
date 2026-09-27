@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -30,15 +30,12 @@
  *
  */
 #pragma once
-#ifndef OOX_CONTENT_TYPES_INCLUDE_H_
-#define OOX_CONTENT_TYPES_INCLUDE_H_
 
 #include "../SystemUtility/SystemUtility.h"
 
-#include "FileType.h"
 #include "WritingElement.h"
-#include <boost/unordered_map.hpp>
-
+#include <unordered_map>
+#include <map>
 
 namespace OOX
 {
@@ -58,7 +55,7 @@ namespace OOX
 		class CDefault : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CDefault)
+			WritingElement_AdditionMethods(CDefault)
 			CDefault();
 			CDefault(const std::wstring& sExtension);
 			virtual ~CDefault();
@@ -79,33 +76,28 @@ namespace OOX
 		class COverride : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(COverride)
+			WritingElement_AdditionMethods(COverride)
 			COverride();
 			COverride(const std::wstring& sType, const CPath& oPath);
 			virtual ~COverride();
 
-		public:
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
 			virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 
-		private:
-			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
-		public:
 			const std::wstring type() const;
 			const OOX::CPath filename() const;
 
-		private:
-            std::wstring	m_sType;
+			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
+          
+			std::wstring	m_sType;
 			OOX::CPath		m_oPart;
-
 		};
 	} // namespace ContentTypes
 
-    static const CPath c_oContentTypeFileName (_T("[Content_Types].xml"));
+    static const CPath c_oContentTypeFileName (L"[Content_Types].xml");
 
 	class CContentTypes
 	{
@@ -130,10 +122,10 @@ namespace OOX
 		void AddOverride(const std::wstring& sType, std::wstring sPath);
 
 	public:
-        boost::unordered_map<std::wstring, ContentTypes::CDefault>	m_mapDefaults;
-        boost::unordered_map<std::wstring, ContentTypes::COverride>	m_mapOverrides;
+        std::unordered_map<std::wstring, ContentTypes::CDefault> m_mapDefaults;
+        std::unordered_map<std::wstring, smart_ptr<ContentTypes::COverride>> m_mapOverrides;
+		
+		std::multimap<std::wstring, smart_ptr<ContentTypes::COverride>> m_mapOverridesByType;
 	};
 
 } // namespace OOX
-
-#endif // OOX_CONTENT_TYPES_INCLUDE_H_

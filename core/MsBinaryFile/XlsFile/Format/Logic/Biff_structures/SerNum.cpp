@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -62,12 +62,35 @@ BiffStructurePtr SerNum::clone()
 void SerNum::load(CFRecord& record)
 {
 	record >> xnum;
+	// Excel limitations
+	constexpr double ExcelMinAbs = 2.229e-308;
+	constexpr double ExcelMax = 9.99999999999999e+307;
+
+	if(std::abs(xnum) < ExcelMinAbs && xnum != 0.0)
+		xnum = (xnum > 0) ? ExcelMinAbs : -ExcelMinAbs;
+	else if(xnum > ExcelMax)
+		xnum = ExcelMax;
+	else if(xnum < -ExcelMax)
+		xnum = -ExcelMax;
 }
 
+void SerNum::save(CFRecord& record)
+{
+    char serType;
+    if (record.getGlobalWorkbookInfo()->Version < 0x0800)
+        serType = 1;
+    else
+        serType = 0;
+
+    record << serType << xnum;
+}
 
 const std::wstring SerNum::toString() const
 {
-	return STR::double2str(xnum);
+	auto tempNum = STR::double2str(xnum);
+	if(tempNum == L"-nan")
+		tempNum = L"#NUM!";
+	return tempNum;
 }
 
 

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -36,8 +36,22 @@
 
 namespace PdfWriter
 {
-	struct TrueTypeTable;
-	struct TrueTypeCmap;
+	struct TrueTypeTable
+	{
+		unsigned int unTag;
+		unsigned int unChecksum;
+		int          nOffset;
+		int          nOrigOffset;
+		int          nLen;
+	};
+	struct TrueTypeCmap
+	{
+		int nPlatform;
+		int nEncoding;
+		int nOffset;
+		int nLen;
+		int nFormat;
+	};
 	//----------------------------------------------------------------------------------------
 	// CFontFileBase
 	//----------------------------------------------------------------------------------------
@@ -86,12 +100,16 @@ namespace PdfWriter
 		// таблицу 'cmap'.
 		void WriteTTF(CStream* pOutputStream, char *sName = NULL, unsigned short *pCodeToGID = NULL, unsigned int unCodesCount = 0, unsigned char *pUseGlyfs = NULL, long lGlyfsCount = 0);
 		void WriteOTF(CStream* pOutputStream, char *sName = NULL, unsigned short *pCodeToGID = NULL);
+		void WriteCIDFontType0C(CStream* pOutputStream, unsigned short* pCodeToGID = NULL, unsigned int unCodesCount = 0);
 
 		int  GetAscent();
 		int  GetDescent();
 		int  GetCapHeight();
 		int* GetBBox();
 		int  GetWeight();
+		bool GetOpenTypeCFF();
+
+		void SetName(const std::string& sName);
 
 	private:
 
@@ -118,6 +136,7 @@ namespace PdfWriter
 		int            m_nDescent;
 		int            m_nCapHeight;
 		int            m_nWeight;
+		std::string    m_sName;
 					   
 		bool           m_bSuccess;
 	};

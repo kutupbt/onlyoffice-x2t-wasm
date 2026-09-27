@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -29,8 +29,6 @@
  * terms at http://creativecommons.org/licenses/by-sa/4.0/legalcode
  *
  */
-#include "../../../../Common/MS-LCID.h"
-
 #include "GlobalsSubstream.h"
 #include "AnyObject.h"
 
@@ -107,7 +105,7 @@
 //#include "Biff_records/XCT.h"
 //#include "Biff_records/CRN.h"
 
-#include "Biff_structures/ODRAW/OfficeArtDgContainer.h"
+#include "Biff_structures/ODRAW/SimpleOfficeArtContainers.h"
 
 namespace XLS
 {;
@@ -172,7 +170,13 @@ const bool GlobalsSubstream::loadContent(BinProcessor& proc)
 	{
 		CFRecordType::TypeId type = proc.getNextRecordType();
 		
-		if (type == rt_NONE) break;
+		if (type == rt_NONE)
+		{
+			proc.SkipRecord();
+			type = proc.getNextRecordType();
+			if (type == rt_NONE)
+				break;
+		}
 		if (type == rt_EOF) 
 		{
 			proc.mandatory<EOF_T>();
@@ -282,7 +286,14 @@ const bool GlobalsSubstream::loadContent(BinProcessor& proc)
 					elements_.pop_back();
 				}
 			}break;
-			case rt_FileSharing:		proc.optional<FileSharing>();	break;
+			case rt_FileSharing:
+			{
+				if (proc.optional<FileSharing>())
+				{
+					m_FileSharing = elements_.back();
+					elements_.pop_back();
+				}
+			}break;
 			case rt_CodePage:
 			{
 				if (proc.optional<CodePage>())
@@ -614,7 +625,7 @@ const bool GlobalsSubstream::loadContent(BinProcessor& proc)
 	}
 	if (global_info_->CodePage == 0 && global_info_->lcid_user > 0)
 	{
-		global_info_->CodePage = msLCID2DefCodePage(global_info_->lcid_user);
+		global_info_->CodePage = global_info_->lcid_converter.get_codepage(global_info_->lcid_user);
 	}
 	
 	UpdateXFC();
@@ -623,6 +634,116 @@ const bool GlobalsSubstream::loadContent(BinProcessor& proc)
 	UpdateDefineNames();
 	UpdateExternalDefineNames();
 
+	return true;
+}
+
+const bool GlobalsSubstream::saveContent(BinProcessor& proc)
+{
+	auto globalInfoPtr = proc.getGlobalWorkbookInfo();
+	{
+		BOF bof;
+		bof.dt= 0x0005;
+		proc.mandatory(bof);
+	}
+	if(m_WriteProtect != nullptr)
+		proc.mandatory(*m_WriteProtect);
+	if(m_Template != nullptr)
+		proc.mandatory(*m_Template);
+	proc.mandatory<INTERFACE_T>();
+	proc.mandatory<WriteAccess>();
+	if(m_FileSharing != nullptr)
+		proc.mandatory(*m_FileSharing);
+	proc.mandatory<CodePage>();
+	proc.mandatory<DSF>();
+	proc.mandatory<Excel9File>();
+	if(m_RRTabId != nullptr)
+		proc.mandatory(*m_RRTabId);
+	else
+		proc.mandatory<RRTabId>();
+	if(globalInfoPtr->bMacrosExist || globalInfoPtr->bVbaProjectExist)
+	{
+		proc.mandatory<ObProj>();
+		if(!globalInfoPtr->bMacrosExist)
+			proc.mandatory<ObNoMacros>();
+	}
+	if(m_CodeName != nullptr)
+		proc.mandatory(*m_CodeName);
+	if(m_FNGROUPS != nullptr)
+		proc.mandatory(*m_FNGROUPS);
+	for(auto i : m_arLBL)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	if(m_PROTECTION != nullptr)
+		proc.mandatory(*m_PROTECTION);
+	else
+		proc.mandatory<PROTECTION>();
+	if(m_arWindow1.empty())
+		proc.mandatory<Window1>();
+	else
+		{
+			for(auto i: m_arWindow1)
+				if(i!= nullptr)
+					proc.mandatory(*i);
+		}
+	proc.mandatory<Backup>();
+	proc.mandatory<HideObj>();
+	if(m_Date1904 != nullptr)
+		proc.mandatory(*m_Date1904);
+	else
+		proc.mandatory<Date1904>();
+	if(m_CalcPrecision != nullptr)
+		proc.mandatory(*m_CalcPrecision);
+	else
+		proc.mandatory<CalcPrecision>();
+	proc.mandatory<RefreshAll>();
+	proc.mandatory<BookBool>();
+	if(m_Formating != nullptr)
+		proc.mandatory(*m_Formating);
+	else
+		proc.mandatory<FORMATTING>();
+	//if(globalInfoPtr && !globalInfoPtr->arPIVOTCACHEDEFINITION.empty())
+	//{
+		//for(auto i : globalInfoPtr->arPIVOTCACHEDEFINITION)
+			//proc.mandatory(*i);
+	//}
+	for(auto i : m_arPIVOTCACHEDEFINITION)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	for(auto i : m_arUserBView)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	proc.mandatory<UsesELFs>();
+	if(m_arBUNDLESHEET.empty())
+		proc.mandatory<BUNDLESHEET>();
+	else
+		for(auto i : m_arBUNDLESHEET)
+			if(i != nullptr)
+				proc.mandatory(*i);
+	if(m_METADATA != nullptr)
+		proc.mandatory(*m_METADATA);
+	if(m_MTRSettings != nullptr)
+		proc.mandatory(*m_MTRSettings);
+	if(m_Country != nullptr)
+		proc.mandatory(*m_Country);
+	else
+		proc.mandatory<Country>();
+	for(auto i: m_arSUPBOOK)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	if(m_SHAREDSTRINGS != nullptr)
+		proc.mandatory(*m_SHAREDSTRINGS);
+	if(m_ExtSST != nullptr)
+		proc.mandatory(*m_ExtSST);
+	//else
+		//proc.mandatory<ExtSST>();
+	if(m_BookExt != nullptr)
+		proc.mandatory(*m_BookExt);
+	for(auto i : m_arDConn)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	if(m_THEME != nullptr)
+		proc.mandatory(*m_THEME);
+	proc.mandatory<EOF_T>();
 	return true;
 }
 void GlobalsSubstream::UpdateXFC()
@@ -652,7 +773,7 @@ void GlobalsSubstream::LoadHFPicture()
 					hf = dynamic_cast<HFPicture*>(m_arHFPicture[j].get());
 					record.appendRawData(hf->recordDrawingGroup);
 				}
-				ODRAW::OfficeArtDgContainerPtr rgDrawing = ODRAW::OfficeArtDgContainerPtr(new ODRAW::OfficeArtDgContainer(ODRAW::OfficeArtRecord::CA_HF));
+				ODRAW::OfficeArtDggContainerPtr rgDrawing = ODRAW::OfficeArtDggContainerPtr(new ODRAW::OfficeArtDggContainer(ODRAW::OfficeArtRecord::CA_HF));
 				rgDrawing->loadFields(record);
 				m_arHFPictureDrawing.push_back(rgDrawing);
 				current_size_hf = 0;
@@ -669,7 +790,15 @@ void GlobalsSubstream::LoadHFPicture()
 			HFPicture* hf = dynamic_cast<HFPicture*>(m_arHFPicture[j].get());
 			record.appendRawData(hf->recordDrawingGroup);
 		}
-		ODRAW::OfficeArtDgContainerPtr rgDrawing = ODRAW::OfficeArtDgContainerPtr(new ODRAW::OfficeArtDgContainer(ODRAW::OfficeArtRecord::CA_HF));
+		ODRAW::OfficeArtRecordHeader rh_test;
+		record >> rh_test;
+		record.RollRdPtrBack(8);//sizeof(OfficeArtRecordHeader)
+
+		if ((rh_test.recType & 0xF000) != 0xF000)
+		{
+			return;
+		}
+		ODRAW::OfficeArtDggContainerPtr rgDrawing = ODRAW::OfficeArtDggContainerPtr(new ODRAW::OfficeArtDggContainer(ODRAW::OfficeArtRecord::CA_HF));
 		rgDrawing->loadFields(record);
 		m_arHFPictureDrawing.push_back(rgDrawing);
 	}
@@ -693,6 +822,8 @@ void GlobalsSubstream::UpdateXti()
 		{
 			XTI* xti = dynamic_cast<XTI*>(extern_sheet->rgXTI[i].get());
 			if (!xti) continue;
+
+			if (xti->iSupBook >= m_arSUPBOOK.size()) continue;
 
 			SUPBOOK* index_book = dynamic_cast<SUPBOOK*>(m_arSUPBOOK[xti->iSupBook].get());
 			if (!index_book) continue;
@@ -721,7 +852,7 @@ void GlobalsSubstream::UpdateXti()
 					else if (xti->itabFirst < global_info_->sheets_info.size())
 					{
 						strRange = XMLSTUFF::name2sheet_name(global_info_->sheets_info[xti->itabFirst].name, L"");
-						if (xti->itabFirst != xti->itabLast)
+						if (xti->itabFirst != xti->itabLast && global_info_->sheets_info.size() > xti->itabLast)
 						{
 							strRange += std::wstring(L":") + XMLSTUFF::name2sheet_name(global_info_->sheets_info[xti->itabLast].name, L"");
 						}
@@ -792,8 +923,8 @@ void GlobalsSubstream::UpdateDefineNames()
 			else
 			{
 				std::vector<std::wstring> ar(ind_sheet + 1);
-			
-				ar[ind_sheet] = value;
+                if(ar.size() > ind_sheet)
+                    ar[ind_sheet] = value;
 				//ar.push_back(value);
 
 				global_info_->mapDefineNames.insert(std::make_pair(name, ar));
@@ -804,8 +935,11 @@ void GlobalsSubstream::UpdateDefineNames()
 		{
 			if (lbl->fFunc)
 			{
-				if (name == L"FORMULA") //"general_formulas.xls"
-						name = L"_xludf." + name;
+				if (name != L"CHISQDIST" &&
+					name != L"CHISQINV" &&
+					name != L"CURRENT" &&
+					name != L"EFFECTIVE")
+				name = L"_xludf." + name;
 			}
 		}
 		global_info_->arDefineNames.push_back(name);// для имен функций - todooo ... не все функции корректны !! БДИ !!
@@ -864,9 +998,25 @@ int GlobalsSubstream::serialize_format(std::wostream & _stream)
 {
 	BookExt *book_ext = dynamic_cast<BookExt*>(m_BookExt.get());
 	CodeName *code_name = dynamic_cast<CodeName*>(m_CodeName.get());
+	FileSharing *file_sharing = dynamic_cast<FileSharing*>(m_FileSharing.get());
 
 	CP_XML_WRITER(_stream)    
 	{
+		if (file_sharing)
+		{
+			CP_XML_NODE(L"fileSharing")
+			{
+				if (file_sharing->fReadOnlyRec.value())
+				{
+					CP_XML_ATTR(L"readOnlyRecommended", 0 != (*file_sharing->fReadOnlyRec.value()));
+				}
+				if (false == file_sharing->stUNUsername.value().empty())
+				{
+					CP_XML_ATTR(L"userName", file_sharing->stUNUsername.value());
+					CP_XML_ATTR(L"password", file_sharing->wResPass);
+				}
+			}
+		}
 		CP_XML_NODE(L"workbookPr")
 		{
 			if (code_name)
@@ -875,8 +1025,8 @@ int GlobalsSubstream::serialize_format(std::wostream & _stream)
 			}
 			if (book_ext)
 			{
-				CP_XML_ATTR(L"hidePivotFieldList",	book_ext->fHidePivotList);
-				CP_XML_ATTR(L"filterPrivacy",		book_ext->fFilterPrivacy);
+				CP_XML_ATTR(L"hidePivotFieldList", book_ext->fHidePivotList);
+				CP_XML_ATTR(L"filterPrivacy", book_ext->fFilterPrivacy);
 			}
 		}
 	}

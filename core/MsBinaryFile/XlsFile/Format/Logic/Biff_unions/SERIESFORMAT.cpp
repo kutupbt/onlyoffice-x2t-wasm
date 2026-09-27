@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -240,6 +240,45 @@ const bool SERIESFORMAT::loadContent(BinProcessor& proc)
 		if (proc.mandatory<End>()) elements_.pop_back(); //skip
 	}
 
+	return true;
+}
+
+const bool SERIESFORMAT::saveContent(BinProcessor& proc)
+{
+	if(m_Series == nullptr)
+		return false;
+	proc.mandatory(*m_Series);
+	proc.mandatory<Begin>();
+	for(auto i : m_arAI)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	for(auto i : m_arPtSS)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	if(m_SerToCrt != nullptr)
+		proc.mandatory(*m_SerToCrt);
+	if(m_SerParent != nullptr)
+	{
+		proc.mandatory(*m_SerParent);
+		auto castedParent = static_cast<SerParent*>(m_SerParent.get());
+		if(castedParent->m_SerAuxTrend != nullptr)
+			proc.mandatory(*castedParent->m_SerAuxTrend);
+		else if(castedParent->m_SerAuxErrBar != nullptr)
+			proc.mandatory(*castedParent->m_SerAuxErrBar);
+	}
+	for(auto i : m_SeriesEx)
+	{
+		if(i.legendException == nullptr)
+			continue;
+		proc.mandatory(*i.legendException);
+		if(i.attachedLABEL != nullptr)
+		{
+			proc.mandatory<Begin>();
+			proc.mandatory(*i.attachedLABEL);
+			proc.mandatory<End>();
+		}
+	}
+	proc.mandatory<End>();
 	return true;
 }
 

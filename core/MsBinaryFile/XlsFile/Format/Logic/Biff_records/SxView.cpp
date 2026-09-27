@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -72,6 +72,43 @@ void SxView::readFields(CFRecord& record)
 	}
 	int skip = record.getDataSize() - record.getRdPtr();
 	record.skipNunBytes(skip);
+}
+
+void SxView::writeFields(CFRecord& record)
+{
+	auto globInfo = record.getGlobalWorkbookInfo();
+	auto cacheIndex = globInfo->mapPivotCacheIndex.find(iCache);
+	if(cacheIndex != globInfo->mapPivotCacheIndex.end())
+		iCache = cacheIndex->second;
+    unsigned short flags = 0;
+    record << ref << rwFirstHead << rwFirstData << colFirstData << iCache;
+    record.reserveNunBytes(2);
+    record << sxaxis4Data << ipos4Data;
+    record << cDim << cDimRw << cDimCol << cDimPg << cDimData << cRw << cCol;
+
+    SETBIT(flags, 0, fRwGrand)
+    SETBIT(flags, 1, fColGrand)
+    SETBIT(flags, 3, fAutoFormat)
+    SETBIT(flags, 4, fAtrNum)
+    SETBIT(flags, 5, fAtrFnt)
+    SETBIT(flags, 6, fAtrAlc)
+    SETBIT(flags, 7, fAtrBdr)
+    SETBIT(flags, 8, fAtrPat)
+    SETBIT(flags, 9, fAtrProc)
+    record << flags;
+
+    cchTableName = stTable.getSize();
+    cchDataName = stData.getSize();
+    record << itblAutoFmt << cchTableName << cchDataName;
+    if(cchTableName && cchTableName <= 0x00FF)
+    {
+        record << stTable;
+    }
+    if(cchDataName > 0 && cchDataName <= 0x00FE)
+    {
+        record << stData;
+    }
+
 }
 
 } // namespace XLS

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -123,8 +123,10 @@ public:
 		PointF_T(T x, T y) : X(x), Y(y) { }
 		//~PointF() { }
 		INT Equals(const PointF_T& point) const { return(X==point.X && Y==point.Y); }
+		bool IsZero() const noexcept { return X == 0.0 && Y == 0.0; }
 		PointF_T operator+(const PointF_T& point) const { return PointF_T(X + point.X, Y + point.Y); }
 		PointF_T operator-(const PointF_T& point) const { return PointF_T(X - point.X, Y - point.Y); }
+		PointF_T& operator=(const PointF_T& other) noexcept {X = other.X; Y = other.Y; return *this;}
 public:
 		T X, Y;
 };
@@ -210,6 +212,20 @@ public:
 		void Offset(const PointF_T<T>& point) { Offset(point.X, point.Y); }
 		void Offset(T dx, T dy) { X += dx; Y += dy; }
 
+		inline bool IsPositive() { return Width > 0 && Height > 0; }
+
+		RectF_T& operator=(const RectF_T& other)
+		{
+			if (this == &other)
+				return *this;
+
+			X = other.X;
+			Y = other.Y;
+			Width = other.Width;
+			Height = other.Height;
+
+			return *this;
+		};
 public:
 		T X, Y, Width, Height;
 };

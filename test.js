@@ -1,5 +1,10 @@
 const path = require('node:path');
 const fs = require('node:fs');
+const { exit } = require('node:process');
+const xml2json = require('xml2json');
+
+const WASM = Symbol('WASM');
+const BIN = Symbol('BIN');
 
 const getFormatId = function (ext) {
   // Sheets
@@ -45,9 +50,16 @@ function copyToWasm(nodePath, wasmPath) {
 }
 
 function copyDirToWasm(nodePath, wasmPath) {
-  const dir = fs.readdirSync(nodePath);
-  for (const f of dir) {
-    copyToWasm(path.join(nodePath, f), path.join(wasmPath, f));
+  if (fs.statSync(nodePath).isDirectory()) {
+    try {
+      x2t.FS.mkdir(wasmPath);
+    } catch(e) {}
+    const dir = fs.readdirSync(nodePath);
+    for (const f of dir) {
+      copyDirToWasm(path.join(nodePath, f), path.join(wasmPath, f));
+    }
+  } else {
+    copyToWasm(nodePath, wasmPath);
   }
 }
 
@@ -57,13 +69,14 @@ function copyFromWasm(wasmPath, nodePath) {
 }
 
 function convert(inputPath, outputPath) {
+  initWorkDir();
   const inputName = path.basename(inputPath);
   const outputName = path.basename(outputPath);
   const inputFormat = path.extname(inputPath).substring(1);
   const outputFormat = path.extname(outputPath).substring(1);
   const pdfData = "";
 
-  console.log({inputPath, outputPath, inputName, outputName, inputFormat, outputFormat});
+  console.log(inputPath, '->', outputPath);
   const params =  "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
     + "<TaskQueueDataConvert xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">"
     + "<m_sFontDir>/working/fonts/</m_sFontDir>"
@@ -79,31 +92,111 @@ function convert(inputPath, outputPath) {
     // + "<m_sCsvDelimiterChar>,</m_sCsvDelimiterChar>"
     + "</TaskQueueDataConvert>";
 
-  console.log(params);
   x2t.FS.writeFile('/working/params.xml', params);
   copyToWasm(inputPath, '/working/' + inputName);
 
-  console.log(x2t.FS.readdir('/working/'));
   const result = x2t.ccall("main1", "number", ["string"], ["/working/params.xml"]);
-  console.log(x2t.FS.readdir('/working/'));
-  console.log(result);
+  if (result !== 0) {
+    console.log({inputPath, outputPath, inputName, outputName, inputFormat, outputFormat});
+    console.log('x2t exit code:', result);
+    raise `Converting ${inputPath} -> ${outputPath} failed with exit code ${result}`;
+  }
   copyFromWasm('/working/' + outputName, outputPath);
 }
 
-x2t.onRuntimeInitialized = function() {
-  console.log("on init");
+function callX2T(workdir, x2tkind) {
+  
+}
+
+const TEST_CONVERSIONS = {
+  '.docx': ['.docx', '.odt'],
+  '.xlsx': ['.xlsx', '.ods'],
+  '.pptx': ['.pptx', '.odp'],
+  '.odt': ['.docx', '.odt'],
+  '.ods': ['.xlsx', '.ods'],
+  '.odp': ['.pptx', '.odp'],
+};
+
+function testConvertDir(inputPath) {
+  const paramsXml = fs.readFileSync(path.join(inputPath, 'working', 'params.xml'));
+  const paramsJson = JSON.parse(xml2json.toJson(paramsXml));
+  let outputPath = paramsJson["TaskQueueDataConvert"]["m_sFileTo"];
+
+  const baseName = path.parse(inputPath).base;
+  const ext = path.parse(outputPath).ext;
+
+  initWorkDir();
+  copyDirToWasm(inputPath, '/');
+
+  console.log(inputPath, '->', outputPath);
+  const result = x2t.ccall("main1", "number", ["string"], ["/working/params.xml"]);
+  if (result !== 0) {
+    console.log({inputPath, outputPath, baseName});
+    console.log('x2t exit code:', result);
+    throw `Converting ${inputPath} -> ${outputPath} failed with exit code ${result}`;
+  }
+  const resultPath = path.join('results', baseName + ext);
+  copyFromWasm(outputPath, resultPath);
+}
+
+function testConversions(inputPath) {
+  if (fs.statSync(inputPath).isDirectory() && path.parse(inputPath).base !== 'fonts') {
+    testConvertDir(inputPath);
+    return;
+  }
+  const inputExt = path.extname(inputPath);
+  const inputName = path.basename(inputPath, inputExt);
+  const conversions = TEST_CONVERSIONS[inputExt];
+  if (!conversions) {
+    return;
+  }
+  const binPath = path.join('results', inputName + '.bin');
+  convert(inputPath, binPath)
+  for (const ext of conversions) {
+    convert(binPath, path.join('results', inputName + ext));
+  }
+}
+
+function testFilesInDir(dir) {
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    testConversions(path.join(dir, file));
+  }
+}
+
+function initWorkDir() {
+  rmr(x2t.FS, '/working');
+  rmr(x2t.FS, '/tmp');
+  x2t.FS.mkdir('/tmp');
   x2t.FS.mkdir('/working');
   x2t.FS.mkdir('/working/media');
   x2t.FS.mkdir('/working/fonts');
   x2t.FS.mkdir('/working/themes');
+  copyDirToWasm('tests/fonts', '/working/fonts');
+}
 
-  copyDirToWasm('/tests/fonts', '/working/fonts');
+function rmr(FS, p) {
+  if (!FS.analyzePath(p).exists) {
+    return;
+  }
 
-  // convert('/tests/test1.xlsx', '/results/out1.pdf');
-  convert('/tests/test1.xlsx', '/results/out1.bin');
-  // convert('/results/out1.bin', '/results/out1.xlsx');
-  // convert('/results/out1.bin', '/results/out1.ods');
-  // convert('/tests/test1.xlsx', '/results/out1.csv');
-  // convert('/results/out1.bin', '/results/out1.csv');
-  // convert('/results/out1.bin', '/results/out1.pdf');
+  if (FS.isDir(FS.stat(p).mode)) {
+    FS.readdir(p)
+      .filter(e => e !== '.' && e !== '..')
+      .forEach(e => rmr(FS, path.join(p, e)));
+    if (p !== '/') {
+      FS.rmdir(p);
+    }
+  } else {
+    FS.unlink(p);
+  }
+}
+
+x2t.onRuntimeInitialized = function() {
+  try {
+    testFilesInDir('tests');
+  } catch(e) {
+    console.error(e);
+    exit(1);
+  }
 };

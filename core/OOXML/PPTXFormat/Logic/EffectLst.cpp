@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -50,8 +50,6 @@ namespace PPTX
 		}
 		void EffectLst::fromXML(XmlUtils::CXmlLiteReader& oReader)
 		{
-			ReadAttributes( oReader );
-
 			if ( oReader.IsEmptyNode() )
 				return;
 
@@ -197,6 +195,38 @@ namespace PPTX
 
 			pReader->Seek(_end_rec);
 		}	
+		EffectLst& EffectLst::operator=(const EffectLst& oSrc)
+		{
+			blur = oSrc.blur;
+			fillOverlay = oSrc.fillOverlay;
+			glow = oSrc.glow;
+			innerShdw = oSrc.innerShdw;
+			outerShdw = oSrc.outerShdw;
+			prstShdw = oSrc.prstShdw;
+			reflection = oSrc.reflection;
+			softEdge = oSrc.softEdge;
+
+			return *this;
+		}
+		void EffectLst::Merge(EffectLst& effectLst) const
+		{
+			if (blur.IsInit())
+				effectLst.blur = blur;
+			if (fillOverlay.IsInit())
+				effectLst.fillOverlay = fillOverlay;
+			if (glow.IsInit())
+				effectLst.glow = glow;
+			if (innerShdw.IsInit())
+				effectLst.innerShdw = innerShdw;
+			if (outerShdw.IsInit())
+				effectLst.outerShdw = outerShdw;
+			if (prstShdw.IsInit())
+				effectLst.prstShdw = prstShdw;
+			if (reflection.IsInit())
+				effectLst.reflection = reflection;
+			if (softEdge.IsInit())
+				effectLst.softEdge = softEdge;
+		}
 
 		void EffectLst::FillParentPointersForChilds()
 		{

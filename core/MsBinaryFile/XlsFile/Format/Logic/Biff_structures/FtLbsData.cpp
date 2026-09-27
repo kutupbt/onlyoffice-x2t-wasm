@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -88,12 +88,53 @@ void FtLbsData::load(CFRecord& record, const unsigned short ot)
 			bsels.push_back(bsel);
 		}
 	}
-
-
-
-
 }
 
+void FtLbsData::save(CFRecord& record, const unsigned short ot)
+{
+	{
+		unsigned short ft = 0x0013;
+		record << ft;
+	}
+	unsigned short cbFContinued = 0;
+	record << cbFContinued;
+	auto cbPos = record.getRdPtr();
+
+	fmla.save(record);
+	cLines = rgLines.size();
+
+	unsigned short flags = 0;
+
+	SETBIT(flags, 0, fUseCB)
+	SETBIT(flags, 1, fValidPlex)
+	SETBIT(flags, 2, fValidIds)
+	SETBIT(flags, 3, fNo3d)
+	SETBITS(flags, 4, 5, wListSelType)
+	SETBITS(flags, 8, 15, lct)
+
+	record << cLines << iSel << flags << idEdit;
+
+	if(0x0014 == ot && dropData != nullptr)
+	{
+		dropData->save(record);
+	}
+	if(fValidPlex)
+		for(auto i : rgLines)
+			record << i;
+	if (0 != wListSelType)
+	{
+		for(auto i : bsels)
+			record << i;
+	}
+
+	//size calculation
+	//todo process case with size over limit
+	cbFContinued = record.getRdPtr() - cbPos;
+	record.RollRdPtrBack(cbFContinued+2);
+	record << cbFContinued;
+	record.skipNunBytes(cbFContinued);
+
+}
 
 } // namespace XLS
 

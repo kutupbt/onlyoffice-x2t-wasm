@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -57,6 +57,17 @@ void OfficeArtFRITContainer::loadFields(XLS::CFRecord& record)
 		record >> frit;
 		rgfrit.push_back(frit);
 	}
+}
+
+void OfficeArtFRITContainer::save(XLS::CFRecord& record)
+{
+	rh_own.recVer = 0;
+	rh_own.recInstance = rgfrit.size();
+	rh_own.recType = 0xF118;
+	rh_own.recLen = rh_own.recInstance * 4;
+	record << rh_own;
+	for(auto i : rgfrit)
+			i.save(record);
 }
 
 const unsigned short OfficeArtFRITContainer::GetInstanceToStore()

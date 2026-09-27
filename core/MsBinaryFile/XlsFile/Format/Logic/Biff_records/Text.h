@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -50,38 +50,39 @@ public:
 	BaseObjectPtr clone();
 	
 	void readFields(CFRecord& record);
+	void writeFields(CFRecord& record);
 
 	static const ElementType	type = typeText;
 
 	int serialize(std::wostream & _stream);
 
-	unsigned char	at;
-	unsigned char	vat;
+	unsigned char	at = 2;
+	unsigned char	vat = 2;
 
-	_UINT16			wBkgMode;
+	_UINT16			wBkgMode = 1;
 	LongRGB			rgbText;
 
-	_INT32			x;
-	_INT32			y;
-	_INT32			dx;
-	_INT32			dy;
+	_INT32			x = 0;
+	_INT32			y = 0;
+	_INT32			dx = 0;
+	_INT32			dy = 0;
 
-	bool fAutoColor;
-	bool fShowKey;
-	bool fShowValue;
-	bool fAutoText;
-	bool fGenerated;
-	bool fDeleted;
-	bool fAutoMode;
-	bool fShowLabelAndPerc;
-	bool fShowPercent;
-	bool fShowBubbleSizes;
-	bool fShowLabel;
+	bool fAutoColor = false;
+	bool fShowKey = false;
+	bool fShowValue = false;
+	bool fAutoText = false;
+	bool fGenerated = false;
+	bool fDeleted = false;
+	bool fAutoMode = true;
+	bool fShowLabelAndPerc = false;
+	bool fShowPercent = false;
+	bool fShowBubbleSizes = false;
+	bool fShowLabel = false;
 
-	Icv				icvText;
-	unsigned char	dlp;
-	unsigned char	iReadingOrder;
-	_UINT16			trot;
+	Icv				icvText = 0;
+	unsigned char	dlp = 0;
+	unsigned char	iReadingOrder = 0;
+	_UINT16			trot = 0;
 
 //-----------------------------
 	bool is_area;

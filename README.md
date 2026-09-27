@@ -23,3 +23,10 @@ git subtree pull --prefix core https://github.com/ONLYOFFICE/core.git <TAG> --sq
 ```
 
 Since the clone contains small changes there may be merge conflicts.
+
+## See changes we made to https://github.com/ONLYOFFICE/core.git
+
+``` shell
+git fetch --depth=1 https://github.com/ONLYOFFICE/core.git v9.3.0.140
+git diff FETCH_HEAD HEAD:core
+```

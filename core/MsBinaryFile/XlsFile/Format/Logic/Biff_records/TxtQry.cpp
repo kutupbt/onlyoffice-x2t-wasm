@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -83,6 +83,39 @@ void TxtQry::readFields(CFRecord& record)
 	}
 
 	record >> rgchFile;
+}
+
+void TxtQry::writeFields(CFRecord& record)
+{
+	record << rt;
+	record.reserveNunBytes(2);
+	unsigned short flags1 = 0;
+
+	SETBIT(flags1, 0, fFile)
+	SETBIT(flags1, 1, fDelimited)
+	SETBITS(flags1, 2, 3, iCpid)
+	SETBIT(flags1, 4, fPromptForFile)
+	SETBITS(flags1, 5, 14, iCpidNew)
+	SETBIT(flags1, 15, fUseNewiCpid)
+	record << flags1;
+	record.reserveNunBytes(2);
+
+	unsigned short flags2 = 0;
+	SETBIT(flags2, 0, fTab)
+	SETBIT(flags2, 1, fSpace)
+	SETBIT(flags2, 2, fComma)
+	SETBIT(flags2, 3, fSemiColon)
+	SETBIT(flags2, 4, fCustom)
+	SETBIT(flags2, 5, fConsecutive)
+	SETBITS(flags1, 6, 7, iTextDelm)
+	record << rowStartAt << flags2 << chCustom;
+	record.reserveNunBytes(1);
+	record << itwf << chDecimal << chThousSep;
+	for(auto i : rgtxtwf)
+	{
+		i.save(record);
+	}
+	record << rgchFile;
 }
 
 } // namespace XLS

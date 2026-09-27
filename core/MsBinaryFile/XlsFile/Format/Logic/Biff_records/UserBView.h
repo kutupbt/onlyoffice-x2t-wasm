@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -33,7 +33,7 @@
 
 #include "BiffRecord.h"
 #include "../Biff_structures/BiffString.h"
-#include "../../../../../OOXML/XlsbFormat/Biff12_structures/XLWideString.h"
+#include "../Biff_structures/BIFF12/XLWideString.h"
 
 namespace XLS
 {
@@ -50,45 +50,46 @@ public:
 	BaseObjectPtr clone();
 	
 	void readFields(CFRecord& record);
+	void writeFields(CFRecord& record);
 
 	static const ElementType	type = typeUserBView;
 
 	int serialize(std::wostream & stream);
 //-----------------------------
     //_UINT16			tabId;
-    _UINT32			tabId; //iTabid in biff12
-	std::wstring	guid;
+	_UINT32			tabId = 0; //iTabid in biff12
+	std::wstring	guid = L"";
 	
-    _INT32		x; //xLeft in biff12
-    _INT32		y; //xRight in biff12
-    _INT32		dx; //yTop in biff12
-    _INT32		dy; //yBot in biff12
+	_INT32		x = 0; //xLeft in biff12
+	_INT32		y = 0; //xRight in biff12
+	_INT32		dx = 0; //yTop in biff12
+	_INT32		dy = 0; //yBot in biff12
 
     //_UINT16			wTabRatio;
-    _UINT32			wTabRatio; //iTabRatio in biff12
+	_UINT32			wTabRatio = 0; //iTabRatio in biff12
 
-	bool			fDspFmlaBar;
-	bool			fDspStatus;
+	bool			fDspFmlaBar = false;
+	bool			fDspStatus = false;
 	
-	std::wstring	mdNoteDisp;
+	std::wstring	mdNoteDisp = L"";
 	
-	bool fDspHScroll;
-	bool fDspVScroll;
-	bool fBotAdornment;
-	bool fZoom;
+	bool fDspHScroll = false;
+	bool fDspVScroll = false;
+	bool fBotAdornment = false;
+	bool fZoom = false;
 	
-	std::wstring fHideObj;
+	std::wstring fHideObj = L"";
 	
-	bool fPrintIncl;
-	bool fRowColIncl;
-	bool fInvalidTabId;
-	bool fTimedUpdate;
-	bool fAllMemChanges;
-	bool fOnlySync;
-	bool fPersonalView;
-	bool fIconic;
+	bool fPrintIncl = false;
+	bool fRowColIncl = false;
+	bool fInvalidTabId = false;
+	bool fTimedUpdate = false;
+	bool fAllMemChanges = false;
+	bool fOnlySync = false;
+	bool fPersonalView = false;
+	bool fIconic = false;
 	
-	_UINT16			wMergeInterval;
+	_UINT16			wMergeInterval = 0;
 	XLUnicodeString st;
     XLSB::XLWideString stName; //biff12
 

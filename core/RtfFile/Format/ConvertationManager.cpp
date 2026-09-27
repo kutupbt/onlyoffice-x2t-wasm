@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -61,6 +61,8 @@ RtfConvertationManager::RtfConvertationManager( )
 
 	m_poRtfWriter = NULL;
 	m_poRtfReader = NULL;
+
+	m_nDefaultFontSize = 0;
 }
 _UINT32 RtfConvertationManager::ConvertRtfToOOX( std::wstring sSrcFileName, std::wstring sDstPath )
 {
@@ -91,29 +93,21 @@ _UINT32 RtfConvertationManager::ConvertRtfToOOX( std::wstring sSrcFileName, std:
 		oWriter.m_sTempFolder = NSDirectory::CreateDirectoryWithUniqueName(NSDirectory::GetTempPath());
 	}
 
-    m_poRtfReader = &oReader;
-    m_poOOXWriter = &oWriter;
+	m_poRtfReader = &oReader;
+	m_poOOXWriter = &oWriter;
 
-    //m_poRtfReader->m_convertationManager = this;
-
-    if (false == oReader.Load( )) return AVS_FILEUTILS_ERROR_CONVERT;
-
-    //сохранение будет поэлементое в обработчике OnCompleteItemRtf
-    //надо только завершить
-    //if( true == m_bParseFirstItem )
-    //{
-    //    m_bParseFirstItem = false;
-    //    oWriter.SaveByItemStart( );
-    //}
-    //m_poOOXWriter->SaveByItem();
-    //oWriter.SaveByItemEnd( );
-
+	if (false == oReader.Load())
+		return AVS_FILEUTILS_ERROR_CONVERT;
+	if (!m_sDefaultFontName.empty())
+		oDocument.m_oProperty.m_sDefFontName = m_sDefaultFontName;
+	if (m_nDefaultFontSize > 0)
+		oDocument.m_oProperty.m_nDefFontSize = m_nDefaultFontSize;
 	oWriter.Save();
 
-    NSDirectory::DeleteDirectory(oReader.m_sTempFolder);
-    NSDirectory::DeleteDirectory(oWriter.m_sTempFolder);
+	NSDirectory::DeleteDirectory(oReader.m_sTempFolder);
+	NSDirectory::DeleteDirectory(oWriter.m_sTempFolder);
 
-    return S_OK;        
+	return S_OK;
 }
 _UINT32 RtfConvertationManager::ConvertOOXToRtf( std::wstring sDstFileName, std::wstring sSrcPath )
 {
@@ -146,17 +140,19 @@ _UINT32 RtfConvertationManager::ConvertOOXToRtf( std::wstring sDstFileName, std:
 
     m_poOOXReader->m_convertationManager = this;
 
-    bool succes = oReader.Parse( );
-    if( true == succes)
+    bool result = oReader.Parse( );
+    if( result )
     {
-        succes = oWriter.Save( );
+		result = oWriter.Save( );
     }
 
     NSDirectory::DeleteDirectory(oReader.m_sTempFolder);
     NSDirectory::DeleteDirectory(oWriter.m_sTempFolder);
 
-    if( true == succes) return 0;
-    return AVS_FILEUTILS_ERROR_CONVERT;
+    if ( result ) 
+		return 0;
+    else 
+		return AVS_FILEUTILS_ERROR_CONVERT;
 }
 void RtfConvertationManager::OnCompleteItemRtf()
 {

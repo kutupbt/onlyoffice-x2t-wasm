@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -47,37 +47,38 @@ public:
 
 	BaseObjectPtr clone();
 	
-	void readFields(CFRecord& record);
+	void readFields(CFRecord& record) override;
+	void writeFields(CFRecord& record) override;
 
 	static const ElementType type = typeQsi;
 
-	bool			fTitles;
-	bool			fRowNums;
-	bool			fDisableRefresh;
-	bool			fAsync;
-	bool			fNewAsync;
-	bool			fAutoRefresh;
-	bool			fShrink;
-	bool			fFill;
-	bool			fAutoFormat;
-	bool			fSaveData;
-	bool			fDisableEdit;
-	bool			fOverwrite;
-	unsigned short	itblAutoFmt;		//AutoFmt8
-	bool			fibitAtrNum;
-	bool			fibitAtrFnt;
-	bool			fibitAtrAlc;
-	bool			fibitAtrBdr;
-	bool			fibitAtrPat;
-	bool			fibitAtrProt;
+	bool			fTitles = false;
+	bool			fRowNums = false;
+	bool			fDisableRefresh = false;
+	bool			fAsync = false;
+	bool			fNewAsync = false;
+	bool			fAutoRefresh = false;
+	bool			fShrink = false;
+	bool			fFill = false;
+	bool			fAutoFormat = false;
+	bool			fSaveData = false;
+	bool			fDisableEdit = false;
+	bool			fOverwrite = false;
+	unsigned short	itblAutoFmt = 0;		//AutoFmt8
+	bool			fibitAtrNum = false;
+	bool			fibitAtrFnt = false;
+	bool			fibitAtrAlc = false;
+	bool			fibitAtrBdr = false;
+	bool			fibitAtrPat = false;
+	bool			fibitAtrProt = false;
 
-        //biff12
-        _UINT32         dwConnID;
-        bool            fDummyList;
-        bool            fAutoFit;
-        bool            fPreserveFmt;
+    //biff12
+	_UINT32         dwConnID = 0;
+	bool            fDummyList = false;
+	bool            fAutoFit = false;
+	bool            fPreserveFmt = false;
 
-        std::wstring	name;
+	std::wstring	name = L"";
 };
 
 } // namespace XLS

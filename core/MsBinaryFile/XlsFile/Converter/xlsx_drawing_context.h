@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -94,12 +94,19 @@ struct _color
 	int				index = -1;
 	bool			bScheme = false;
 
-	void SetRGB(unsigned char nR, unsigned char  nG, unsigned char  nB);
+	void SetRGB(unsigned char nR, unsigned char  nG, unsigned char  nB)
+	{
+		nRGB = (nR << 16) | (nG << 8) | nB;
+		sRGB = STR::toRGB(nR, nG, nB);
+
+		index = -1;
+	}
 
 	unsigned char  GetB() { return (unsigned char )(nRGB);}
 	unsigned char  GetG() { return (unsigned char )(nRGB>>8);}
 	unsigned char  GetR() { return (unsigned char )(nRGB>>16);}
 
+	double			opacity = 0;
 };
 
 struct _rect
@@ -253,7 +260,7 @@ public:
 		bool			is = false;
 		_color			color;
 		_color			highlight;
-		double			opacity;
+		double			opacity = 0;
 		double			offsetX = 0x00006338;
 		double			offsetY = 0x00006338;
 		double			scaleX2X = 1.;
@@ -272,8 +279,6 @@ public:
 		}
 		_color			color;
 		_color			color2;
-		double			opacity = 0;
-		double			opacity2 = 0;
 		_fill_type		type = fillSolid; 
 
 		int				focus = 0;
@@ -290,6 +295,8 @@ public:
 		_CP_OPT(bool)	grayscale;
 		_CP_OPT(int)	biLevel;
 
+		std::wstring	name;
+
 		std::vector<std::pair<double, _color>> colorsPosition;
 	}fill;
 
@@ -297,7 +304,8 @@ public:
 	{
 		fill.type = fillSolid; 
 		fill.color.SetRGB(0xff, 0xff, 0xff);
-		fill.angle = fill.opacity = fill.opacity2 = fill.focus = 0; 
+		fill.color.opacity = 0;
+		fill.angle = fill.focus = 0; 
 		memset(fill.texture_crop, 0, 4 * sizeof(double));
 		fill.texture_crop_enabled = false;
 		fill.colorsPosition.clear();
@@ -347,9 +355,15 @@ public:
 		_CP_OPT(int)	x_sel;
 		_CP_OPT(int)	x_sel_type;
 		_CP_OPT(int)	lct	;
+		_CP_OPT(int)	dx;
 		std::wstring	fmlaRange;
 		_CP_OPT(int)	drop_style;
 		_CP_OPT(int)	drop_lines;
+		_CP_OPT(bool)	checked;
+		_CP_OPT(bool)	_3D;
+		_CP_OPT(bool)	vscroll;
+		_CP_OPT(bool)	hscroll;
+		_CP_OPT(bool)	multiLine;
 	}object;
 //for group
 	std::vector<_drawing_state_ptr>		drawing_states;
@@ -513,6 +527,12 @@ public:
 		void set_object_fmlaRange	(const std::wstring & fmla);
 		void set_object_drop_style	(int val);
 		void set_object_drop_lines	(int val);
+		void set_object_dx			(int dx);
+		void set_object_checked		(bool val);
+		void set_object_multiLine	(bool val);
+		void set_object_vscroll		(bool val);
+		void set_object_hscroll		(bool val);
+		void set_object_3D			(bool val);
 //---------------------------------------------------------------------------------------------
 		void set_custom_rect		(_rect							& rect);
 		void set_custom_verticles	(std::vector<ODRAW::MSOPOINT>	& points);

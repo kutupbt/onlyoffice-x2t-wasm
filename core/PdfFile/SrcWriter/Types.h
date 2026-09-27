@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -38,6 +38,7 @@
 #ifdef max
 #undef max
 #endif
+
 #ifdef min
 #undef min
 #endif
@@ -45,13 +46,17 @@
 #include <string>
 #include <algorithm>
 #include <math.h>
+#include <vector>
+#include <cmath>
 
 #ifdef __linux__
 #include <string.h>
+#include <limits>
 #endif
 
 namespace PdfWriter
 {
+	const double EPS = 0.001;
 	struct TRect
 	{
 		TRect()
@@ -68,6 +73,10 @@ namespace PdfWriter
 			fRight  = dR;
 			fTop    = dT;
 		}
+		bool IsEmpty()
+		{
+			return fLeft == 0.0 && fBottom == 0.0 && fRight == 0.0 && fTop == 0.0;
+		}
 
 		double fLeft;
 		double fBottom;
@@ -75,7 +84,7 @@ namespace PdfWriter
 		double fTop;
 	};
 	typedef TRect TBox;
-	class CMatrix	
+	class CMatrix
 	{
 	public:
 
@@ -87,6 +96,15 @@ namespace PdfWriter
 			m22 = 1;
 			x   = 0;
 			y   = 0;
+		}
+		CMatrix(double d1, double d2, double d3, double d4, double d5, double d6)
+		{
+			m11 = d1;
+			m12 = d2;
+			m21 = d3;
+			m22 = d4;
+			x   = d5;
+			y   = d6;
 		}
 
 		void Reset()
@@ -118,6 +136,11 @@ namespace PdfWriter
 			dX = _x * m11 + _y * m21 + x;
 			dY = _x * m12 + _y * m22 + y;
 		}
+		void Transform(double dUserX, double dUserY, double* pdDeviceX, double* pdDeviceY) const
+		{
+			*pdDeviceX = dUserX * m11 + dUserY * m21 + x;
+			*pdDeviceY = dUserX * m12 + dUserY * m22 + y;
+		}
 		bool operator==(const CMatrix& oMatrix)
 		{
 			if (fabs(oMatrix.m11 - m11) > 0.001
@@ -135,7 +158,7 @@ namespace PdfWriter
 			CMatrix oInverse;
 
 			double dDet = m11 * m22 - m12 * m21;
-			if (dDet < 0.0001 && dDet > 0.0001)
+			if (dDet < 0.0001 && dDet > -0.0001)
 				return oInverse;
 
 			oInverse.m11 =  m22 / dDet;
@@ -346,12 +369,10 @@ namespace PdfWriter
 	class CPoint
 	{
 	public:
+		CPoint() : x(0), y(0) {}
+		CPoint(double dX, double dY) : x(dX), y(dY) {}
+		CPoint(const CPoint& oPoint) : x(oPoint.x), y(oPoint.y) {}
 
-		CPoint()
-		{
-			x = 0;
-			y = 0;
-		}
 		void Set(double dX, double dY)
 		{
 			x = dX;
@@ -368,11 +389,20 @@ namespace PdfWriter
 			y = oPoint.y;
 			return *this;
 		}
+		bool operator==(const CPoint& oPoint) const
+		{
+			return std::abs(x - oPoint.x) < EPS && std::abs(y - oPoint.y) < EPS;
+		}
 
 	public:
-
 		double x;
 		double y;
+	};
+	struct CSegment
+	{
+		CPoint start;
+		CPoint end;
+		CSegment(const CPoint& s, const CPoint& e) : start(s), end(e) {}
 	};
 	enum EGrMode
 	{
@@ -446,6 +476,13 @@ namespace PdfWriter
 		fontCIDType0COT,
 		fontCIDType2,
 		fontCIDType2OT
+	};
+	enum class ERenderingIntent
+	{
+		RenderingIntent_AbsoluteColorimetric,
+		RenderingIntent_RelativeColorimetric,
+		RenderingIntent_Saturation,
+		RenderingIntent_Perceptual
 	};
 }
 

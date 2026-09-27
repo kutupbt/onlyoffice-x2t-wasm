@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -49,32 +49,33 @@ public:
 	BaseObjectPtr clone();
 	
 	void readFields(CFRecord& record);
+    void writeFields(CFRecord& record);
 
 	static const ElementType type = typeSXEx;
 
-	unsigned short	csxformat;
-	unsigned short	cchErrorString;
-	unsigned short	cchNullString;
-	unsigned short	cchTag;
-	unsigned short	csxselect;
+    unsigned short	csxformat = 0;
+    unsigned short	cchErrorString = 0xFFFF;
+    unsigned short	cchNullString = 0xFFFF;
+    unsigned short	cchTag = 0xFFFF;
+    unsigned short	csxselect = 0;
 
-	DRw				crwPage;
-	ColU			ccolPage;
+    DRw				crwPage = 0;
+    ColU			ccolPage = 0;
 
-	bool			fAcrossPageLay;
-	unsigned char	cWrapPage;
-	bool			fEnableWizard;
-	bool			fEnableDrilldown;
-	bool			fEnableFieldDialog;
-	bool			fPreserveFormatting;
-	bool			fMergeLabels;
-	bool			fDisplayErrorString;
-	bool			fDisplayNullString;
-	bool			fSubtotalHiddenPageItems;
+    bool			fAcrossPageLay = false;
+    unsigned char	cWrapPage = 0;
+	bool			fEnableWizard = true;
+	bool			fEnableDrilldown = true;
+	bool			fEnableFieldDialog = true;
+	bool			fPreserveFormatting = true;
+	bool			fMergeLabels = false;
+	bool			fDisplayErrorString = false;
+	bool			fDisplayNullString = true;
+	bool			fSubtotalHiddenPageItems = false;
 
-	unsigned short	cchPageFieldStyle;
-	unsigned short	cchTableStyle;
-	unsigned short	cchVacateStyle;
+	unsigned short	cchPageFieldStyle = 0xFFFF;
+	unsigned short	cchTableStyle = 0xFFFF;
+	unsigned short	cchVacateStyle = 0xFFFF;
 
 	XLUnicodeStringNoCch	stError;
 	XLUnicodeStringNoCch	stDisplayNull;

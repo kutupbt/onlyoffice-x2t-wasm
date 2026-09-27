@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -264,11 +264,12 @@ namespace SimpleTypes
 		return true;
 	}
 
-	std::wstring CGuid::ToString  () const
+	std::wstring CGuid::ToString  (bool braces) const
 	{
 		std::wstringstream sstream;
-		sstream << boost::wformat( L"{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}" ) % m_oGUID.a % m_oGUID.b % m_oGUID.c % m_oGUID.d % m_oGUID.e % m_oGUID.f % m_oGUID.g % m_oGUID.h % m_oGUID.i % m_oGUID.j % m_oGUID.k;
-		return sstream.str();
+		sstream << boost::wformat( L"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x" ) % m_oGUID.a % m_oGUID.b % m_oGUID.c % m_oGUID.d % m_oGUID.e % m_oGUID.f % m_oGUID.g % m_oGUID.h % m_oGUID.i % m_oGUID.j % m_oGUID.k;
+		std::wstring res = (braces ? L"{" : L"") + sstream.str() + (braces ? L"}" : L"");
+		return res;
 	}
 
 	bool CGuid::IsZero()
@@ -722,7 +723,7 @@ namespace SimpleTypes
 	{
 		try
 		{
-			this->m_eValue = XmlUtils::GetInteger(sValue);
+            this->m_eValue = XmlUtils::GetUInteger(sValue);
 			return this->m_eValue;
 		}
 		catch(...)

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -83,9 +83,7 @@ namespace OOX
 		class CTableStyleProperties : public WritingElement
 		{
 		public:
-			CTableStyleProperties();
-			CTableStyleProperties(XmlUtils::CXmlNode &oNode);
-			CTableStyleProperties(XmlUtils::CXmlLiteReader& oReader);
+			CTableStyleProperties();			
 			virtual ~CTableStyleProperties();
 
 			const CTableStyleProperties& operator=(const XmlUtils::CXmlNode &oNode);
@@ -134,9 +132,7 @@ namespace OOX
 	{
 	public:
 
-		CDocDefaults();
-		CDocDefaults(XmlUtils::CXmlNode &oNode);
-		CDocDefaults(XmlUtils::CXmlLiteReader& oReader);
+		CDocDefaults();		
 		virtual ~CDocDefaults();
 
 		const CDocDefaults& operator=(const XmlUtils::CXmlNode &oNode);
@@ -159,9 +155,7 @@ namespace OOX
 	{
 	public:
 
-		CLatentStyles();
-		CLatentStyles(XmlUtils::CXmlNode &oNode);
-		CLatentStyles(XmlUtils::CXmlLiteReader& oReader);
+		CLatentStyles();	
 		virtual ~CLatentStyles();
 
 		const CLatentStyles& operator=(const XmlUtils::CXmlNode &oNode);
@@ -194,9 +188,7 @@ namespace OOX
 	{
 	public:
 
-		CStyle(OOX::Document *pMain = NULL);
-		CStyle(XmlUtils::CXmlNode &oNode);
-		CStyle(XmlUtils::CXmlLiteReader& oReader);
+		CStyle(OOX::Document *pMain = NULL);		
 		virtual ~CStyle();
 
 		void ClearItems();
@@ -214,33 +206,33 @@ namespace OOX
 		void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 
 	public:
-		nullable<SimpleTypes::COnOff>		m_oCustomStyle;
-		nullable<SimpleTypes::COnOff>		m_oDefault;
-		nullable_string						m_sStyleId;
-		nullable<SimpleTypes::CStyleType>	m_oType;
+		nullable<SimpleTypes::COnOff> m_oCustomStyle;
+		nullable<SimpleTypes::COnOff> m_oDefault;
+		nullable_string m_sStyleId;
+		nullable<SimpleTypes::CStyleType> m_oType;
 
-		nullable<ComplexTypes::Word::String>							m_oAliases;
-        nullable<ComplexTypes::Word::COnOff2>	m_oAutoRedefine;
-		nullable<ComplexTypes::Word::String>							m_oBasedOn;
-        nullable<ComplexTypes::Word::COnOff2>	m_oHidden;
-		nullable<ComplexTypes::Word::String>							m_oLink;
-        nullable<ComplexTypes::Word::COnOff2>	m_oLocked;
-		nullable<ComplexTypes::Word::String>							m_oName;
-		nullable<ComplexTypes::Word::String>							m_oNext;
-        nullable<ComplexTypes::Word::COnOff2>	m_oPersonal;
-        nullable<ComplexTypes::Word::COnOff2>	m_oPersonalCompose;
-        nullable<ComplexTypes::Word::COnOff2>	m_oPersonalReply;
-		nullable<OOX::Logic::CParagraphProperty>						m_oParPr;
-        nullable<ComplexTypes::Word::COnOff2>	m_oQFormat;
-		nullable<OOX::Logic::CRunProperty>								m_oRunPr;
-		nullable<ComplexTypes::Word::CLongHexNumber>					m_oRsid;
-        nullable<ComplexTypes::Word::COnOff2>	m_oSemiHidden;
-		nullable<OOX::Logic::CTableProperty>							m_oTblPr;		
-		std::vector<OOX::Logic::CTableStyleProperties*>					m_arrTblStylePr;
-		nullable<OOX::Logic::CTableCellProperties>						m_oTcPr;
-		nullable<OOX::Logic::CTableRowProperties>						m_oTrPr;
-		nullable<ComplexTypes::Word::CDecimalNumber>					m_oUiPriority;
-        nullable<ComplexTypes::Word::COnOff2>	m_oUnhideWhenUsed;
+		nullable<ComplexTypes::Word::String> m_oAliases;
+		nullable<ComplexTypes::Word::COnOff2> m_oAutoRedefine;
+		nullable<ComplexTypes::Word::String> m_oBasedOn;
+		nullable<ComplexTypes::Word::COnOff2> m_oHidden;
+		nullable<ComplexTypes::Word::String> m_oLink;
+		nullable<ComplexTypes::Word::COnOff2> m_oLocked;
+		nullable<ComplexTypes::Word::String> m_oName;
+		nullable<ComplexTypes::Word::String> m_oNext;
+		nullable<ComplexTypes::Word::COnOff2> m_oPersonal;
+		nullable<ComplexTypes::Word::COnOff2> m_oPersonalCompose;
+		nullable<ComplexTypes::Word::COnOff2> m_oPersonalReply;
+		nullable<OOX::Logic::CParagraphProperty> m_oParPr;
+		nullable<ComplexTypes::Word::COnOff2> m_oQFormat;
+		nullable<OOX::Logic::CRunProperty> m_oRunPr;
+		nullable<ComplexTypes::Word::CLongHexNumber> m_oRsid;
+		nullable<ComplexTypes::Word::COnOff2> m_oSemiHidden;
+		nullable<OOX::Logic::CTableProperty> m_oTblPr;
+		std::vector<OOX::Logic::CTableStyleProperties*> m_arrTblStylePr;
+		nullable<OOX::Logic::CTableCellProperties> m_oTcPr;
+		nullable<OOX::Logic::CTableRowProperties> m_oTrPr;
+		nullable<ComplexTypes::Word::CDecimalNumber> m_oUiPriority;
+		nullable<ComplexTypes::Word::COnOff2> m_oUnhideWhenUsed;
 	};
 
 	//--------------------------------------------------------------------------------
@@ -249,6 +241,7 @@ namespace OOX
 	class CStyles : public OOX::File, public WritingElement
 	{
 	public:
+		CStyles();
 		CStyles(OOX::Document *pMain);
 		CStyles(OOX::Document *pMain, const CPath& oPath);
 		CStyles(XmlUtils::CXmlNode& oNode);

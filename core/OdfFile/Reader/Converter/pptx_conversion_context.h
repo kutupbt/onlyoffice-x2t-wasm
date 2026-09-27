@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -130,8 +130,12 @@ public:
 	oox_chart_context	& current_chart();
 	math_context		& get_math_context()	{ return math_context_; }
 	pptx_text_context	& get_text_context()	{ return pptx_text_context_; }
+	forms_context		& get_forms_context()	{ return forms_context_; }
 
 	pptx_table_context	& get_table_context()	{ return pptx_table_context_; }
+
+	void add_page_name(const std::wstring& page_name);
+	const std::vector<std::wstring>& get_page_names() const;
 
     mediaitems_ptr & get_mediaitems() { return pptx_slide_context_.get_mediaitems(); }
 
@@ -163,7 +167,8 @@ private:
 	pptx_table_context		pptx_table_context_;
 	pptx_comments_context	pptx_comments_context_;
 	math_context			math_context_;
-	
+	forms_context			forms_context_;
+
 	std::vector<oox_chart_context_ptr> charts_;
 	
 	std::vector<pptx_xml_slide_ptr>			slides_;
@@ -171,6 +176,8 @@ private:
 	std::vector<pptx_xml_slideMaster_ptr>	slideMasters_;
 	std::vector<pptx_xml_slideLayout_ptr>	slideLayouts_;
 	std::vector<pptx_xml_theme_ptr>			themes_;
+
+	std::vector<std::wstring> page_names_;
 	
 	pptx_xml_slideNotesMaster_ptr			slideNotesMaster_;
 	pptx_xml_authors_comments_ptr			authors_comments_;
@@ -180,8 +187,6 @@ private:
 	std::wstring current_layout_page_name_;
 
     pptx_comments_context_handle comments_context_handle_;
-
-
 };
 
 }

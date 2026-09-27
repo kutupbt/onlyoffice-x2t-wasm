@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -60,6 +60,16 @@ void CrtLayout12::readFields(CFRecord& record)
 	record >> dwCheckSum >> flags >> wXMode >> wYMode >> wWidthMode >> wHeightMode >> x >> y >> dx >> dy;
 	autolayouttype = GETBITS(flags, 1, 4);
 	record.skipNunBytes(2); // reserved2
+}
+
+void CrtLayout12::writeFields(CFRecord& record)
+{
+	FrtHeader frtHeader(rt_CrtLayout12);
+	record << frtHeader;
+	unsigned short flags = 0;
+	SETBITS(flags, 1, 4, autolayouttype);
+	record << dwCheckSum << flags << wXMode << wYMode << wWidthMode << wHeightMode << x << y << dx << dy;
+	record.reserveNunBytes(2);
 }
 
 int CrtLayout12::serialize (std::wostream & _stream)

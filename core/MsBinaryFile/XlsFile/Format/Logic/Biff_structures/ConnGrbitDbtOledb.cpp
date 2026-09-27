@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -56,6 +56,23 @@ void ConnGrbitDbtOledb::load(CFRecord& record)
 	fSrvSupportsClientCube	= GETBIT(flags, 11);
 }
 
+void ConnGrbitDbtOledb::save(CFRecord& record)
+{
+	unsigned short flags = 0;
+
+	SETBITS(flags, 0, 2, dbost)
+	SETBIT(flags, 3, fLocalConn)
+	SETBIT(flags, 4, fNoRefreshCube)
+	SETBIT(flags, 5, fUseOfficeLcid)
+	SETBIT(flags, 6, fSrvFmtNum)
+	SETBIT(flags, 7, fSrvFmtBack)
+	SETBIT(flags, 8, fSrvFmtFore)
+	SETBIT(flags, 9, fSrvFmtFlags)
+	SETBIT(flags, 10, fSupportsLangCellProp)
+	SETBIT(flags, 11, fSrvSupportsClientCube)
+
+	record 	<< flags;
+}
 
 } // namespace XLS
 

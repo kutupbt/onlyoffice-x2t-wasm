@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -68,17 +68,17 @@ namespace PPTX
 		void TextSpacing::ReadAttributes(XmlUtils::CXmlLiteReader& oReader, nullable_int & val)
 		{
 			WritingElement_ReadAttributes_Start	( oReader )
-				WritingElement_ReadAttributes_ReadSingle ( oReader, _T("val"), val)
+				WritingElement_ReadAttributes_ReadSingle ( oReader, L"val", val)
 			WritingElement_ReadAttributes_End	( oReader )
 		}
 		void TextSpacing::fromXML(XmlUtils::CXmlNode& node)
 		{
 			m_name = node.GetName();
 
-			XmlUtils::CXmlNode node1 = node.ReadNode(_T("a:spcPct"));
+			XmlUtils::CXmlNode node1 = node.ReadNode(L"a:spcPct");
 			XmlMacroReadAttributeBase(node1, L"val", spcPct);
 
-			XmlUtils::CXmlNode node2 = node.ReadNode(_T("a:spcPts"));
+			XmlUtils::CXmlNode node2 = node.ReadNode(L"a:spcPts");
 			XmlMacroReadAttributeBase(node2, L"val", spcPts);
 
 			Normalize();

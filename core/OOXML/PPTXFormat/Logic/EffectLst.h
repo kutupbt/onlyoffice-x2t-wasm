@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -30,8 +30,6 @@
  *
  */
 #pragma once
-#ifndef PPTX_LOGIC_EFFECTLST_INCLUDE_H_
-#define PPTX_LOGIC_EFFECTLST_INCLUDE_H_
 
 #include "./../WrapperWritingElement.h"
 #include "Effects/Blur.h"
@@ -50,7 +48,7 @@ namespace PPTX
 		class EffectLst : public WrapperWritingElement
 		{
 		public:			
-			WritingElement_AdditionConstructors(EffectLst)
+			WritingElement_AdditionMethods(EffectLst)
 			PPTX_LOGIC_BASE2(EffectLst)
 
             EffectLst& operator=(const EffectLst& oSrc);
@@ -61,10 +59,6 @@ namespace PPTX
 			}
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
-			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader)
-			{
-			}
-			
 			virtual void fromXML(XmlUtils::CXmlNode& node);
 
             virtual std::wstring toXML() const;
@@ -72,6 +66,9 @@ namespace PPTX
 
 			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
 			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
+
+			void Merge(EffectLst& effectLst) const;
+
 		public:
 			nullable<Blur>			blur;
 			nullable<FillOverlay>	fillOverlay;
@@ -87,5 +84,3 @@ namespace PPTX
 		};
 	} // namespace Logic
 } // namespace PPTX
-
-#endif // PPTX_LOGIC_EFFECTLST_INCLUDE_H_

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,10 +31,11 @@
  */
 #pragma once
 
-#include "../CommonInclude.h"
-
 #include "../SharedStrings/Si.h"
-#include "Cols.h"
+#include "../../Common/SimpleTypes_Shared.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_structures/CellRef.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Binary/CFStreamCacheReader.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Binary/CFStreamCacheWriter.h"
 
 namespace NSBinPptxRW
 {
@@ -45,7 +46,9 @@ namespace NSFile
 {
 	class CStreamWriter;
 }
+
 class CSVWriter;
+
 //--------------------------------------------------------------------------------------------
 namespace OOX
 {
@@ -59,11 +62,10 @@ namespace OOX
 			CFormulaXLSB();
 			void Clean();
 			void fromXML(XmlUtils::CXmlLiteReader& oReader);
-			_UINT32 getXLSBSize() const;
+			_UINT32 getXLSBSize();
 			_UINT16 toXLSB(NSBinPptxRW::CXlsbBinaryWriter& oStream, bool bIsBlankFormula);
 			void toXLSBExt(NSBinPptxRW::CXlsbBinaryWriter& oStream);
 
-		public:
 			bool m_bIsInit;
 			CStringXLSB m_oFormula;
 			SimpleTypes::Spreadsheet::CCellFormulaType m_oT;
@@ -98,7 +100,9 @@ namespace OOX
 			CTextXLSB m_oValue;
 			CFormulaXLSB m_oFormula;
 			nullable<CSi> m_oRichText;
-
+			
+			nullable_uint m_oCellMetadata;
+			nullable_uint m_oValueMetadata;
 		protected:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 		};
@@ -126,10 +130,15 @@ namespace OOX
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 		};
 
+		struct sharedFormula
+		{
+			std::vector<XLS::CellRef> shrFmla;
+			std::vector<std::pair<XLS::CellRangeRef, XLS::CellRef>> arrfmla;
+		};
 		class CFormula : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CFormula)
+			WritingElement_AdditionMethods(CFormula)
 			CFormula();
 			virtual ~CFormula();
 
@@ -141,7 +150,11 @@ namespace OOX
 
 			void fromXLSB (NSBinPptxRW::CBinaryFileReader& oStream);
 			void fromXLSBExt (NSBinPptxRW::CBinaryFileReader& oStream, _UINT16 nFlags);
+            void fromBin(XLS::StreamCacheReaderPtr& reader, XLS::CFRecordPtr& record);
             void fromBin(XLS::BaseObjectPtr& obj, SimpleTypes::Spreadsheet::ECellFormulaType eType);
+			void toXls(XLS::BaseObjectPtr& obj);
+            void toBin(XLS::BaseObjectPtr& obj);
+            void toBin(XLS::CFRecordPtr& record, const XLS::CellRef& cellBaseRef);
 
 			virtual EElementType getType () const;
 
@@ -168,8 +181,8 @@ namespace OOX
 		class CData : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CData)
-			CData();
+			WritingElement_AdditionMethods(CData)
+			CData(bool bFormulaPresent);
 			virtual ~CData();
 
 			virtual void fromXML(XmlUtils::CXmlNode& node);
@@ -193,7 +206,7 @@ namespace OOX
 			nullable_bool	bSuperscript;
 			nullable_string sColor;
 			nullable_int	nFontSize;
-
+			bool bFormula = false;
 
 		public:
 			nullable<SimpleTypes::Spreadsheet::CCellTypeType>	m_oType;
@@ -204,7 +217,7 @@ namespace OOX
 		class CCell : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CCell)
+			WritingElement_AdditionMethods(CCell)
 			CCell(OOX::Document *pMain = NULL);
 			virtual ~CCell();
 
@@ -216,6 +229,10 @@ namespace OOX
 
 			void fromXLSB (NSBinPptxRW::CBinaryFileReader& oStream, _UINT16 nType, _UINT32 nRow);
             void fromBin(XLS::BaseObjectPtr& obj);
+            bool fromBin(XLS::StreamCacheReaderPtr& reader);
+			XLS::BaseObjectPtr toBin(sharedFormula &sharedFormulas);
+			void toXLS(XLS::BaseObjectPtr cellPtr);
+            void toBin(XLS::StreamCacheWriterPtr& writer);
 
 			virtual EElementType getType () const;
 
@@ -234,10 +251,15 @@ namespace OOX
 			void PrepareForBinaryWriter();
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
             void ReadAttributes(XLS::BaseObjectPtr& obj);
-			void ReadComment(XmlUtils::CXmlLiteReader& oReader, CCommentItem* pComment);
+            void ReadTableBinPart(XLS::StreamCacheReaderPtr& reader);
+            void ReadCellInfo(XLS::CFRecordPtr& record);
+            void WriteCellInfo(XLS::CFRecordPtr& record);
+            void ReadValue(XLS::CFRecordPtr& record, XLS::CFRecordType::TypeId typeId);
+            void ReadComment(XmlUtils::CXmlLiteReader& oReader, CCommentItem* pComment);
+			bool checkArrayCell(XLS::CellRef &cellref, const sharedFormula& ArrFmlas);
 
 			void AfterRead();
-	//----------- 2003			
+	//----------- 2003
 			void After2003Read();
 
 			nullable<CCommentItem> pCommentItem;
@@ -248,11 +270,11 @@ namespace OOX
 			nullable_int iAcross;
 			nullable_int iDown;
 		public:
-			nullable<SimpleTypes::CUnsignedDecimalNumber>		m_oCellMetadata;
-			nullable<SimpleTypes::COnOff>						m_oShowPhonetic;
-			nullable_uint										m_oStyle;
 			nullable<SimpleTypes::Spreadsheet::CCellTypeType>	m_oType;
-			nullable<SimpleTypes::CUnsignedDecimalNumber>		m_oValueMetadata;
+			nullable<SimpleTypes::COnOff> m_oShowPhonetic;
+			nullable_uint			m_oStyle;
+			nullable_uint			m_oCellMetadata;
+			nullable_uint			m_oValueMetadata;
 
 			nullable<std::string>	m_oRef;
 			nullable_uint			m_oRow;
@@ -260,7 +282,9 @@ namespace OOX
 			nullable<CFormula>		m_oFormula;
 			nullable<CSi>			m_oRichText;
 			nullable<CText>			m_oValue;
-//-----------------------------			
+//-----------------------------
+            //число повторов чтобы хранить одинаковые в одной
+            nullable_uint           m_oRepeated;
 			nullable_string			m_oCacheValue;
 		};
 
@@ -269,7 +293,7 @@ namespace OOX
 		class CRow : public WritingElementWithChilds<CCell>
 		{
 		public:
-			WritingElement_AdditionConstructors(CRow)
+			WritingElement_AdditionMethods(CRow)
 			CRow(OOX::Document *pMain = NULL);
 			virtual ~CRow();
 
@@ -282,15 +306,26 @@ namespace OOX
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 			void fromXMLToXLSB(XmlUtils::CXmlLiteReader& oReader, NSBinPptxRW::CXlsbBinaryWriter& oStream, CCellXLSB& oCell);
 			void fromXLSB (NSBinPptxRW::CBinaryFileReader& oStream, _UINT16 nType);
-			void toXLSB (NSBinPptxRW::CXlsbBinaryWriter& oStream) const;            
-                        void fromBin(XLS::BaseObjectPtr& obj);
+			void toXLSB (NSBinPptxRW::CXlsbBinaryWriter& oStream) const;
 
+            void fromBin(XLS::BaseObjectPtr& obj);
+            void fromBin(XLS::StreamCacheReaderPtr& reader);
+            XLS::BaseObjectPtr toBin(sharedFormula &sharedFormulas);
+			XLS::BaseObjectPtr toXLS();
+            void toBin(XLS::StreamCacheWriterPtr& writer);
+            void WriteAttributes(XLS::StreamCacheWriterPtr& writer);
+            //удалить хранимые ячейки и кэшировать данные для экономии памяти
+            void storeXmlCache();
 			virtual EElementType getType () const;
 
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
+            void ReadAttributes(XLS::CFRecordPtr& oReader);
 			void ReadAttributes(XLS::BaseObjectPtr& obj);
 			void CheckIndex();
+            bool compressCell(CCell* pCell);
+            //xml кэш чтобы не хранить ячеки
+            nullable_string           m_oDataCache;
 
 		public:
 			nullable<SimpleTypes::COnOff>					m_oCollapsed;
@@ -305,12 +340,14 @@ namespace OOX
 			nullable<SimpleTypes::COnOff>					m_oThickBot;
 			nullable<SimpleTypes::COnOff>					m_oThickTop;
 			nullable<SimpleTypes::CDouble>					m_oDyDescent;
+            //число повторов для сжатия пустых строк
+            nullable_uint           m_oRepeated;
 		};
 
 		class CSheetData  : public WritingElementWithChilds<CRow>
 		{
 		public:
-			WritingElement_AdditionConstructors(CSheetData)
+			WritingElement_AdditionMethods(CSheetData)
             //WritingElement_XlsbConstructors(CSheetData)
 			CSheetData(OOX::Document *pMain = NULL);
 			virtual ~CSheetData();
@@ -321,26 +358,33 @@ namespace OOX
 			virtual void toXML(NSStringUtils::CStringBuilder& writer) const;
 			virtual void toXMLStart(NSStringUtils::CStringBuilder& writer) const;
 			virtual void toXMLEnd(NSStringUtils::CStringBuilder& writer) const;
+            //добавить кэшированное xml значение строки для экономии памяти
+            void AddRowToCache(CRow &row);
 
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 			void fromXLSB (NSBinPptxRW::CBinaryFileReader& oStream, _UINT16 nType, CSVWriter* pCSVWriter, NSFile::CStreamWriter& oStreamWriter);
             void fromBin(XLS::BaseObjectPtr& obj);
+            void fromBin(XLS::StreamCacheReaderPtr& reader);
+			XLS::BaseObjectPtr toBin();
+			XLS::BaseObjectPtr toXLS();
+            void toBin(XLS::StreamCacheWriterPtr& writer);
 
 			virtual EElementType getType () const;
-		
+
 			nullable<SimpleTypes::CUnsignedDecimalNumber>	m_oXlsbPos;
-		
+
 			std::map<int, std::map<int, unsigned int>>	m_mapStyleMerges2003; // map(row, map(col, style))
 			void StyleFromMapStyleMerges2003(std::map<int, unsigned int> &mapStyleMerges);
 			void AfterRead();
+            void ClearSharedFmlaRefs();
 
 		private:
 			void fromXLSBToXmlCell (CCell& pCell, CSVWriter* pCSVWriter, NSFile::CStreamWriter& oStreamWriter);
 			void fromXLSBToXmlRowStart (CRow* pRow, CSVWriter* pCSVWriter, NSFile::CStreamWriter& oStreamWriter);
-			void fromXLSBToXmlRowEnd (CRow* pRow, CSVWriter* pCSVWriter, NSFile::CStreamWriter& oStreamWriter);
-
+			void fromXLSBToXmlRowEnd (CRow* pRow, CSVWriter* pCSVWriter, NSFile::CStreamWriter& oStreamWriter, bool bLastRow = false);
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
+            bool compressRow(CRow* pRow);
+            nullable<NSStringUtils::CStringBuilder>  m_oDataCache;
 	// spreadsheets 2003
 
 			nullable_string m_sStyleID;

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -32,7 +32,7 @@
 #pragma once
 
 #include "BiffRecord.h"
-#include "../../../../../OOXML/XlsbFormat/Biff12_structures/UncheckedSqRfX.h"
+#include "../Biff_structures/BIFF12/UncheckedSqRfX.h"
 #include "../Biff_structures/CellRangeRef.h"
 #include "../Biff_structures/PaneType.h"
 
@@ -50,23 +50,24 @@ public:
 
 	BaseObjectPtr clone();
 	
-	void readFields(CFRecord& record);
+	void readFields(CFRecord& record) override;
+	void writeFields(CFRecord& record) override;
 
 	static const ElementType	type = typeSelection;
 
 	int serialize(std::wostream & stream);
 
-    PaneType	pnn;//4 byte in biff12
+	PaneType	pnn;//4 byte in biff12
 
     //R_RwU			rwAct;
-    UncheckedRw     rwAct;
+	UncheckedRw     rwAct = 0;
     //ColU			colAct;
-    UncheckedCol    colAct;
+	UncheckedCol    colAct = 0;
     //_INT16			irefAct;
-    _UINT32			irefAct; //dwRfxAct in biff12
+	_UINT32			irefAct = 0; //dwRfxAct in biff12
 	
-	std::wstring	sqref;
-    std::wstring	activeCell;
+	std::wstring	sqref = L"A1";
+	std::wstring	activeCell = L"A1";
 
     //biff12
     _UINT32                 pnn_xlsb;    

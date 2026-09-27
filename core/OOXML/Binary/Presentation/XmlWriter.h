@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -124,7 +124,9 @@ namespace NSBinPptxRW
         //
 		void WriteAttribute(const std::wstring& strAttributeName, const std::wstring& val);
 		void WriteAttribute(const std::wstring& strAttributeName, const wchar_t* val);
-		void WriteAttribute2(const std::wstring& strAttributeName, const std::wstring& val);
+		void WriteAttribute2(const std::wstring& strAttributeName, const std::wstring& val); // xml
+		void WriteAttribute2(const std::wstring& strAttributeName, const std::string& val);
+		void WriteAttributeUtf8(const std::wstring& strAttributeName, const std::string& val);
 		void WriteAttribute(const std::wstring& strAttributeName, const double& val);
 		void WriteAttribute(const std::wstring& strAttributeName, const int& val);
 		void WriteAttribute(const std::wstring& strAttributeName, const bool& val);
@@ -160,8 +162,10 @@ namespace NSBinPptxRW
 		void WriteAttribute(const std::wstring& strName, const nullable_sizet& value);
 		void WriteAttribute(const std::wstring& strName, const nullable_double& value);
 		void WriteAttribute(const std::wstring& strName, const nullable_string& value);
-		void WriteAttribute2(const std::wstring& strName, const nullable_string& value);
+		void WriteAttribute2(const std::wstring& strName, const nullable_string& value); // xml 
 		void WriteAttribute(const std::wstring& strName, const nullable_bool& value);
+		void WriteAttribute2(const std::wstring& strName, const nullable_astring& value);
+		void WriteAttributeUtf8(const std::wstring& strName, const nullable_astring& value);
 
         template <typename T>
 		void WriteAttribute(const std::wstring& strName, const nullable_limit<T>& value)

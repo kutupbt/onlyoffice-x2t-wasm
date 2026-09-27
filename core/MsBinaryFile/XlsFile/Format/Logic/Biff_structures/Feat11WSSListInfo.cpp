@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -96,6 +96,37 @@ void Feat11WSSListInfo::load(CFRecord& record)
 	fDefaultDateToday = GETBIT(flags2, 5);
 	fLoadFormula	= GETBIT(flags2, 6);
 	fAllowFillIn	= GETBIT(flags2, 6);
+}
+
+void Feat11WSSListInfo::save(CFRecord& record)
+{
+	record << LCID << cDec;
+	_UINT32	flags = 0;
+	SETBIT(flags, 0, fPercent)
+	SETBIT(flags, 1, fDecSet)
+	SETBIT(flags, 2, fDateOnly)
+	SETBITS(flags, 3, 4, fReadingOrder)
+	SETBIT(flags, 5, fRichText)
+	SETBIT(flags, 6, fUnkRTFormatting)
+	SETBIT(flags, 7, fAlertUnkRTFormatting)
+	record << flags;
+
+	flags = 0;
+
+	SETBIT(flags, 0, fReadOnly)
+	SETBIT(flags, 1, fRequired)
+	SETBIT(flags, 2, fMinSet)
+	SETBIT(flags, 3, fMaxSet)
+	SETBIT(flags, 4, fDefaultSet)
+	SETBIT(flags, 5, fDefaultDateToday)
+	SETBIT(flags, 6, fLoadFormula)
+	SETBIT(flags, 6, fAllowFillIn)
+	record << flags;
+	if(rgbDV != nullptr)
+		rgbDV->save(record);
+	if(fLoadFormula)
+		record << strFormula;
+	record.reserveNunBytes(4);
 }
 
 

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -188,6 +188,33 @@ void TxO::readFields(CFRecord& record)
 	//	memcpy(last, record.getCurData<BYTE>(), sz);
 	//	delete []last;
 	//}
+}
+
+void TxO::writeFields(CFRecord& record)
+{
+	unsigned short flags = 0;
+
+	SETBITS(flags, 1, 3, hAlignment)
+	SETBITS(flags, 4, 6, vAlignment)	// reserved2 (2 bits)
+
+	SETBIT(flags, 9, fLockText)	// reserved3 (4 bits)
+	SETBIT(flags, 14, fJustLast)
+	SETBIT(flags, 15, fSecretEdit)
+
+	record << flags << rot;
+	if(fcontrolInfoExist)
+		record << controlInfo;
+	else
+		record.reserveNunBytes(6);
+	cchText = rawText.getSize();
+	if(TxOruns.rgTxoRuns.size() > 0)
+		cbRuns = (TxOruns.rgTxoRuns.size()+1)*8 ;
+	if(!ifntEmpty.value().is_initialized())
+		ifntEmpty.value() = 0;
+	record << cchText << cbRuns << ifntEmpty;
+	fmla.save(record);
+
+
 }
 
 int TxO::serialize_vml (std::wostream & _stream)

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -67,6 +67,38 @@ const bool PIVOTLI::loadContent(BinProcessor& proc)
 	proc.repeated<Continue>(0, 0);
 
 	return true;
+}
+
+const bool PIVOTLI::saveContent(BinProcessor& proc)
+{
+    if(m_SXLI == nullptr)
+        return false;
+    proc.mandatory(*m_SXLI);
+    auto castedPtr = static_cast<SXLI*>(m_SXLI.get());
+    const auto maxRecSize = 8224;
+    auto globalInfo = proc.getGlobalWorkbookInfo();
+    while(!castedPtr->m_arItems.empty())
+    {
+        CFRecord tempRecord(rt_Continue, globalInfo);
+        while(!castedPtr->m_arItems.empty())
+        {
+            auto itemPose = tempRecord.getRdPtr();
+            castedPtr->m_arItems.at(0).save(tempRecord);
+            if(tempRecord.getRdPtr() > maxRecSize)
+            {
+                auto itemSize = tempRecord.getRdPtr() - itemPose;
+                tempRecord.RollRdPtrBack(itemSize);
+                break;;
+            }
+            castedPtr->m_arItems.erase(castedPtr->m_arItems.begin());
+        }
+        Continue continueRecord;
+        continueRecord.m_iDataSize = tempRecord.getRdPtr();
+        continueRecord.m_pData = new char[continueRecord.m_iDataSize];
+		auto CopyData =  tempRecord.getCurStaticData<char>() - tempRecord.getRdPtr();
+        memcpy(continueRecord.m_pData, CopyData, continueRecord.m_iDataSize);
+        proc.mandatory(continueRecord);
+    }
 }
 
 int PIVOTLI::serialize(std::wostream & strm)

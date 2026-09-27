@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,12 +31,14 @@
  */
 
 #include "Converter.h"
+#include "../../PPTXFormat/Presentation/PresentationChildElements.h"
+#include "../../PPTXFormat/NotesSlide.h"
+#include "../../PPTXFormat/HandoutMaster.h"
 
 namespace PPTX2EditorAdvanced
 {
 	DWORD Convert(NSBinPptxRW::CBinaryFileWriter& oBinaryWriter, PPTX::Document& oFolder, const std::wstring& strSourceDirectory, const std::wstring& strDstFile, bool bIsNoBase64)
 	{
-		// сначала соберем все объекты для конвертации и сформируем main-таблицы
 		NSBinPptxRW::CCommonWriter* pCommon = oBinaryWriter.m_pCommon;
 
 		std::vector<smart_ptr<PPTX::Theme>>				_themes;
@@ -45,6 +47,7 @@ namespace PPTX2EditorAdvanced
 		std::vector<smart_ptr<PPTX::SlideLayout>>		_layouts;
 		std::vector<smart_ptr<PPTX::NotesSlide>>		_notes;
 		std::vector<smart_ptr<PPTX::NotesMaster>>		_notesMasters;
+		std::vector<smart_ptr<PPTX::HandoutMaster>>		_handoutMasters;
 
 		smart_ptr<PPTX::Presentation> presentation = oFolder.Get(OOX::Presentation::FileTypes::Presentation).smart_dynamic_cast<PPTX::Presentation>();
 
@@ -53,7 +56,6 @@ namespace PPTX2EditorAdvanced
 		int cy = presentation->sldSz->cy;
 #endif
 
-		// записываем все темы
 		size_t nCountMasters = presentation->sldMasterIdLst.size();
 		for (size_t nMaster = 0; nMaster < nCountMasters; ++nMaster)
 		{
@@ -165,6 +167,47 @@ namespace PPTX2EditorAdvanced
 			oBinaryWriter.m_pCommon->m_oNotesMasters_Rels.push_back(nNotesMastersRelsIndex);
 		}
 
+		// записываем все handoutMasters
+		size_t nCountHandoutMasters = presentation->handoutMasterIdLst.size();
+		for (size_t nHandout = 0; nHandout < nCountHandoutMasters; ++nHandout)
+		{
+			smart_ptr<PPTX::HandoutMaster> handoutMaster = ((*presentation)[presentation->handoutMasterIdLst[nHandout].rid.get()]).smart_dynamic_cast<PPTX::HandoutMaster>();
+			if (false == handoutMaster.IsInit())
+			{
+				// такого быть не должно
+				continue;
+			}
+			size_t pPointerNM = (size_t)(handoutMaster.operator ->());
+
+			std::map<size_t, LONG>::const_iterator pSearchNM = pCommon->handoutMasters.find(pPointerNM);
+			if (pSearchNM != pCommon->handoutMasters.end())
+			{
+				// такого быть не должно
+				continue;
+			}
+
+			// записываем mainMaster
+			LONG lCountNM = (LONG)_handoutMasters.size();
+			pCommon->handoutMasters[pPointerNM] = lCountNM;
+			_handoutMasters.push_back(handoutMaster);
+
+			// проверяем theme
+			size_t pPointerTh = (size_t)(handoutMaster->theme_.operator ->());
+			LONG nHandoutMastersRelsIndex = -1;
+			std::map<size_t, LONG>::const_iterator pSearchTh = pCommon->themes.find(pPointerTh);
+			if (pSearchTh == pCommon->themes.end())
+			{
+				LONG lCountTh = (LONG)_themes.size();
+				pCommon->themes[pPointerTh] = lCountTh;
+				_themes.push_back(handoutMaster->theme_);
+				nHandoutMastersRelsIndex = lCountTh;
+			}
+			else {
+				nHandoutMastersRelsIndex = pSearchTh->second;
+			}
+			oBinaryWriter.m_pCommon->m_oHandoutMasters_Rels.push_back(nHandoutMastersRelsIndex);
+		}
+
 		// записываем все слайды
 		for (size_t i = 0; i < presentation->sldIdLst.size(); ++i)
 		{
@@ -252,7 +295,7 @@ namespace PPTX2EditorAdvanced
 		oBinaryWriter.WriteULONG(0);
 
 // App
-		smart_ptr<PPTX::App> app = oFolder.Get(OOX::FileTypes::App).smart_dynamic_cast<PPTX::App>();
+		smart_ptr<OOX::CApp> app = oFolder.Get(OOX::FileTypes::App).smart_dynamic_cast<OOX::CApp>();
 		if (app.is_init())
 		{
 			oBinaryWriter.StartMainRecord(NSBinPptxRW::NSMainTables::App);
@@ -260,7 +303,7 @@ namespace PPTX2EditorAdvanced
 		}
 
 // Core
-		smart_ptr<PPTX::Core> core = oFolder.Get(OOX::FileTypes::Core).smart_dynamic_cast<PPTX::Core>();
+		smart_ptr<OOX::CCore> core = oFolder.Get(OOX::FileTypes::Core).smart_dynamic_cast<OOX::CCore>();
 		if (core.is_init())
 		{
 			oBinaryWriter.StartMainRecord(NSBinPptxRW::NSMainTables::Core);
@@ -405,6 +448,14 @@ namespace PPTX2EditorAdvanced
 		{
 			_notesMasters[i]->toPPTY(&oBinaryWriter);
 		}
+// handoutmasters
+		oBinaryWriter.StartMainRecord(NSBinPptxRW::NSMainTables::HandoutMasters);
+		ULONG nCountHM = (ULONG)_handoutMasters.size();
+		oBinaryWriter.WriteULONG(nCountHM);
+		for (ULONG i = 0; i < nCountHM; ++i)
+		{
+			_handoutMasters[i]->toPPTY(&oBinaryWriter);
+		}
 // ImageMap ---------------------------------------
 		oBinaryWriter.StartMainRecord(NSBinPptxRW::NSMainTables::ImageMap);
 		oBinaryWriter.StartRecord(NSBinPptxRW::NSMainTables::ImageMap);
@@ -527,13 +578,25 @@ namespace PPTX2EditorAdvanced
 
 		oBinaryWriter.WriteBYTE(NSBinPptxRW::g_nodeAttributeEnd);
 		oBinaryWriter.EndRecord();
+// HandoutMastersRels --------------------------------------
+		oBinaryWriter.StartMainRecord(NSBinPptxRW::NSMainTables::HandoutMastersRels);
+		oBinaryWriter.StartRecord(NSBinPptxRW::NSMainTables::HandoutMastersRels);
+		oBinaryWriter.WriteBYTE(NSBinPptxRW::g_nodeAttributeStart);
 
+		_s_rels = oBinaryWriter.m_pCommon->m_oHandoutMasters_Rels.size();
+		for (size_t i = 0; i < _s_rels; ++i)
+		{
+			oBinaryWriter.WriteInt1(0, oBinaryWriter.m_pCommon->m_oHandoutMasters_Rels[i]);
+		}
+
+		oBinaryWriter.WriteBYTE(NSBinPptxRW::g_nodeAttributeEnd);
 		oBinaryWriter.EndRecord();
+
+	oBinaryWriter.EndRecord();
 // ------------------------------------------------
 		oBinaryWriter.WriteEmbeddedFonts();
 		oBinaryWriter.WriteMainPart(nStartPos);
 
-// все записалось нормально. осталось скинуть на диск
 		BYTE* pbBinBuffer = oBinaryWriter.GetBuffer();
 		int nBinBufferLen = (int)oBinaryWriter.GetPosition();
 		if (bIsNoBase64)

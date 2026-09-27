@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -64,19 +64,20 @@ namespace BinXlsxRW {
         _UINT32 loadFromFile	(const std::wstring& sSrcFileName, const std::wstring& sDstPath, const std::wstring& sXMLOptions, const std::wstring& sMediaDir, const std::wstring& sEmbedPath);
         _UINT32 saveToFile		(const std::wstring& sDstPath, const std::wstring& sSrcFileName, const std::wstring& sXMLOptions);
 //------------------------------------------------		
-        static void CreateXlsxFolders  (const std::wstring& sXmlOptions, const std::wstring& sDstPath, std::wstring& sMediaPath, std::wstring& sEmbedPath);
+        static void CreateXlsxFolders  (const std::wstring& sDstPath, std::wstring& sMediaPath, std::wstring& sEmbedPath);
 		
 		void setTempDir			(const std::wstring& sTempDir);
         void setFontDir			(const std::wstring& sFontDir);
         void setEmbeddedFontsDir(const std::wstring& sEmbeddedFontsDir);
 		void setDrawingConverter(NSBinPptxRW::CDrawingConverter* pDrawingConverter);
 		void setIsNoBase64		(bool val);
+		
 		void setMacroEnabled	(bool val);
+		bool getMacroEnabled	();
 
 		_UINT32 xml2Xlsx		(const std::wstring& sSrcFileName, const std::wstring& sDstPath, const std::wstring& sXMLOptions);
 		
 		bool saveChart          (NSBinPptxRW::CBinaryFileReader* pReader, long lLength, NSCommon::smart_ptr<OOX::File> &file);
 		bool writeChartXlsx     (const std::wstring& sDstFile, NSCommon::smart_ptr<OOX::File> &file);
-		bool hasPivot			(const std::wstring& sSrcPath);
 	};
 }

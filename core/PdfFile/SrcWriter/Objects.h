@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -45,6 +45,7 @@ namespace PdfWriter
 	class CStream;
 	class CEncrypt;
 	class CDocument;
+	struct TXrefEntry;
 
 	typedef enum
 	{
@@ -80,7 +81,8 @@ namespace PdfWriter
 		dict_type_EXT_GSTATE   = 0x0A,
 		dict_type_EXT_GSTATE_R = 0x0B,  /* read only object */
 		dict_type_METADATA     = 0x0C,
-		dict_type_SIGNATURE    = 0x0D
+		dict_type_SIGNATURE    = 0x0D,
+		dict_type_STREAM       = 0x0E
 	} EDictType;
 
 	class CObjectBase
@@ -91,6 +93,7 @@ namespace PdfWriter
 			m_unFlags = 0;
 			m_unGenNo = 0;
 			m_unObjId = 0;
+			m_pXrefEntry = NULL;
 		}
 		virtual ~CObjectBase() 
 		{}
@@ -114,6 +117,8 @@ namespace PdfWriter
 			m_unObjId = unObjId;
 			m_unGenNo = unGenNo;
 		}
+		void SetXrefEntry(TXrefEntry* pEntry);
+		TXrefEntry* GetXrefEntry();
 		unsigned int GetObjId() const
 		{
 			return m_unObjId;
@@ -126,10 +131,10 @@ namespace PdfWriter
 		void Write     (CStream* pStream, CEncrypt* pEncrypt);
 
 	private:
-
 		unsigned int m_unFlags;
 		unsigned int m_unObjId;
 		unsigned int m_unGenNo;
+		TXrefEntry* m_pXrefEntry;
 	};
 	class CNullObject : public CObjectBase
 	{
@@ -296,8 +301,10 @@ namespace PdfWriter
 	{
 	public:
 		CStringObject(const char* sValue, bool isUTF16 = false, bool isDictValue = false);
+		CStringObject();
 		virtual ~CStringObject();
-		void Set(const char* sValue, bool isUTF16, bool isDictValue);
+		void Set(const char* sValue, bool isUTF16, bool isDictValue, int nMax = LIMIT_MAX_STRING_LEN);
+		void Add(const char* sValue);
 		const BYTE*  GetString() const
 		{
 			return (const BYTE*)m_pValue;
@@ -337,9 +344,10 @@ namespace PdfWriter
 	class CBinaryObject : public CObjectBase
 	{
 	public:
-		CBinaryObject(const BYTE* pValue, unsigned int unLen);
+		CBinaryObject(BYTE* pValue, unsigned int unLen, bool bCopy = true);
 		~CBinaryObject();
-		void         Set(const BYTE* pValue, unsigned int unLen);
+		void Set(BYTE* pValue, unsigned int unLen, bool bCopy = true);
+		void Add(BYTE* pValue, unsigned int unLen);
 		BYTE*        GetValue() const
 		{
 			return m_pValue;
@@ -371,6 +379,7 @@ namespace PdfWriter
 	public:
 		CProxyObject(CObjectBase* pObject, bool bClear = false);
 		~CProxyObject();
+		void Clear();
 		CObjectBase* Get() const
 		{
 			return m_pObject;
@@ -382,8 +391,10 @@ namespace PdfWriter
 				((CProxyObject*)pOut)->m_pObject->SetRef(m_pObject->GetObjId(), m_pObject->GetGenNo());
 				return pOut;
 			}
-			CProxyObject* pRes = new CProxyObject(new CObjectBase(), true);
-			pRes->Get()->SetRef(m_pObject->GetObjId(), m_pObject->GetGenNo());
+			bool bObj = m_pObject && m_pObject->IsIndirect();
+			CProxyObject* pRes = new CProxyObject(bObj ? m_pObject : new CObjectBase(), !bObj);
+			if (m_pObject)
+				pRes->Get()->SetRef(m_pObject->GetObjId(), m_pObject->GetGenNo());
 			return pRes;
 		}
 		EObjectType GetType() const
@@ -425,6 +436,7 @@ namespace PdfWriter
 		}
 		static CArrayObject* CreateBox(const TBox& oBox);
 		static CArrayObject* CreateBox(double dL, double dB, double dR, double dT);
+		static CArrayObject* CreateMatrix(double* m);
 		virtual CObjectBase* Copy(CObjectBase* pOut = NULL) const;
 		void FromXml(const std::wstring& sXml);
 
@@ -451,10 +463,11 @@ namespace PdfWriter
 		void         Add(const std::string& sKey, double dReal);
 		void         Add(const std::string& sKey, bool bBool);
 		const char*  GetKey(const CObjectBase* pObject);
-		CStream*     GetStream() const
+		virtual CStream*     GetStream() const
 		{
 			return m_pStream;
 		}
+		virtual void SetStream(CStream* pStream);
 		unsigned int GetFilter() const
 		{
 			return m_unFilter;
@@ -465,27 +478,29 @@ namespace PdfWriter
 		}
 		void         SetFilter(unsigned int unFiler)
 		{
-			m_unFilter = unFiler;
+			m_unFilter |= unFiler;
 		}
-		void         SetStream(CXref* pXref, CStream* pStream);
+		void         SetStream(CXref* pXref, CStream* pStream, bool bThis = true);
 
 		virtual void      BeforeWrite(){}
 		virtual void      Write(CStream* pStream){}
-		virtual void      AfterWrite(){}
+		virtual void      AfterWrite(CStream* pStream){}
 		virtual CObjectBase* Copy(CObjectBase* pOut = NULL) const;
 		virtual EDictType GetDictType() const
 		{
 			return dict_type_UNKNOWN;
 		}
 
-		void WriteToStream(CStream* pStream, CEncrypt* pEncrypt);
-		void WriteSignatureToStream(CStream* pStream, CEncrypt* pEncrypt);
+		virtual void WriteToStream(CStream* pStream, CEncrypt* pEncrypt);
 		unsigned int GetSize() { return m_mList.size(); }
+		std::map<std::string, CObjectBase*> GetDict() { return m_mList; }
 		void FromXml(const std::wstring& sXml);
+		void ClearStream();
+
+	protected:
+		std::map<std::string, CObjectBase*> m_mList;
 
 	private:
-
-		std::map<std::string, CObjectBase*> m_mList;
 		unsigned int                        m_unFilter;
 		unsigned int                        m_unPredictor;
 		CStream*                            m_pStream;
@@ -496,6 +511,7 @@ namespace PdfWriter
 		unsigned int unByteOffset;
 		unsigned int unGenNo;
 		CObjectBase* pObject;
+		std::vector<CProxyObject*> pRefObj;
 	};
 	class CXref
 	{
@@ -505,16 +521,22 @@ namespace PdfWriter
 		CXref(CDocument* pDocument, unsigned int unRemoveId, unsigned int unRemoveGen);
 		~CXref();
 
-		TXrefEntry* GetEntry(unsigned int unIndex) const;
-		TXrefEntry* GetEntryByObjectId(unsigned int unObjectId) const;
-		CXref*      GetXrefByObjectId(unsigned int unObjectId);
-		void        Add(CObjectBase* pObject);		
-		void        WriteToStream(CStream* pStream, CEncrypt* pEncrypt, bool bStream = false);
-		void        SetPrev(CXref* pPrev)
+		TXrefEntry*  GetEntry(unsigned int unIndex) const;
+		TXrefEntry*  GetEntryByObjectId(unsigned int unObjectId) const;
+		CXref*       GetXrefByObjectId(unsigned int unObjectId);
+		void         Add(CObjectBase* pObject);
+		void         Add(CObjectBase* pObject, unsigned int unObjectGen);
+		void         Remove(CObjectBase* pObject);
+		void         WriteToStream(CStream* pStream, CEncrypt* pEncrypt, bool bStream = false);
+		void         SetPrev(CXref* pPrev)
 		{
-			m_pPrev = pPrev;
+			m_pPrev  = pPrev;
 		}
-		void        SetPrevAddr(unsigned int unAddr)
+		CXref*       GetPrev()
+		{
+			return m_pPrev;
+		}
+		void         SetPrevAddr(unsigned int unAddr)
 		{
 			m_unAddr = unAddr;
 		}
@@ -526,15 +548,15 @@ namespace PdfWriter
 		{
 			return m_unStartOffset + m_arrEntries.size();
 		}
-		int         GetCount() const
+		int          GetCount() const
 		{
 			return m_arrEntries.size();
 		}
-		CDictObject*GetTrailer() const
+		CDictObject* GetTrailer() const
 		{
 			return m_pTrailer;
 		}
-		bool        IsPDFA() const;
+		bool         IsPDFA() const;
 
 	private:
 

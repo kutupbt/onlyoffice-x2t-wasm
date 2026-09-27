@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -100,9 +100,29 @@ void BookExt::readFields(CFRecord& record)
         }
 
     }
+}
 
+void BookExt::writeFields(CFRecord& record)
+{
+	FrtHeader header(rt_BookExt);
+	record << header << cb;
+	 _UINT32 flags = 0;
 
+	SETBIT(flags, 0, fDontAutoRecover)
+	SETBIT(flags, 1, fHidePivotList)
+	SETBIT(flags, 2, fFilterPrivacy)
+	SETBIT(flags, 3, fEmbedFactoids)
+	SETBITS(flags, 4, 5, mdFactoidDisplay)
+	SETBIT(flags, 6, fSavedDuringRecovery)
+	SETBIT(flags, 7, fCreatedViaMinimalSave)
+	SETBIT(flags, 8, fOpenedViaDataRecovery)
+	SETBIT(flags, 9, fOpenedViaSafeLoad)
+	record << flags;
 
+	if(cb > 20)
+		record << grbit1;
+	if(cb > 21)
+		record << grbit2;
 }
 
 } // namespace XLS

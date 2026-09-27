@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,7 +31,7 @@
  */
 
 #include "MTRSettings.h"
-
+#include "../Biff_structures/FrtHeader.h"
 namespace XLS
 {
 
@@ -59,6 +59,16 @@ void MTRSettings::readFields(CFRecord& record)
 
 	fMTREnabled			= temp1;
 	fUserSetThreadCount	= temp2;
+}
+
+void MTRSettings::writeFields(CFRecord& record)
+{
+	FrtHeader header(rt_MTRSettings);
+	record << header;
+	_UINT32 flags1 = 0, flags2 = 0;
+	flags1 = fMTREnabled;
+	flags2 = fUserSetThreadCount;
+	record << flags1 << flags2 << cUserThreadCount;
 }
 
 } // namespace XLS

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -30,13 +30,12 @@
  *
  */
 
-#include <vector>
 #include <xml/simple_xml_writer.h>
+#include <boost/algorithm/string.hpp>
 
 #include "oox_rels.h"
 
 #include "pptx_drawings.h"
-#include "pptx_drawing.h"
 
 namespace cpdoccore {
 namespace oox {
@@ -66,12 +65,41 @@ public:
 		}
         for (size_t i = 0; i < d.hlinks.size(); i++)
         {
-			pptx_drawing_rels_.push_back(_rel(false, d.hlinks[i].hId, d.hlinks[i].hRef, typeHyperlink));
+			bool found = false;
+			for (size_t j = 0; j < pptx_drawing_rels_.size(); j++)
+			{
+				if (d.hlinks[i].hId == pptx_drawing_rels_[j].rid)
+				{
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				oox::_rels_type type = boost::algorithm::starts_with(d.hlinks[i].hRef, L"slide") &&
+					boost::algorithm::ends_with(d.hlinks[i].hRef, L".xml") ? typeSlide : typeHyperlink;
+				pptx_drawing_rels_.push_back(_rel(false, d.hlinks[i].hId, d.hlinks[i].hRef, type));
+			}
+				
 		}
         if (!d.action.hId.empty())
         {
-			bool bInternal = (d.action.typeRels != typeHyperlink);
-			pptx_drawing_rels_.push_back(_rel(bInternal, d.action.hId, d.action.hRef, d.action.typeRels));
+			bool found = false;
+			for (size_t i = 0; i < pptx_drawing_rels_.size(); i++)
+			{
+				if (pptx_drawing_rels_[i].rid == d.action.hId)
+				{
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				bool bInternal = (d.action.typeRels != typeHyperlink);
+				pptx_drawing_rels_.push_back(_rel(bInternal, d.action.hId, d.action.hRef, d.action.typeRels));
+			}
 		}    
 	}
 
@@ -114,7 +142,8 @@ public:
 			if (pptx_drawing_rels_[i].type == typeUnknown		|| 
 				pptx_drawing_rels_[i].type == typeTable			||
 				pptx_drawing_rels_[i].type == typeShape			||
-				pptx_drawing_rels_[i].type == typeGroupShape)	continue;
+				pptx_drawing_rels_[i].type == typeGroupShape || 
+				pptx_drawing_rels_[i].type == typeControl)	continue;
 
 			if (pptx_drawing_rels_[i].type == typeComment)
 			{
@@ -133,6 +162,11 @@ public:
 							mediaitems::get_rel_type(pptx_drawing_rels_[i].type), ref, (pptx_drawing_rels_[i].is_internal ? L"" : L"External")) );
 			}
 		}
+	}
+
+	std::vector<_pptx_drawing>& get_drawings()
+	{
+		return pptx_drawings_;
 	}
 
 private:
@@ -180,11 +214,16 @@ void pptx_drawings::dump_rels(rels & Rels)
     return impl_->dump_rels(Rels);
 }
 
+std::vector<_pptx_drawing>& pptx_drawings::get_drawings()
+{
+	return impl_->get_drawings();
+}
+
 pptx_drawings_ptr pptx_drawings::create()
 {
     return boost::make_shared<pptx_drawings>();
 }
 
 }
-}
+ }
 

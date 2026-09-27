@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -42,8 +42,8 @@
 #include "MSO_enums.h"
 
 #include "../../../../../Common/Vml/PPTShape/Enums.h"
-#include "../../../../../Common/ODraw/GraphicsPath.h"
-#include "../../../../../Common/ODraw/FormulaShape.h"
+#include "../../../../../Common/Vml/GraphicsPath.h"
+#include "../../../../../Common/Vml/PPTShape/PptFormula.h"
 
 namespace XLS
 {
@@ -63,6 +63,7 @@ protected:
 	virtual void load(XLS::CFRecord& record);
 	void load(IBinaryReader* reader);
 public:
+	void save(XLS::CFRecord& record);
 	XLS::BiffStructurePtr clone();
 
 	static const XLS::ElementType type = XLS::typeOfficeArtFOPTE;
@@ -751,7 +752,7 @@ class MSOPATHINFO : public XLS::BiffStructure
 
 	static const XLS::ElementType	type = XLS::typeOfficeArtRecord;
 
-	NSCustomShapesConvert::RulesType	m_eRuler;
+	ODRAW::RulesType		m_eRuler;
 	_UINT16					m_nCount;
 	
 	int cbElement;
@@ -770,7 +771,7 @@ class MSOSG : public XLS::BiffStructure
 
 	static const XLS::ElementType	type = XLS::typeOfficeArtRecord;
 
-	NSCustomShapesConvert::FormulaType	m_eType;
+	NSGuidesVML::FormulaType	m_eType;
 
 	unsigned char				m_param_type1;
 	unsigned char				m_param_type2;
@@ -1065,54 +1066,48 @@ public:
 		{
 			switch (m_arSegments[i].m_eRuler)
 			{
-				case NSCustomShapesConvert::rtLineTo:
+				case ODRAW::rtLineTo:
 				{
-					for (_UINT16 j = 0; j < m_arSegments[i].m_nCount; ++j)
-					{
-						if (valuePointer + 1 > m_arPoints.size())
-						{
-							break;
+                    if (valuePointer + 1 > m_arPoints.size())
+                    {
+                        break;
 
-							strVmlPath += L"l";
-							strVmlPath += std::to_wstring(m_arPoints[0].x);
-							strVmlPath += L",";
-							strVmlPath += std::to_wstring(m_arPoints[0].y);
+                        strVmlPath += L"l";
+                        strVmlPath += std::to_wstring(m_arPoints[0].x);
+                        strVmlPath += L",";
+                        strVmlPath += std::to_wstring(m_arPoints[0].y);
 							
-							++valuePointer;
-						}
-						else
-						{
-							strVmlPath += L"l";
-							strVmlPath += std::to_wstring(m_arPoints[valuePointer].x );
-							strVmlPath += L",";
-							strVmlPath += std::to_wstring(m_arPoints[valuePointer].y );
+                        ++valuePointer;
+                    }
+                    else
+                    {
+                        strVmlPath += L"l";
+                        strVmlPath += std::to_wstring(m_arPoints[valuePointer].x );
+                        strVmlPath += L",";
+                        strVmlPath += std::to_wstring(m_arPoints[valuePointer].y );
 							
-							++valuePointer;
-						}
-					}
+                        ++valuePointer;
+                    }
 				}break;
-				case NSCustomShapesConvert::rtCurveTo:
+				case ODRAW::rtCurveTo:
 				{
-					for (_UINT16 j = 0; j < m_arSegments[i].m_nCount; ++j)
-					{
-						if (valuePointer + 3 > m_arPoints.size()) 
-							break;
-						strVmlPath += L"c";
-						strVmlPath += std::to_wstring(m_arPoints[valuePointer].x );
-						strVmlPath += L",";
-						strVmlPath += std::to_wstring(m_arPoints[valuePointer].y );
-						strVmlPath += L",";
-						strVmlPath += std::to_wstring(m_arPoints[valuePointer + 1].x );
-						strVmlPath += L",";
-						strVmlPath += std::to_wstring(m_arPoints[valuePointer + 1].y );
-						strVmlPath += L",";
-						strVmlPath += std::to_wstring(m_arPoints[valuePointer + 2].x );
-						strVmlPath += L",";
-						strVmlPath += std::to_wstring(m_arPoints[valuePointer + 2].y );
-						valuePointer += 3;
-					}
+                    if (valuePointer + 3 > m_arPoints.size())
+                        break;
+                    strVmlPath += L"c";
+                    strVmlPath += std::to_wstring(m_arPoints[valuePointer].x );
+                    strVmlPath += L",";
+                    strVmlPath += std::to_wstring(m_arPoints[valuePointer].y );
+                    strVmlPath += L",";
+                    strVmlPath += std::to_wstring(m_arPoints[valuePointer + 1].x );
+                    strVmlPath += L",";
+                    strVmlPath += std::to_wstring(m_arPoints[valuePointer + 1].y );
+                    strVmlPath += L",";
+                    strVmlPath += std::to_wstring(m_arPoints[valuePointer + 2].x );
+                    strVmlPath += L",";
+                    strVmlPath += std::to_wstring(m_arPoints[valuePointer + 2].y );
+                    valuePointer += 3;
 				}break;
-				case NSCustomShapesConvert::rtMoveTo:
+				case ODRAW::rtMoveTo:
 				{
 					if (valuePointer < m_arPoints.size()) 
 					{
@@ -1125,12 +1120,22 @@ public:
 					}
 				}
 				break;
-				case NSCustomShapesConvert::rtClose:
+                case ODRAW::rtNoFill:
+                {
+                    strVmlPath += L"nf";
+                }
+                break;
+                case ODRAW::rtNoStroke:
+                {
+                    strVmlPath += L"ns";
+                }
+                break;
+				case ODRAW::rtClose:
 				{
 					strVmlPath += L"x";
 				}
 				break;
-				case NSCustomShapesConvert::rtEnd:
+				case ODRAW::rtEnd:
 				{
 					strVmlPath += L"e";
 				}break;	

@@ -1,12 +1,39 @@
+/*
+ * (c) Copyright Ascensio System SIA 2010-2023
+ *
+ * This program is a free software product. You can redistribute it and/or
+ * modify it under the terms of the GNU Affero General Public License (AGPL)
+ * version 3 as published by the Free Software Foundation. In accordance with
+ * Section 7(a) of the GNU AGPL its Section 15 shall be amended to the effect
+ * that Ascensio System SIA expressly excludes the warranty of non-infringement
+ * of any third-party rights.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
+ * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
+ *
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
+ * street, Riga, Latvia, EU, LV-1050.
+ *
+ * The  interactive user interfaces in modified source and object code versions
+ * of the Program must display Appropriate Legal Notices, as required under
+ * Section 5 of the GNU AGPL version 3.
+ *
+ * Pursuant to Section 7(b) of the License you must retain the original Product
+ * logo when distributing the program. Pursuant to Section 7(e) we decline to
+ * grant you any rights under trademark law for use of our trademarks.
+ *
+ * All the Product's GUI elements, including illustrations and icon sets, as
+ * well as technical writing content are licensed under the terms of the
+ * Creative Commons Attribution-ShareAlike 4.0 International. See the License
+ * terms at http://creativecommons.org/licenses/by-sa/4.0/legalcode
+ *
+ */
 #include "Adaptors.h"
 #include "../lib/xpdf/NameToCharCode.h"
 #include "../lib/xpdf/TextString.h"
+#include "../../DesktopEditor/graphics/pro/js/wasm/src/serialize.h"
 
-
-void GlobalParamsAdaptor::SetFontManager(NSFonts::IFontManager *pFontManager)
-{
-    m_pFontManager = pFontManager;
-}
 void GlobalParamsAdaptor::SetCMapFolder(const std::wstring &wsFolder)
 {
     m_wsCMapFolder = wsFolder;
@@ -155,9 +182,57 @@ bool GlobalParamsAdaptor::GetCMap(const char* sName, char*& pData, unsigned int&
     return false;
 }
 
+void GlobalParamsAdaptor::AddRedact(const std::vector<double>& arrRedactBox)
+{
+	m_arrRedactBox.insert(m_arrRedactBox.end(), arrRedactBox.begin(), arrRedactBox.end());
+}
+double crossProduct(double x1, double y1, double x2, double y2, double x3, double y3)
+{
+	return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+}
+bool GlobalParamsAdaptor::InRedact(double dX, double dY)
+{
+	for (int i = 0; i < m_arrRedactBox.size(); i += 8)
+	{
+		double x1 = m_arrRedactBox[i + 0];
+		double y1 = m_arrRedactBox[i + 1];
+		double x2 = m_arrRedactBox[i + 2];
+		double y2 = m_arrRedactBox[i + 3];
+		double x3 = m_arrRedactBox[i + 6];
+		double y3 = m_arrRedactBox[i + 7];
+		double x4 = m_arrRedactBox[i + 4];
+		double y4 = m_arrRedactBox[i + 5];
+
+		if (x1 == x2 && x2 == x3 && x3 == x4 && y1 == y2 && y2 == y3 && y3 == y4)
+		{
+			if (dX == x1 && dY == y1)
+				return true;
+			continue;
+		}
+
+		// Проверяем знаки векторных произведений для всех сторон
+		double cross1 = crossProduct(x1, y1, x2, y2, dX, dY);
+		double cross2 = crossProduct(x2, y2, x3, y3, dX, dY);
+		double cross3 = crossProduct(x3, y3, x4, y4, dX, dY);
+		double cross4 = crossProduct(x4, y4, x1, y1, dX, dY);
+
+		bool allPositive = (cross1 >= 0 && cross2 >= 0 && cross3 >= 0 && cross4 >= 0);
+		bool allNegative = (cross1 <= 0 && cross2 <= 0 && cross3 <= 0 && cross4 <= 0);
+
+		// Точка внутри, если все векторные произведения имеют одинаковый знак
+		if ((allPositive || allNegative) && !(cross1 == 0 && cross2 == 0 && cross3 == 0 && cross4 == 0))
+			return true;
+	}
+	return false;
+}
+void GlobalParamsAdaptor::ClearRedact()
+{
+	m_arrRedactBox.clear();
+}
+
 bool operator==(const Ref &a, const Ref &b)
 {
-    return a.gen == b.gen && a.num == b.gen;
+	return a.gen == b.gen && a.num == b.num;
 }
 
 bool operator<(const Ref &a, const Ref &b)

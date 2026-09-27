@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -34,6 +34,7 @@
 
 #include "../../DesktopEditor/common/Types.h"
 #include "../../DesktopEditor/graphics/AggPlusEnums.h"
+#include "../../DesktopEditor/graphics/GraphicsPath.h"
 #include "Types.h"
 
 #include <string>
@@ -44,6 +45,9 @@ namespace PdfWriter
 {
     class CPage;
     class CFontDict;
+	class CShading;
+	class CExtGrState;
+	class CDestination;
 }
 
 class CPdfWriter;
@@ -72,11 +76,15 @@ public:
         m_dY          = dY;
         m_pFont       = NULL;
         m_dSize       = -1;
+		m_nType       = PdfWriter::EFontType::fontUnknownType;
         m_lColor      = 0;
         m_nAlpha      = 255;
         m_dCharSpace  = 0;
         m_dHorScaling = 100;
         m_nMode       = (int)PdfWriter::textrenderingmode_Fill;
+		m_dRise       = 0;
+		m_dWordSpace  = 0;
+		m_dWidth      = -1;
 
         m_bNeedDoItalic = false;
         m_bNeedDoBold   = false;
@@ -115,6 +123,10 @@ public:
     {
         m_dSize = dSize;
     }
+	inline void           SetType(PdfWriter::EFontType oType)
+	{
+		m_nType = oType;
+	}
     inline void           SetColor(const LONG& lColor)
     {
         m_lColor = lColor;
@@ -143,7 +155,27 @@ public:
     {
         m_bNeedDoBold = bBold;
     }
-    inline PdfWriter::CFontDict*     GetFont() const
+	inline void           SetPUA(const std::string& sPUA)
+	{
+		m_sPUA = sPUA;
+	}
+	inline void           SetRise(const double& dRise)
+	{
+		m_dRise = dRise;
+	}
+	inline void           SetWordSpace(const double& dWordSpace)
+	{
+		m_dWordSpace = dWordSpace;
+	}
+	inline void           SetName(const std::wstring& sName)
+	{
+		m_sName = sName;
+	}
+	inline void           SetWidth(const double& dWidth)
+	{
+		m_dWidth = dWidth;
+	}
+	inline PdfWriter::CFontDict* GetFont() const
     {
         return m_pFont;
     }
@@ -151,6 +183,10 @@ public:
     {
         return m_dSize;
     }
+	inline PdfWriter::EFontType GetFontType() const
+	{
+		return m_nType;
+	}
     inline LONG           GetColor() const
     {
         return m_lColor;
@@ -179,6 +215,26 @@ public:
     {
         return m_bNeedDoBold;
     }
+	inline std::string    GetPUA() const
+	{
+		return m_sPUA;
+	}
+	inline double         GetRise()
+	{
+		return m_dRise;
+	}
+	inline double         GetWordSpace()
+	{
+		return m_dWordSpace;
+	}
+	inline std::wstring   GetName()
+	{
+		return m_sName;
+	}
+	inline double         GetWidth()
+	{
+		return m_dWidth;
+	}
 
 private:
 
@@ -191,11 +247,17 @@ private:
     bool           m_bNeedDoItalic;
     bool           m_bNeedDoBold;
     double         m_dSize;
+	PdfWriter::EFontType m_nType;
     LONG           m_lColor;
     BYTE           m_nAlpha;
     double         m_dCharSpace;
     int            m_nMode;
     double         m_dHorScaling;
+	std::string    m_sPUA;
+	double         m_dRise;
+	double         m_dWordSpace;
+	std::wstring   m_sName;
+	double         m_dWidth;
 };
 struct TFontInfo
 {
@@ -420,11 +482,32 @@ public:
             }
         }
     }
-    inline double*GetDashPattern(LONG& lSize)
+	inline double* GetDashPattern(LONG& lSize)
     {
         lSize = m_lDashPatternSize;
         return m_pDashPattern;
     }
+	inline double GetFlatness()
+	{
+		return m_dFlatness;
+	}
+	inline void   SetFlatness(const double& dF)
+	{
+		m_dFlatness = dF;
+	}
+	inline double* GetDColor2(int& nSize)
+	{
+		nSize = m_nColor2Size;
+		return m_dColor2;
+	}
+	inline void SetDColor2(int nSize, double d1 = 0, double d2 = 0, double d3 = 0, double d4 = 0)
+	{
+		m_nColor2Size = nSize;
+		m_dColor2[0] = d1;
+		m_dColor2[1] = d2;
+		m_dColor2[2] = d3;
+		m_dColor2[3] = d4;
+	}
 
     void Reset()
     {
@@ -434,18 +517,20 @@ public:
         m_oColor.Set(0);
         m_dSize  = 0;
         m_nAlpha = 255;
-        m_nStartCapStyle = Aggplus::LineCapRound;
-        m_nEndCapStyle   = Aggplus::LineCapRound;
-        m_nJoinStyle     = Aggplus::LineJoinRound;
+        m_nStartCapStyle = Aggplus::LineCapFlat;
+        m_nEndCapStyle   = Aggplus::LineCapFlat;
+        m_nJoinStyle     = Aggplus::LineJoinMiter;
 
         m_lAlign = 0;
-        m_dMiter = 0;
+        m_dMiter = 3.527778;
+		m_dFlatness = 0;
 
         m_nDashStyle       = Aggplus::DashStyleSolid;
         m_lDashPatternSize = 0;
         m_pDashPattern     = NULL;
+		m_dDashOffset      = 0;
 
-        m_dDashOffset = 0;
+		m_nColor2Size = 0;
     }
 
 private:
@@ -459,12 +544,15 @@ private:
 
     LONG   m_lAlign;
     double m_dMiter;
+	double m_dFlatness;
 
     BYTE   m_nDashStyle;
     double m_dDashOffset;
     double*m_pDashPattern;
     LONG   m_lDashPatternSize;
 
+	double m_dColor2[4];
+	int m_nColor2Size;
 };
 class CBrushState
 {
@@ -972,6 +1060,43 @@ public:
         lCount  = m_lShadingPointsCount;
     }
 
+	inline void GetBrushScale(bool& isScale, double& scaleX, double& scaleY) const
+	{
+		isScale = m_bIsScale;
+		scaleX = m_dScaleX;
+		scaleY = m_dScaleY;
+	}
+	inline void SetBrushScale(bool isScale, const double& scaleX, const double& scaleY)
+	{
+		m_bIsScale = isScale;
+		m_dScaleX = scaleX;
+		m_dScaleY = scaleY;
+	}
+	inline void GetBrushOffset(double& offsetX, double& offsetY) const
+	{
+		offsetX = m_dOffsetX;
+		offsetY = m_dOffsetY;
+	}
+	inline void SetBrushOffset(const double& offsetX, const double& offsetY)
+	{
+		m_dOffsetX = offsetX;
+		m_dOffsetY = offsetY;
+	}
+
+	inline double* GetDColor2(int& nSize)
+	{
+		nSize = m_nColor2Size;
+		return m_dColor2;
+	}
+	inline void SetDColor2(int nSize, double d1 = 0, double d2 = 0, double d3 = 0, double d4 = 0)
+	{
+		m_nColor2Size = nSize;
+		m_dColor2[0] = d1;
+		m_dColor2[1] = d2;
+		m_dColor2[2] = d3;
+		m_dColor2[3] = d4;
+	}
+
 private:
 
     LONG         m_lType;
@@ -989,13 +1114,22 @@ private:
     double*      m_pShadingPoints;
     LONG         m_lShadingPointsCount;
     double       m_pShadingPattern[6]; // У линейного градиента x0, y0, x1, y1 (2 не используются), у радиального x0, y0, r0, x1, y1, r1
+
+	bool         m_bIsScale;
+	double       m_dScaleX;
+	double       m_dScaleY;
+	double       m_dOffsetX;
+	double       m_dOffsetY;
+
+	double m_dColor2[4];
+	int m_nColor2Size;
 };
 class CFontState
 {
 public:
 
-    CFontState() : m_wsName(L"Arial"), m_wsPath(L""), m_dSize(10), m_bGid(false), m_lFaceIndex(0), m_lStyle(0),
-        m_bBold(false), m_bItalic(false), m_dCharSpace(0), m_bNeedDoItalic(false), m_bNeedDoBold(false)
+	CFontState() : m_wsName(L"Arial"), m_wsPath(L""), m_dSize(10), m_bGid(false), m_lFaceIndex(0), m_lStyle(0), m_bBold(false), m_bItalic(false), m_dCharSpace(0), m_bNeedDoItalic(false),
+		m_bNeedDoBold(false), m_nRenderMode(0), m_dRise(0), m_dWordSpace(0), m_dHorizontalScaling(100)
     {
     }
 
@@ -1010,6 +1144,10 @@ public:
         m_bBold      = false;
         m_bItalic    = false;
         m_dCharSpace = 0;
+		m_nRenderMode = 0;
+		m_dRise      = 0;
+		m_dWordSpace = 0;
+		m_dHorizontalScaling = 100;
 
         m_bNeedDoItalic = false;
         m_bNeedDoBold   = false;
@@ -1097,6 +1235,39 @@ public:
     {
         return m_bNeedDoBold;
     }
+	inline void         SetRenderMode(BYTE nMode)
+	{
+		m_nRenderMode = nMode;
+	}
+	inline BYTE         GetRenderMode()
+	{
+		return m_nRenderMode;
+	}
+	inline void         SetRise(double dRise)
+	{
+		m_dRise = dRise;
+	}
+	inline double       GetRise()
+	{
+		return m_dRise;
+	}
+	inline void         SetWordSpace(double dWordSpace)
+	{
+		m_dWordSpace = dWordSpace;
+	}
+	inline double       GetWordSpace()
+	{
+		return m_dWordSpace;
+	}
+	inline void         SetHorizontalScaling(double dHS)
+	{
+		m_dHorizontalScaling = dHS;
+	}
+	inline double       GetHorizontalScaling()
+	{
+		return m_dHorizontalScaling;
+	}
+
 
 private:
 
@@ -1111,6 +1282,68 @@ private:
     double       m_dCharSpace;
     bool         m_bNeedDoItalic;
     bool         m_bNeedDoBold;
+	BYTE         m_nRenderMode;
+	double       m_dRise;
+	double       m_dWordSpace;
+	double m_dHorizontalScaling;
+};
+struct CTransform
+{
+	CTransform()
+	{
+		Reset();
+	}
+	void operator=(const CTransform& oT)
+	{
+		m11 = oT.m11;
+		m12 = oT.m12;
+		m21 = oT.m21;
+		m22 = oT.m22;
+		dx  = oT.dx;
+		dy  = oT.dy;
+	}
+	void Reset()
+	{
+		m11 = 1.0;
+		m12 = 0.0;
+		m21 = 0.0;
+		m22 = 1.0;
+		dx  = 0;
+		dy  = 0;
+	}
+	bool IsIdentity() const
+	{
+		if (fabs(m11 - 1) < 0.001
+			&& fabs(m12) < 0.001
+			&& fabs(m21) < 0.001
+			&& fabs(m22 - 1) < 0.001
+			&& fabs(dx) < 0.001
+			&& fabs(dy) < 0.001)
+			return true;
+
+		return false;
+	}
+	void Set(const double& dM11, const double& dM12, const double& dM21, const double& dM22, const double& dX, const double& dY)
+	{
+		m11 = dM11;
+		m12 = dM12;
+		m21 = dM21;
+		m22 = dM22;
+		dx  = dX;
+		dy  = dY;
+	}
+	void Transform(double dUserX, double dUserY, double* pdDeviceX, double* pdDeviceY) const
+	{
+		*pdDeviceX = dUserX * m11 + dUserY * m21 + dx;
+		*pdDeviceY = dUserX * m12 + dUserY * m22 + dy;
+	}
+
+	double m11;
+	double m12;
+	double m21;
+	double m22;
+	double dx;
+	double dy;
 };
 class CPath
 {
@@ -1142,6 +1375,7 @@ private:
         virtual void UpdateBounds(double& dL, double& dT, double& dR, double& dB) = 0;
         virtual void GetLastPoint(double& dX, double& dY) = 0;
         virtual EPathCommandType GetType() = 0;
+		virtual void ToCGraphicsPath(PdfWriter::CMatrix* pMatrix, Aggplus::CGraphicsPath& oPath) = 0;
     };
     class CPathMoveTo : public CPathCommandBase
     {
@@ -1162,6 +1396,7 @@ private:
         {
             return rendererpathcommand_MoveTo;
         }
+		void ToCGraphicsPath(PdfWriter::CMatrix* pMatrix, Aggplus::CGraphicsPath& oPath);
 
     public:
 
@@ -1187,6 +1422,7 @@ private:
         {
             return rendererpathcommand_LineTo;
         }
+		void ToCGraphicsPath(PdfWriter::CMatrix* pMatrix, Aggplus::CGraphicsPath& oPath);
 
     public:
 
@@ -1216,6 +1452,7 @@ private:
         {
             return rendererpathcommand_CurveTo;
         }
+		void ToCGraphicsPath(PdfWriter::CMatrix* pMatrix, Aggplus::CGraphicsPath& oPath);
 
     public:
 
@@ -1250,6 +1487,7 @@ private:
         {
             return rendererpathcommand_ArcTo;
         }
+		void ToCGraphicsPath(PdfWriter::CMatrix* pMatrix, Aggplus::CGraphicsPath& oPath);
 
     public:
 
@@ -1278,6 +1516,7 @@ private:
         {
             return rendererpathcommand_Close;
         }
+		void ToCGraphicsPath(PdfWriter::CMatrix* pMatrix, Aggplus::CGraphicsPath& oPath);
     };
     class CPathText : public CPathCommandBase
     {
@@ -1307,6 +1546,7 @@ private:
         {
             return rendererpathcommand_Text;
         }
+		void ToCGraphicsPath(PdfWriter::CMatrix* pMatrix, Aggplus::CGraphicsPath& oPath);
 
     public:
 
@@ -1382,6 +1622,9 @@ public:
     void Draw(PdfWriter::CPage* pPage, bool bStroke, bool bFill, bool bEoFill);
     void Clip(PdfWriter::CPage* pPage, bool bEvenOdd = false);
     void GetBounds(double& dL, double& dT, double& dR, double& dB);
+	void Redact(PdfWriter::CMatrix* oMatrix, const std::vector<double>& arrRedact, PdfWriter::CPage* pPage, bool bStroke, bool bFill, bool bEoFill,
+				PdfWriter::CShading* pShading, PdfWriter::CExtGrState* pShadingExtGrState);
+	bool DrawPathRedact(PdfWriter::CMatrix* oMatrix, Aggplus::CGraphicsPath* oPath, bool bStroke, const std::vector<PdfWriter::CSegment>& arrForStroke = {});
 
 private:
 
@@ -1401,59 +1644,7 @@ public:
     std::vector<CPathCommandBase*> m_vCommands;
     bool                           m_bIsMoveTo;
 };
-struct CTransform
-{
-    CTransform()
-    {
-        Reset();
-    }
-    void operator=(const CTransform& oT)
-    {
-        m11 = oT.m11;
-        m12 = oT.m12;
-        m21 = oT.m21;
-        m22 = oT.m22;
-        dx  = oT.dx;
-        dy  = oT.dy;
-    }
-    void Reset()
-    {
-        m11 = 1.0;
-        m12 = 0.0;
-        m21 = 0.0;
-        m22 = 1.0;
-        dx  = 0;
-        dy  = 0;
-    }
-    bool IsIdentity() const
-    {
-        if (fabs(m11 - 1) < 0.001
-            && fabs(m12) < 0.001
-            && fabs(m21) < 0.001
-            && fabs(m22 - 1) < 0.001
-            && fabs(dx) < 0.001
-            && fabs(dy) < 0.001)
-            return true;
 
-        return false;
-    }
-    void Set(const double& dM11, const double& dM12, const double& dM21, const double& dM22, const double& dX, const double& dY)
-    {
-        m11 = dM11;
-        m12 = dM12;
-        m21 = dM21;
-        m22 = dM22;
-        dx  = dX;
-        dy  = dY;
-    }
-
-    double m11;
-    double m12;
-    double m21;
-    double m22;
-    double dx;
-    double dy;
-};
 class CCommandManager
 {
 public:
@@ -1469,12 +1660,13 @@ private:
 private:
     CPdfWriter*                        m_pRenderer;
     std::vector<CRendererCommandBase*> m_vCommands;
-    CTransform                         m_oTransform;
+	CTransform                         m_oTransform;
 };
 struct TDestinationInfo
 {
     TDestinationInfo(PdfWriter::CPage* page, const double& x, const double& y, const double& w, const double& h, const double& dx, const double& dy, const unsigned int& undpage)
     {
+		pDest      = NULL;
         pPage      = page;
         dX         = x;
         dY         = y;
@@ -1484,7 +1676,14 @@ struct TDestinationInfo
         dDestY     = dy;
         unDestPage = undpage;
     }
+	TDestinationInfo(PdfWriter::CDestination* dest, const unsigned int& undpage)
+	{
+		pDest      = dest;
+		pPage      = NULL;
+		unDestPage = undpage;
+	}
 
+	PdfWriter::CDestination* pDest;
     PdfWriter::CPage* pPage;
     double       dX;
     double       dY;
@@ -1507,25 +1706,27 @@ public:
         m_nAscent      = 0;
         m_nDescent     = 0;
     }
-    void Init(unsigned short* pCodes, unsigned int* pWidths, const unsigned int& unLen, const unsigned short& ushSpaceCode, const unsigned int& unLineHeight, const int& nAscent)
+    void Init(unsigned short* pCodes, unsigned int* pWidths, const unsigned int& unLen, const unsigned short& ushSpaceCode, const unsigned short& ushNewLineCode, const unsigned int& unLineHeight, const int& nAscent)
     {
-        m_pCodes       = pCodes;
-        m_pWidths      = pWidths;
-        m_unLen        = unLen;
-        m_ushSpaceCode = ushSpaceCode;
-        m_unLineHeight = unLineHeight;
-        m_nAscent      = nAscent;
-        m_nDescent     = unLineHeight - nAscent;
+        m_pCodes         = pCodes;
+        m_pWidths        = pWidths;
+        m_unLen          = unLen;
+        m_ushSpaceCode   = ushSpaceCode;
+        m_ushNewLineCode = ushNewLineCode;
+        m_unLineHeight   = unLineHeight;
+        m_nAscent        = nAscent;
+        m_nDescent       = unLineHeight - nAscent;
     }
     void Clear()
     {
-        m_pCodes       = NULL;
-        m_pWidths      = NULL;
-        m_unLen        = 0;
-        m_ushSpaceCode = 0;
-        m_unLineHeight = 0;
-        m_nAscent      = 0;
-        m_nDescent     = 0;
+        m_pCodes         = NULL;
+        m_pWidths        = NULL;
+        m_unLen          = 0;
+        m_ushSpaceCode   = 0;
+        m_ushNewLineCode = 0;
+        m_unLineHeight   = 0;
+        m_nAscent        = 0;
+        m_nDescent       = 0;
     }
     void CalculateLines(const double& dFontSize, const double& dW)
     {
@@ -1547,6 +1748,15 @@ public:
                 bLineStart        = false;
                 bFirstItemOnLine  = false;
             }
+			else if (IsNewLine(unPos))
+			{
+				bLineStart       = true;
+				bFirstItemOnLine = true;
+				bWord            = false;
+				dX               = 0;
+				dWordWidth       = 0;
+				m_vBreaks.push_back(unPos + 1);
+			}
             else
             {
                 double dLetterWidth = m_pWidths[unPos] * dKoef;
@@ -1656,13 +1866,15 @@ public:
 
         return m_vBreaks[nLineIndex - 1];
     }
-    unsigned int GetLineEndPos(const int& nLineIndex) const
-    {
-        if (nLineIndex >= m_vBreaks.size())
-            return m_unLen;
-
-        return m_vBreaks[nLineIndex];
-    }
+	unsigned int GetLineEndPos(const int& nLineIndex) const
+	{
+		unsigned int unLineStart = GetLineStartPos(nLineIndex);
+		unsigned int unLineEnd = nLineIndex >= m_vBreaks.size() ? m_unLen : m_vBreaks[nLineIndex];
+		while (unLineEnd > 0 && unLineEnd > unLineStart && IsNewLine(unLineEnd - 1))
+			--unLineEnd;
+		
+		return unLineEnd;
+	}
     double GetLineWidth(const int& nLineIndex, const double& dFontSize = 10.0)
     {
         if (nLineIndex < 0 || nLineIndex > m_vBreaks.size())
@@ -1699,9 +1911,13 @@ public:
     }
 
 private:
-    inline bool IsSpace(const unsigned int& unPos) const
+	inline bool IsSpace(const unsigned int& unPos) const
+	{
+		return (m_pCodes[unPos] == m_ushSpaceCode);
+	}
+    inline bool IsNewLine(const unsigned int& unPos) const
     {
-        return (m_pCodes[unPos] == m_ushSpaceCode);
+        return (m_pCodes[unPos] == m_ushNewLineCode);
     }
     inline bool CheckHeight(const double& dH, const double& dFontSize) const
     {
@@ -1714,6 +1930,7 @@ private:
     unsigned int*   m_pWidths;
     unsigned int    m_unLen;
     unsigned short  m_ushSpaceCode;
+    unsigned short  m_ushNewLineCode;
     unsigned int    m_unLineHeight;
     int             m_nAscent;
     int             m_nDescent;

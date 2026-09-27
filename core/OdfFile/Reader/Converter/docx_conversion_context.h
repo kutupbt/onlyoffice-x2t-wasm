@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -36,6 +36,7 @@
 #include "../../DataTypes/noteclass.h"
 
 #include <boost/unordered_map.hpp>
+#include <unordered_map>
 #include <boost/shared_ptr.hpp>
 #include <list>
 
@@ -66,6 +67,7 @@ namespace cpdoccore {
 		class style_columns;
 		class form_element;
 		class text_linenumbering_configuration;
+		class text_list_style;
 
 		namespace text
 		{
@@ -144,11 +146,11 @@ public:
 		bool					use_image_replace;
 	};
 
-    drawing_context() : objects_count_(0),  current_shape_(NULL),shape_text_content_(L""),zero_string_(L""),current_level_(0),current_shape_id_ (0){}
+    drawing_context() : objects_count_(0), current_shape_(NULL), current_level_(0), current_shape_id_ (0) {}
     
     void start_frame(odf_reader::draw_frame * drawFrame) 
     { 
-        current_object_name_ = L"";
+        current_object_name_.clear();
  		current_level_++;
         objects_count_++; 
 
@@ -161,26 +163,28 @@ public:
 		current_level_++;
         objects_count_++; 
 		
-		current_shape_id_		= objects_count_;
-        current_object_name_	= L"";
-        current_shape_			= drawShape;
+        current_object_name_.clear();
+
+		current_shape_id_ = objects_count_;
+        current_shape_ = drawShape;
     }
     void start_control(odf_reader::draw_control * drawControl) 
     { 
 		current_level_++;
         objects_count_++; 
 		
-		current_shape_id_		= objects_count_;
-        current_object_name_	= L"";
-        current_control_		= drawControl;
+        current_object_name_.clear();
+
+		current_shape_id_ = objects_count_;
+        current_control_ = drawControl;
     }
 	void start_group() 
     { 
 		current_level_++;
         objects_count_++; 
 		
-		current_shape_id_		= objects_count_;
-        current_object_name_	= L"";
+		current_shape_id_ = objects_count_;
+        current_object_name_.clear();
 		
 		groups_.push_back(_group());
     }
@@ -223,6 +227,7 @@ public:
 		current_level_--;
 		frames_.pop_back();
 		caption_.clear();
+		draw_hyperlinkRId.clear();
 	}
 
 	std::wstring & get_text_stream_frame()
@@ -259,6 +264,7 @@ public:
 		shape_text_content_.clear();
 		current_shape_id_ = 0;
 		caption_.clear();
+		draw_hyperlinkRId.clear();
 	}
 	void stop_control()
 	{
@@ -267,6 +273,7 @@ public:
 		shape_text_content_.clear();
 		current_shape_id_ = 0;
 		caption_.clear();
+		draw_hyperlinkRId.clear();
 	}
 	void stop_group()
 	{
@@ -276,8 +283,8 @@ public:
 	
 	int get_current_frame_id() const 
 	{
-		if (false == frames_.empty())	return frames_.back().id;
-		else					return 0;
+		if (false == frames_.empty()) return frames_.back().id;
+		else return 0;
 	}
 	bool	in_group()						{ return !groups_.empty(); }
     int		get_current_level()		const	{ return current_level_; }
@@ -297,25 +304,25 @@ public:
 		caption_ = value;
 	}
 	
+	std::wstring draw_hyperlinkRId;
 private:
-	std::wstring			shape_text_content_;
+	std::wstring shape_text_content_;
 
-	std::wstring			current_object_name_;
-    unsigned int			objects_count_;
+	std::wstring current_object_name_;
+    unsigned int objects_count_;
 	
-	int						current_level_;
+	int current_level_;
 	
-	std::vector<_group>		groups_;
-	std::vector<_frame>		frames_; 
+	std::vector<_group> groups_;
+	std::vector<_frame> frames_; 
    
 	odf_reader::draw_shape *current_shape_; 
-	size_t					current_shape_id_;
+	size_t current_shape_id_;
 
 	odf_reader::draw_control*current_control_; 
 
-	std::wstring			zero_string_;
-	std::wstring			caption_;
-
+	std::wstring zero_string_;
+	std::wstring caption_;
 };
 
 class section_context : boost::noncopyable
@@ -525,6 +532,7 @@ public:
 		bool						active = false;
 		bool						in_drawing = false;
 		bool						out_active = false;
+		bool						in_para = false;
 		_UINT32						oox_id = 0;
 
 		void clear()
@@ -802,6 +810,7 @@ public:
 	std::wstring  dump_settings_document();
 	std::wstring  dump_settings_app();
 	std::wstring  dump_settings_core();
+	std::wstring  dump_settings_custom();
 
  	bool next_dump_page_properties_;
 	bool next_dump_section_;
@@ -862,6 +871,7 @@ public:
     void pop_text_properties	();
    
 	odf_reader::style_text_properties_ptr current_text_properties();
+	odf_reader::style_paragraph_properties_ptr current_paragraph_properties();
 
     void set_page_break_after(int val);
     int get_page_break_after();
@@ -871,6 +881,9 @@ public:
 
 	void set_page_break		(bool val);
     bool get_page_break		();
+
+	void set_temp_style_name( const std::wstring& val );
+	std::wstring get_temp_style_name() const;
 	
 	void			add_page_properties		(const std::wstring & StyleName);
     std::wstring	get_page_properties		();
@@ -881,7 +894,7 @@ public:
 	void last_dump_page_properties			(bool val);
 	bool is_last_dump_page_properties		();
 
-    void set_master_page_name(const std::wstring & MasterPageName);
+    bool set_master_page_name(const std::wstring & MasterPageName);
     const std::wstring & get_master_page_name() const;
 
     void start_text_list_style	(const std::wstring & StyleName);
@@ -894,7 +907,11 @@ public:
     void end_list				();
     void start_list_item		(bool restart = false);
     void end_list_item	();
-    
+
+	size_t get_list_style_level() { return list_style_stack_.size(); }
+	size_t get_list_style_occurances(const std::wstring& styleName) { return list_styles_occurances_[styleName]; }
+	const std::vector<std::wstring>& get_list_style_stack() const { return list_style_stack_; }
+
 	void serialize_list_properties(std::wostream & strm);
 	void serialize_paragraph_style(std::wostream & strm, const std::wstring & ParentId, bool in_styles = false);
    
@@ -976,22 +993,50 @@ public:
 	void add_alphabetical_index_text (odf_reader::office_element_ptr & elem);
 
 	void set_process_headers_footers(bool Val)				{ process_headers_footers_ = Val; }
+
+	void set_next_master_page_name(_CP_OPT(std::wstring) masterPageName) { next_master_page_name_ = masterPageName; }
+	_CP_OPT(std::wstring) get_next_master_page_name() { return next_master_page_name_; }
    
 	headers_footers			& get_headers_footers()			{ return headers_footers_; }
 	header_footer_context	& get_header_footer_context()	{ return header_footer_context_; }
 	drop_cap_context		& get_drop_cap_context()		{ return drop_cap_context_; }
 	
 	styles_map	styles_map_;
+	std::unordered_map<std::wstring,bool> status_para{};
 	bool		process_headers_footers_;
 	bool		delayed_converting_;
 	bool		convert_delayed_enabled_;
 
-	void		start_changes();
-	void		end_changes();
+	void		start_changes(bool in_para);
+	void		end_changes(bool in_para);
 
 	void		add_jsaProject(const std::string &content);
 
+    void set_implicit_end( bool _flag );
+
+    bool get_implicit_end() const;
+
+	void set_inside_frame( bool flag );
+
+	bool get_inside_frame() const;
+
+	void set_scale( const int _scale );
+
+	int get_scale() const;
+
+	const std::wstring get_current_fontName();
+
+	const double get_current_fontSize_from_default_style();
+
 private:
+
+	std::wstring temp_name;
+
+    bool flag_implicit_end = false;
+
+	bool inside_frame = false;
+
+	int scale_for_framePr = 0;
 
 	struct _context_state
 	{
@@ -1084,6 +1129,11 @@ private:
 	std::map<std::wstring, std::vector<odf_reader::office_element_ptr>> mapAlphabeticals;
 
 	std::vector<std::wstring>											arBibliography;
+
+	std::vector<_CP_PTR(odf_reader::text_list_style)>					restarted_list_styles;
+	std::unordered_map<std::wstring, size_t>							list_styles_occurances_;
+
+	_CP_OPT(std::wstring) next_master_page_name_;
 };
 
 }

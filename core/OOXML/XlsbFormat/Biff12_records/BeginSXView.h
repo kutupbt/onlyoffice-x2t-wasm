@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,9 +31,9 @@
  */
 #pragma once
 
-#include  "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_records/BiffRecord.h"
 #include "../../XlsxFormat/WritingElement.h"
-#include "../Biff12_structures/XLWideString.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_records/BiffRecord.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_structures/BIFF12/XLWideString.h"
 
 namespace XLSB
 {
@@ -48,83 +48,84 @@ namespace XLSB
 
             XLS::BaseObjectPtr clone();
 
-            void readFields(XLS::CFRecord& record);
+            void readFields(XLS::CFRecord& record) override;
+			void writeFields(XLS::CFRecord& record) override;
 
             static const XLS::ElementType	type = XLS::typeBeginSXView;
 
-            BYTE         bVerSxMacro;
-            bool         fDisplayImmediateItems;
-            bool         fEnableDataEd;
-            bool         fDisableFList;
-            bool         fReenterOnLoadOnce;
-            bool         fNotViewCalculatedMembers;
-            bool         fNotVisualTotals;
-            bool         fPageMultipleItemLabel;
+            BYTE         bVerSxMacro = 0;
+            bool         fDisplayImmediateItems = false;
+            bool         fEnableDataEd = false;
+            bool         fDisableFList = false;
+            bool         fReenterOnLoadOnce = false;
+            bool         fNotViewCalculatedMembers = false;
+            bool         fNotVisualTotals = false;
+            bool         fPageMultipleItemLabel = false;
             //H - reserved1 (1 bit)
-            bool         fHideDDData;
+            bool         fHideDDData = false;
             //J - reserved2 (3 bits)
-            bool         fHideDrillIndicators;
-            bool         fPrintDrillIndicators;
-            bool         fMemPropsInTips;
-            bool         fNoPivotTips;
-            BYTE         cIndentInc;//7 bit
-            bool         fNoHeaders;
-            bool         fNoStencil;
-            bool         fHideTotAnnotation;
-            bool         fIncludeEmptyRw;
-            bool         fIncludeEmptyCol;
-            bool         fEnableWizard;
-            bool         fEnableDrilldown;
-            bool         fEnableFieldDialog;
-            bool         fPreserveFormatting;
-            bool         fAutoFormat;
-            bool         fDisplayErrorString;
-            bool         fDisplayNullString;
-            bool         fAcrossPageLay;
-            bool         fSubtotalHiddenPageItems;
-            bool         fRwGrand;
-            bool         fColGrand;
-            bool         fPrintTitles;
+            bool         fHideDrillIndicators = false;
+            bool         fPrintDrillIndicators = false;
+            bool         fMemPropsInTips = false;
+            bool         fNoPivotTips = false;
+            BYTE         cIndentInc = 0;//7 bit
+            bool         fNoHeaders = false;
+            bool         fNoStencil = false;
+            bool         fHideTotAnnotation = false;
+            bool         fIncludeEmptyRw = false;
+            bool         fIncludeEmptyCol = false;
+            bool         fEnableWizard = false;
+            bool         fEnableDrilldown = false;
+            bool         fEnableFieldDialog = false;
+            bool         fPreserveFormatting = false;
+            bool         fAutoFormat = false;
+            bool         fDisplayErrorString = false;
+            bool         fDisplayNullString = false;
+            bool         fAcrossPageLay = false;
+            bool         fSubtotalHiddenPageItems = false;
+            bool         fRwGrand = false;
+            bool         fColGrand = false;
+            bool         fPrintTitles = false;
             //f - unused (1 bit)
-            bool         fRepeatItemsOnEachPrintedPage;
-            bool         fMergeLabels;
-            bool         fDisplayData;
-            bool         fDisplayGrand;
-            bool         fDisplayPageFieldStyle;
-            bool         fDisplayTableStyle;
-            bool         fDisplayVacateStyle;
-            bool         ibitAtrNum;
-            bool         ibitAtrFnt;
-            bool         ibitAtrAlc;
-            bool         ibitAtrBdr;
-            bool         ibitAtrPat;
-            bool         ibitAtrProt;
-            bool         fDisplayTag;
+            bool         fRepeatItemsOnEachPrintedPage = false;
+            bool         fMergeLabels = false;
+            bool         fDisplayData = false;
+            bool         fDisplayGrand = false;
+            bool         fDisplayPageFieldStyle = false;
+            bool         fDisplayTableStyle = false;
+            bool         fDisplayVacateStyle = false;
+            bool         ibitAtrNum = false;
+            bool         ibitAtrFnt = false;
+            bool         ibitAtrAlc = false;
+            bool         ibitAtrBdr = false;
+            bool         ibitAtrPat = false;
+            bool         ibitAtrProt = false;
+            bool         fDisplayTag = false;
             //u - reserved3 (1 bit)
-            bool         fDefaultCompact;
-            bool         fDefaultOutline;
-            bool         fOutlineData;
-            bool         fCompactData;
-            bool         fNewDropZones;
-            bool         fPublished;
-            bool         fEmptyDisplayErrorString;
-            bool         fEmptyDisplayNullString;
-            bool         fTurnOffImmersive;
-            bool         fSingleFilterPerField;
-            bool         fUseRwHdrName;
-            bool         fUseColHdrName;
-            bool         fNonDefaultSortInFlist;
+            bool         fDefaultCompact = false;
+            bool         fDefaultOutline = false;
+            bool         fOutlineData = false;
+            bool         fCompactData = false;
+            bool         fNewDropZones = false;
+            bool         fPublished = false;
+            bool         fEmptyDisplayErrorString = false;
+            bool         fEmptyDisplayNullString = true;
+            bool         fTurnOffImmersive = false;
+            bool         fSingleFilterPerField = false;
+            bool         fUseRwHdrName = false;
+            bool         fUseColHdrName = false;
+            bool         fNonDefaultSortInFlist = false;
             //ι - reserved4 (1 bit)
-            bool         fDontUseCustomLists;
-            BYTE         sxaxis4Data;
-            BYTE         cWrapPage;
-            BYTE         bVerSxLastUpdated;
-            BYTE         bVerSxUpdateableMin;
-            _INT32       ipos4Data;
-            _UINT16      itblAutoFmt;
+            bool         fDontUseCustomLists = false;
+            BYTE         sxaxis4Data = 0;
+            BYTE         cWrapPage = 0;
+            BYTE         bVerSxLastUpdated = 0;
+            BYTE         bVerSxUpdateableMin = 0;
+            _INT32       ipos4Data = -1;
+            _UINT16      itblAutoFmt = 0;
             //reserved6 (2 bytes):
-            _UINT32      dwCrtFmtId;
-            _UINT32      idCache;
+            _UINT32      dwCrtFmtId = 0;
+            _UINT32      idCache = 0;
             XLWideString irstName;
             XLWideString irstData;
             XLWideString irstGrand;

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -47,12 +47,21 @@ namespace PPTX
 		public:
 			PPTX_LOGIC_BASE(CommentAuthor)
 
-			nullable_int	id;
+			nullable_int	idx;
 			nullable_int	last_idx;
 			nullable_int	clr_idx;
 
 			nullable_string	name;
 			nullable_string	initials;			
+
+//------------------------------------------------------------------------------------------
+//modern
+			nullable_string	id; //Guid
+			nullable_string	userId;
+			nullable_string	providerId;
+
+			bool bModern = false;
+//------------------------------------------------------------------------------------------
 
 			virtual void fromXML(XmlUtils::CXmlNode& node);
 			virtual std::wstring toXML() const;
@@ -70,7 +79,10 @@ namespace PPTX
 	{
 	public:
 		std::vector<PPTX::Logic::CommentAuthor> m_arAuthors;
-
+//--------------------------------------------------------------------------------------
+		bool bModern = false;
+		std::map<std::wstring, int> mapAuthors;
+//--------------------------------------------------------------------------------------
 		Authors(OOX::Document* pMain);
 		Authors(OOX::Document* pMain, const OOX::CPath& filename, FileMap& map);
 		virtual ~Authors();

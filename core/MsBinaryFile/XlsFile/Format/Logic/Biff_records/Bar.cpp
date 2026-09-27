@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -61,6 +61,17 @@ void Bar::readFields(CFRecord& record)
 	fStacked	= GETBIT(flags, 1);
 	f100		= GETBIT(flags, 2);
 	fHasShadow	= GETBIT(flags, 3);
+}
+
+void Bar::writeFields(CFRecord& record)
+{
+    unsigned short flags = 0;
+    SETBIT(flags, 0, fTranspose)
+    SETBIT(flags, 1, fStacked)
+    SETBIT(flags, 2, f100)
+    SETBIT(flags, 3, fHasShadow)
+
+    record << pcOverlap << pcGap << flags;
 }
 
 int	Bar::serialize(std::wostream & _stream)

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -36,6 +36,7 @@
 #include "../../DesktopEditor/common/File.h"
 
 #define STREAM_FILTER_NONE          0x0000
+#define STREAM_FILTER_ALREADY_DECODE 0x0001
 #define STREAM_FILTER_ASCIIHEX      0x0100
 #define STREAM_FILTER_ASCII85       0x0200
 #define STREAM_FILTER_FLATE_DECODE  0x0400
@@ -96,6 +97,7 @@ namespace PdfWriter
 		virtual int          Tell() = 0;
 		virtual void         Close() = 0;
 		virtual unsigned int Size() = 0;
+		virtual void         Clear() {}
 		virtual EStreamType  GetType()
 		{
 			return StreamUnknown;
@@ -105,6 +107,9 @@ namespace PdfWriter
 		unsigned char  ReadUChar();
 		char           ReadChar();
 		unsigned short ReadUShort();
+		double         ReadFixed();
+		long long      ReadLongDateTime();
+		unsigned int   ReadOffset(BYTE nOffset);
 
 		void Write(const BYTE* pBuffer, unsigned int unSize, bool bCalcCheckSum);
 		void WriteChar (char nChar);
@@ -146,6 +151,7 @@ namespace PdfWriter
 
 		CMemoryStream();
 		CMemoryStream(unsigned int unBufferSize);
+		CMemoryStream(BYTE* pBuffer, unsigned int unSize, bool bFree = false);
 		~CMemoryStream();
 		bool         IsEof();
 		void         Write(const BYTE* pBuffer, unsigned int unSize);
@@ -154,16 +160,21 @@ namespace PdfWriter
 		int          Tell();
 		void         Close();
 		unsigned int Size();
+		void         Clear();
 		EStreamType  GetType()
 		{
 			return StreamMemory;
 		}
+		BYTE* GetBuffer();
+		BYTE* GetCurBuffer();
+		void ClearWithoutAttack();
 
 	private:
 
 		void Shrink(unsigned int unSize);
 
 	private:
+		bool         m_bFree;
 
 		BYTE*        m_pBuffer;
 		int          m_nBufferSize;

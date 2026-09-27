@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -155,6 +155,49 @@ const bool GLOBALS::loadContent(BinProcessor& proc)
 	}	
 
 	return true;
+}
+const bool GLOBALS::saveContent(BinProcessor& proc)
+{
+    if(m_CalcMode != nullptr)
+        proc.mandatory(*m_CalcMode);
+    else
+        proc.mandatory<CalcMode>();
+
+    proc.optional<CalcCount>();
+
+    if(m_CalcRefMode != nullptr)
+        proc.mandatory(*m_CalcRefMode);
+    else
+        proc.mandatory<CalcRefMode>();
+
+    proc.optional<CalcIter>();
+    proc.optional<CalcDelta>();
+    proc.optional<CalcSaveRecalc>();
+    proc.optional<PrintRowCol>();
+    proc.optional<PrintGrid>();
+    proc.optional<GridSet>();
+
+    if(m_Guts != nullptr)
+        proc.mandatory(*m_Guts);
+    else
+        proc.mandatory<Guts>();
+    if(m_DefaultRowHeight != nullptr)
+        proc.mandatory(*m_DefaultRowHeight);
+    else
+        proc.mandatory<DefaultRowHeight>();
+    if(m_WsBool != nullptr)
+        proc.mandatory(*m_WsBool);
+    else
+        {
+            WsBool wsbool(is_dialog);
+            proc.mandatory(wsbool);
+        }
+    if(m_HorizontalPageBreaks != nullptr)
+        proc.mandatory(*m_HorizontalPageBreaks);
+
+    if(m_VerticalPageBreaks != nullptr)
+        proc.mandatory(*m_VerticalPageBreaks);
+    return true;
 }
 int GLOBALS::serialize_calcPr(std::wostream & stream)
 {

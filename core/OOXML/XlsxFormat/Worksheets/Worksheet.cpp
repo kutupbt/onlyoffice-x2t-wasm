@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -34,11 +34,14 @@
 #include "Worksheet.h"
 
 #include "../Comments/Comments.h"
+#include "../Drawing/Pos.h"
+#include "../Pivot/PivotTable.h"
 #include "../Comments/ThreadedComments.h"
 
 #include "../../DocxFormat/External/HyperLink.h"
 #include "../../DocxFormat/Media/Image.h"
 #include "../../DocxFormat/VmlDrawing.h"
+#include "../../DocxFormat/Drawing/DrawingExt.h"
 
 #include "../../XlsbFormat/Xlsb.h"
 
@@ -47,6 +50,22 @@
 
 #include "../../XlsbFormat/Biff12_unions/HLINKS.h"
 #include "../../XlsbFormat/Biff12_unions/MERGECELLS.h"
+
+#include "../../Binary/XlsbFormat/FileTypes_SpreadsheetBin.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Binary/CFStreamCacheWriter.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/WorksheetSubstream.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/ChartSheetSubstream.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_unions/PAGESETUP.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_unions/SORTANDFILTER.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_unions/CONDFMTS.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_unions/CONDFMT12.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_unions/OBJECTS.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_unions/FEAT11.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_records/CondFmt12.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_records/MsoDrawing.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_records/Obj.h"
+
+#include "../../../OdfFile/Common/logging.h"
 
 namespace OOX
 {
@@ -65,11 +84,11 @@ namespace OOX
 			if (xlsx)
 			{
 				m_bPrepareForBinaryWriter = true; // подготовка для бинарника при чтении
-				
+
 				xlsx->m_arWorksheets.push_back( this );
 				//xlsx->m_mapWorksheets.insert( std::make_pair(rId, this) );
 			}
-			else 
+			else
 				m_bPrepareForBinaryWriter = false;
 		}
         CWorksheet::CWorksheet(OOX::Document* pMain, const CPath& oRootPath, const CPath& oPath, const std::wstring & rId, bool isChartSheet) : OOX::File(pMain), OOX::IFileContainer(pMain), WritingElement(pMain)
@@ -85,11 +104,11 @@ namespace OOX
 			if (xlsx)
 			{
 				m_bPrepareForBinaryWriter = true;
-				
+
 				xlsx->m_arWorksheets.push_back( this );
 				xlsx->m_mapWorksheets.insert( std::make_pair(rId, this) );
 			}
-			else 
+			else
 				m_bPrepareForBinaryWriter = false;
 
 			read( oRootPath, oPath );
@@ -228,6 +247,409 @@ namespace OOX
 
             }
         }
+		XLS::BaseObjectPtr CWorksheet::WriteBin() const
+		{
+			if(m_bIsChartSheet)
+			{
+				XLSB::ChartSheetStreamPtr chartSheetStream(new XLSB::ChartSheetStream);
+
+				if (m_oPageMargins.IsInit())
+					chartSheetStream->m_BrtMargins = m_oPageMargins->toBin();
+				if (m_oHeaderFooter.IsInit())
+					chartSheetStream->m_HEADERFOOTER = m_oHeaderFooter->toBin();
+				if (m_oDrawing.IsInit())
+					chartSheetStream->m_BrtDrawing = m_oDrawing->toBin();
+                if (m_oLegacyDrawing.IsInit())
+					chartSheetStream->m_BrtLegacyDrawing = m_oLegacyDrawing->toBin();
+				if (m_oLegacyDrawingHF.IsInit())
+					chartSheetStream->m_BrtLegacyDrawingHF = m_oLegacyDrawingHF->toBin();
+                if (m_oPicture.IsInit())
+					chartSheetStream->m_BrtBkHim = m_oPicture->toBin();
+
+				if (m_oSheetViews.IsInit())
+					chartSheetStream->m_CSVIEWS = m_oSheetViews->toBin();
+                
+				if (m_oPageSetup.IsInit())
+					chartSheetStream->m_BrtCsPageSetup = m_oPageSetup->toBinCs();
+
+				if(m_oSheetProtection.IsInit())
+				{
+					if (m_oSheetProtection->m_oAlgorithmName.IsInit())
+						chartSheetStream->m_BrtCsProtectionIso = m_oSheetProtection->toBinCS();
+					else if(m_oSheetProtection->m_oPassword.IsInit())
+						chartSheetStream->m_BrtCsProtection = m_oSheetProtection->toBinCS();
+				}
+
+				if (m_oSheetPr.IsInit())
+                {
+                    if(m_oSheetPr->m_oCodeName.IsInit())
+                        chartSheetStream->m_BrtCsProp = m_oSheetPr->toBinCs();
+                }
+
+				return chartSheetStream;
+			}
+			else
+			{
+				XLSB::WorkSheetStreamPtr workSheetStream(new XLSB::WorkSheetStream);
+
+				if (m_oCols.IsInit())
+					workSheetStream->m_arCOLINFOS = m_oCols->toBin();
+				if (m_oDimension.IsInit())
+					workSheetStream->m_BrtWsDim = m_oDimension->toBin();
+				if (m_oDrawing.IsInit())
+					workSheetStream->m_BrtDrawing = m_oDrawing->toBin();
+				if (m_oLegacyDrawing.IsInit())
+					workSheetStream->m_BrtLegacyDrawing = m_oLegacyDrawing->toBin();
+				if (m_oLegacyDrawingHF.IsInit())
+					workSheetStream->m_BrtLegacyDrawingHF = m_oLegacyDrawingHF->toBin();
+				if (m_oHyperlinks.IsInit())
+					workSheetStream->m_HLINKS = m_oHyperlinks->toBin();
+				if (m_oMergeCells.IsInit())
+					workSheetStream->m_MERGECELLS = m_oMergeCells->toBin();
+
+				if ( m_oSheetData.IsInit())
+					workSheetStream->m_CELLTABLE = m_oSheetData->toBin();
+
+				if (m_oSheetFormatPr.IsInit())
+					workSheetStream->m_BrtWsFmtInfo = m_oSheetFormatPr->toBin();
+				if (m_oSheetViews.IsInit())
+					workSheetStream->m_WSVIEWS2 = m_oSheetViews->toBin();
+				if (m_oPageMargins.IsInit())
+					workSheetStream->m_BrtMargins = m_oPageMargins->toBin();
+				if (m_oPageSetup.IsInit())
+					workSheetStream->m_BrtPageSetup = m_oPageSetup->toBin();
+				if (m_oPrintOptions.IsInit())
+					workSheetStream->m_BrtPrintOptions = m_oPrintOptions->toBin();
+				if (m_oHeaderFooter.IsInit())
+					workSheetStream->m_HEADERFOOTER = m_oHeaderFooter->toBin();
+				if(m_oSheetProtection.IsInit())
+				{
+					if (m_oSheetProtection->m_oAlgorithmName.IsInit())
+						workSheetStream->m_BrtSheetProtectionIso = m_oSheetProtection->toBin();
+					else if(m_oSheetProtection->m_oPassword.IsInit())
+						workSheetStream->m_BrtSheetProtection = m_oSheetProtection->toBin();
+				}
+				if (m_oTableParts.IsInit())
+					workSheetStream->m_LISTPARTS = m_oTableParts->toBin();
+				if (m_oSortState.IsInit())
+					workSheetStream->m_SORTSTATE = m_oSortState->toBin();
+				if (!m_arrConditionalFormatting.empty())
+						for(auto &item : m_arrConditionalFormatting)
+							workSheetStream->m_arCONDITIONALFORMATTING.push_back(item->toBin());
+
+				if (m_oAutofilter.IsInit())
+					workSheetStream->m_AUTOFILTER = m_oAutofilter->toBin();
+				if (m_oDataValidations.IsInit())
+					workSheetStream->m_DVALS = m_oDataValidations->toBin();
+				if (m_oOleObjects.IsInit())
+					workSheetStream->m_OLEOBJECTS = m_oOleObjects->toBin();
+				if (m_oControls.IsInit())
+					workSheetStream->m_ACTIVEXCONTROLS = m_oControls->toBin();
+				if (m_oSheetPr.IsInit())
+					workSheetStream->m_BrtWsProp = m_oSheetPr->toBin();
+				if (m_oPicture.IsInit())
+					workSheetStream->m_BrtBkHim = m_oPicture->toBin();
+				if (m_oRowBreaks.IsInit())
+					workSheetStream->m_RWBRK = m_oRowBreaks->toBinRow();
+				if (m_oColBreaks.IsInit())
+					workSheetStream->m_COLBRK = m_oColBreaks->toBinColumn();
+				if (m_oDataConsolidate.IsInit())
+					workSheetStream->m_DCON = m_oDataConsolidate->toBin();
+
+				if (m_oProtectedRanges.IsInit())
+				{
+					if(m_oProtectedRanges->m_arrItems.empty())
+					{
+						auto arrayPtr = m_oProtectedRanges->m_arrItems.back();
+						if(arrayPtr->m_oSpinCount.IsInit() || arrayPtr->m_oSpinCount.IsInit() || arrayPtr->m_oSpinCount.IsInit() || arrayPtr->m_oSaltValue.IsInit())
+							workSheetStream->m_arBrtRangeProtectionIso = m_oProtectedRanges->toBin();
+						else
+							workSheetStream->m_arBrtRangeProtection = m_oProtectedRanges->toBin();
+					}
+				}
+				if (m_oExtLst.IsInit())
+					workSheetStream->m_FRTWORKSHEET = m_oExtLst->toBinWorksheet();
+
+				return workSheetStream;
+			}
+
+		}
+		XLS::BaseObjectPtr CWorksheet::toXLS()
+		{
+			if(m_bIsChartSheet)
+			{
+				auto chartSheetPtr = new XLS::ChartSheetSubstream(0);
+				XLS::BaseObjectPtr objPtr(chartSheetPtr);
+				if(m_oPageSetup.IsInit())
+					chartSheetPtr->m_PAGESETUP = m_oPageSetup->toXLS();
+				else
+				{
+					auto pageSetup = new XLS::PAGESETUP;
+					chartSheetPtr->m_PAGESETUP = XLS::BaseObjectPtr(pageSetup);
+				}
+				if(m_oSheetViews.IsInit())
+					chartSheetPtr->m_arWINDOW = m_oSheetViews->toXLS();
+				if(m_oDrawing.IsInit() && m_oDrawing->m_oId.IsInit())
+				{
+					RId drawingId = m_oDrawing->m_oId->GetValue();
+					auto castedDrawing = Get<OOX::File>(drawingId);
+					auto drawingPtr = static_cast<OOX::Spreadsheet::CDrawing*>(castedDrawing.GetPointer());
+					drawingPtr->toXLSChart(objPtr);
+				}
+				return objPtr;
+
+			}
+			auto worksheetPtr = new XLS::WorksheetSubstream(0);
+			auto sheetPtr = XLS::BaseObjectPtr(worksheetPtr);
+			if(m_oSortState.IsInit() || m_oAutofilter.IsInit())
+			{
+				auto sortData = new XLS::SORTANDFILTER;
+				worksheetPtr->m_SORTANDFILTER = XLS::BaseObjectPtr(sortData);
+				if(m_oSortState.IsInit())
+					m_oSortState->toXLS(worksheetPtr->m_SORTANDFILTER);
+				if(m_oAutofilter.IsInit())
+					m_oAutofilter->toXLS(worksheetPtr->m_SORTANDFILTER);
+			}
+			if(m_oDimension.IsInit())
+				worksheetPtr->m_Dimensions = m_oDimension->toXLS();
+			if(m_oCols.IsInit())
+				worksheetPtr->m_COLUMNS = m_oCols->toXLS();
+			if (m_oMergeCells.IsInit())
+				worksheetPtr->m_arMergeCells = m_oMergeCells->toXLS();
+			if(m_oSheetViews.IsInit())
+				worksheetPtr->m_arWINDOW = m_oSheetViews->toXLS();
+			if(m_oPageSetup.IsInit())
+				worksheetPtr->m_PAGESETUP = m_oPageSetup->toXLS();
+			else
+				{
+					auto pageSetup = new XLS::PAGESETUP;
+					worksheetPtr->m_PAGESETUP = XLS::BaseObjectPtr(pageSetup);
+				}
+			if(m_oPageMargins.IsInit())
+				m_oPageMargins->toXLS(worksheetPtr->m_PAGESETUP);
+			if(m_oPrintOptions.IsInit())
+				m_oPrintOptions->toXLS(worksheetPtr->m_PAGESETUP);
+			if(m_oHeaderFooter.IsInit())
+				m_oHeaderFooter->toXLS(worksheetPtr->m_PAGESETUP);
+			if(m_oSheetProtection.IsInit())
+				worksheetPtr->m_PROTECTION = m_oSheetProtection->toXLS();
+			if(!m_arrConditionalFormatting.empty())
+			{
+				auto condFmts = new XLS::CONDFMTS;
+				worksheetPtr->m_CONDFMTS = XLS::BaseObjectPtr(condFmts);
+				auto condFmtId = 0;
+				for(auto i : m_arrConditionalFormatting)
+					{
+						i->toXLS(worksheetPtr->m_CONDFMTS);
+						auto lastCondFmt = static_cast<XLS::CONDFMT12*>(condFmts->m_arCONDFMT.back().get());
+						auto fmtRecord = static_cast<XLS::CondFmt12*>(lastCondFmt->m_CondFmt12.get());
+						fmtRecord->mainCF.nID = condFmtId;
+						condFmtId++;
+					}
+			}
+			if(m_oHyperlinks.IsInit())
+				worksheetPtr->m_arHLINK = m_oHyperlinks->toXLS();
+			if(m_oDataValidations.IsInit())
+				worksheetPtr->m_DVAL = m_oDataValidations->toXLS();
+			if(m_oSheetData.IsInit())
+				worksheetPtr->m_CELLTABLE = m_oSheetData->toXLS();
+			if(m_oDataConsolidate.IsInit())
+				worksheetPtr->m_DCON = m_oDataConsolidate->toXLS();
+
+			if(m_oDrawing.IsInit() && m_oDrawing->m_oId.IsInit())
+			{
+
+				RId drawingId = m_oDrawing->m_oId->GetValue();
+				auto castedDrawing = Get<OOX::File>(drawingId);
+				auto drawingPtr = static_cast<OOX::Spreadsheet::CDrawing*>(castedDrawing.GetPointer());
+				if(drawingPtr->IsChart())
+				{
+					auto Objects = new XLS::OBJECTS(false);
+					auto objectsPtr =  XLS::BaseObjectPtr(Objects);
+					auto drawingObj = new XLS::MsoDrawing(false);
+
+					{
+						auto anchor = drawingPtr->m_arrItems.back();
+						auto anchorElem = drawingPtr->m_arrItems.back()->m_oElement->GetElem();
+						{
+							auto left = 0, leftOff = 0, right = 0, righOff = 0, top = 0, topOff = 0, bot = 0, botOff = 0;
+							anchor->getAnchorPos(left, leftOff, top, topOff, right, righOff, bot, botOff);
+							drawingObj->prepareChart(drawingId.getNumber(), left, right, top, bot, leftOff, righOff, topOff, botOff);
+						}
+					}
+					Objects->m_MsoDrawing = XLS::MsoDrawingPtr(drawingObj);
+					auto objPt = new XLS::Obj(Objects->m_MsoDrawing);
+					objPt->cmo.ot = 5;
+					objPt->cmo.fPrint = true;
+					objPt->cmo.fRecalcObj = true;
+					objPt->cmo.id = drawingId.getNumber();
+					std::pair<XLS::BaseObjectPtr, std::vector<XLS::BaseObjectPtr>> objPair;
+					objPair.first = XLS::BaseObjectPtr(objPt);
+					auto chartSheetPtr = new XLS::ChartSheetSubstream(0);
+					chartSheetPtr->separate = false;
+					auto pageSetup = new XLS::PAGESETUP;
+					chartSheetPtr->m_PAGESETUP = XLS::BaseObjectPtr(pageSetup);
+					XLS::BaseObjectPtr StreamobjPtr(chartSheetPtr);
+
+					drawingPtr->toXLSChart(StreamobjPtr);
+					objPair.second.push_back(StreamobjPtr);
+					Objects->m_arrObject.push_back(objPair);
+					worksheetPtr->m_OBJECTS = objectsPtr;
+				}
+			}
+			/*if(m_pComments != nullptr)
+			{
+				if(worksheetPtr->m_OBJECTS == nullptr)
+					worksheetPtr->m_OBJECTS = XLS::BaseObjectPtr(new XLS::OBJECTS(false));
+				worksheetPtr->m_arNote = m_pComments->toXLS(worksheetPtr->m_OBJECTS);
+			}*///will be later
+			if(m_oTableParts.IsInit())
+			{
+				auto feat11 = new XLS::FEAT11;
+				worksheetPtr->m_arFEAT11.push_back(XLS::BaseObjectPtr(feat11));
+			}
+			auto container = GetContainer();
+			for(auto file : container)
+			{
+				if((file->type() == OOX::SpreadsheetBin::FileTypes::TableBin || file->type() == OOX::Spreadsheet::FileTypes::Table) && !worksheetPtr->m_arFEAT11.empty())
+				{
+					auto feat11 = static_cast< XLS::FEAT11*>(worksheetPtr->m_arFEAT11.back().get());
+					XLS::FEAT11::_data featData;
+					auto tempTable = static_cast<CTableFile*>(file.GetPointer());
+					featData.m_Feature = tempTable->m_oTable->toXLS();
+					if(tempTable->m_oTable->m_oTableStyleInfo.IsInit())
+					{
+						featData.m_arList12.push_back(tempTable->m_oTable->m_oTableStyleInfo->toXLS());
+					}
+
+					feat11->m_arFEAT.push_back(featData);
+				}
+				else if(file->type() == OOX::SpreadsheetBin::FileTypes::PivotTableBin)
+				{
+					auto tempPivot = static_cast<CPivotTableFile*>(file.GetPointer());
+					if(tempPivot->m_oPivotTableDefinition.IsInit())
+						worksheetPtr->m_arPIVOTVIEW.push_back(tempPivot->m_oPivotTableDefinition->toXLS());
+				}
+			}
+			return sheetPtr;
+		}
+        void CWorksheet::WriteBin(XLS::StreamCacheWriterPtr& writer) const
+        {
+            {
+                auto record = writer->getNextRecord(XLSB::rt_BeginSheet);
+                 writer->storeNextRecord(record);
+            }
+            if(!m_bIsChartSheet)
+            {
+            if (m_oSheetPr.IsInit())
+                m_oSheetPr->toBin(writer);
+            if (m_oDimension.IsInit())
+                    m_oDimension->toBin(writer);
+            if (m_oSheetViews.IsInit())
+                    m_oSheetViews->toBin(writer);
+            if (m_oSheetFormatPr.IsInit())
+                    m_oSheetFormatPr->toBin(writer);
+            if (m_oCols.IsInit())
+                    m_oCols->toBin(writer);
+
+            if ( m_oSheetData.IsInit())
+                m_oSheetData->toBin(writer);
+
+            if(m_oSheetProtection.IsInit())
+                m_oSheetProtection->toBin(writer);
+            if (m_oProtectedRanges.IsInit() && !m_oProtectedRanges->m_arrItems.empty())
+                m_oProtectedRanges->toBin(writer);
+
+            if (m_oAutofilter.IsInit())
+                m_oAutofilter->toBin(writer);
+            if (m_oSortState.IsInit())
+                m_oSortState->toBin(writer);
+
+            if (m_oDataConsolidate.IsInit())
+                m_oDataConsolidate->toBin(writer);
+            if (m_oMergeCells.IsInit())
+                    m_oMergeCells->toBin(writer);
+            if (!m_arrConditionalFormatting.empty())
+                for(auto &item : m_arrConditionalFormatting)
+                    item->toBin(writer);
+            if (m_oDataValidations.IsInit())
+                m_oDataValidations->toBin(writer);
+            if (m_oHyperlinks.IsInit())
+                m_oHyperlinks->toBin(writer);
+            if (m_oPrintOptions.IsInit())
+                m_oPrintOptions->toBin(writer);
+            if (m_oPageMargins.IsInit())
+                m_oPageMargins->toBin(writer);
+            if (m_oPageSetup.IsInit())
+                m_oPageSetup->toBin(writer);
+            if (m_oHeaderFooter.IsInit())
+                m_oHeaderFooter->toBin(writer);
+            if (m_oRowBreaks.IsInit())
+                m_oRowBreaks->toBinRow(writer);
+            if (m_oColBreaks.IsInit())
+                m_oColBreaks->toBinColumn(writer);
+            if (m_oDrawing.IsInit())
+                m_oDrawing->toBin(writer);
+            if (m_oLegacyDrawing.IsInit())
+                m_oLegacyDrawing->toBin(writer);
+            if (m_oLegacyDrawingHF.IsInit())
+                m_oLegacyDrawingHF->toBin(writer);
+            if (m_oPicture.IsInit())
+                m_oPicture->toBin(writer);
+            if (m_oOleObjects.IsInit())
+                m_oOleObjects->toBin(writer);
+            if (m_oControls.IsInit())
+                m_oControls->toBin(writer);
+            if (m_oTableParts.IsInit())
+                m_oTableParts->toBin(writer);
+            if (m_oExtLst.IsInit())
+            {
+                auto extLst = m_oExtLst->toBinWorksheet();
+                extLst->write(writer, nullptr);
+            }
+            }
+            else
+            {
+                if (m_oSheetPr.IsInit())
+                {
+                    XLS::BaseObjectPtr props;
+                    props = m_oSheetPr->toBinCs();
+                    props->write(writer, nullptr);
+                }
+                if(m_oSheetViews.IsInit())
+                {
+                    XLS::BaseObjectPtr views;
+                    views = m_oSheetViews->toBinCs();
+                    views->write(writer, nullptr);
+                }
+                if(m_oSheetProtection.IsInit())
+                    m_oSheetProtection->toBinCS(writer);
+                if (m_oPageMargins.IsInit())
+                    m_oPageMargins->toBin(writer);
+                if (m_oPageSetup.IsInit())
+                {
+                    XLS::BaseObjectPtr pageSetup;
+                    pageSetup = m_oPageSetup->toBinCs();
+                    pageSetup->write(writer, nullptr);
+                }
+                if (m_oHeaderFooter.IsInit())
+                    m_oHeaderFooter->toBin(writer);
+                if (m_oDrawing.IsInit())
+                    m_oDrawing->toBin(writer);
+                if (m_oLegacyDrawing.IsInit())
+                    m_oLegacyDrawing->toBin(writer);
+                if (m_oLegacyDrawingHF.IsInit())
+                    m_oLegacyDrawingHF->toBin(writer);
+                if (m_oPicture.IsInit())
+                    m_oPicture->toBin(writer);
+
+            }
+            {
+                auto record = writer->getNextRecord(XLSB::rt_EndSheet);
+                 writer->storeNextRecord(record);
+            }
+
+        }
 		void CWorksheet::read(const CPath& oRootPath, const CPath& oPath)
 		{
 			m_oReadPath = oPath;
@@ -239,22 +661,30 @@ namespace OOX
 			}
 			else
 			{
+				_CP_LOG << L"\tstart read xml sheet: " << oPath.GetFilename() << std::endl;
 				XmlUtils::CXmlLiteReader oReader;
 				if (!oReader.FromFile(oPath.GetPath()))
 					return;
 				if (!oReader.ReadNextNode())
 					return;
 
+				_CP_LOG << L"\tend read xml, start parsing: " << oPath.GetFilename() << std::endl;
+
 				std::wstring sName = XmlUtils::GetNameNoNS(oReader.GetName());
 				if (L"worksheet" == sName || L"chartsheet" == sName)
 				{
 					fromXML(oReader);
 				}
+				_CP_LOG << L"\tend parsing sheet: " << oPath.GetFilename() << std::endl;
 			}
 		}
 		void CWorksheet::PrepareAfterRead()
 		{
-			PrepareComments(m_pComments, m_pThreadedComments, m_oLegacyDrawing.GetPointer());
+			CXlsb* xlsb = dynamic_cast<CXlsb*>(File::m_pMainDocument);
+            if (!xlsb || !xlsb->m_bWriteToXlsb)
+			{
+				PrepareComments(m_pComments, m_pThreadedComments, m_oLegacyDrawing.GetPointer());
+			}
 			PrepareConditionalFormatting();
 			PrepareDataValidations();
 		}
@@ -264,7 +694,7 @@ namespace OOX
 
 			if ( oReader.IsEmptyNode() )
 				return;
-			
+
 			int nDocumentDepth = oReader.GetDepth();
 			std::wstring sName;
 
@@ -305,7 +735,8 @@ namespace OOX
 				}
 				else if (L"Names" == sName)
 				{
-					CDefinedNames names(oReader);
+					CDefinedNames names;
+					names = oReader;
 
 					CXlsxFlat* xlsx_flat = dynamic_cast<CXlsxFlat*>(WritingElement::m_pMainDocument);
 					if (xlsx_flat)
@@ -330,7 +761,11 @@ namespace OOX
 					}
 				}
 				else if (L"conditionalFormatting" == sName)
-					m_arrConditionalFormatting.push_back(new CConditionalFormatting(oReader));
+				{
+					CConditionalFormatting* pConditionalFormatting = new CConditionalFormatting();
+					*pConditionalFormatting = oReader;
+					m_arrConditionalFormatting.push_back(pConditionalFormatting);
+				}
 				else if (L"sheetFormatPr" == sName)
 					m_oSheetFormatPr = oReader;
 				else if (L"sheetViews" == sName)
@@ -411,7 +846,7 @@ namespace OOX
 		void CWorksheet::ReadAttributes(XmlUtils::CXmlLiteReader& oReader)
 		{
 			nullable_string sName;
-			
+
 			WritingElement_ReadAttributes_Start( oReader )
 				WritingElement_ReadAttributes_Read_if	( oReader, L"ss:Name", sName )
 			WritingElement_ReadAttributes_End( oReader )
@@ -495,10 +930,10 @@ namespace OOX
 			}
 			if(false == m_oSheetViews.IsInit())
 				m_oSheetViews.Init();
-			
+
 			if(m_oSheetViews->m_arrItems.empty())
 				m_oSheetViews->m_arrItems.push_back(new CSheetView());
-			
+
 			CSheetView* pSheetView = m_oSheetViews->m_arrItems.front();
 
 			if(false == pSheetView->m_oWorkbookViewId.IsInit())
@@ -551,7 +986,10 @@ namespace OOX
 			if(m_oRowBreaks.IsInit())
 				m_oRowBreaks->toXML(writer);
 			if(m_oColBreaks.IsInit())
+			{
+				m_oColBreaks->m_fRowBreak = false;
 				m_oColBreaks->toXML(writer);
+			}
 			if (m_oCellWatches.IsInit())
 				m_oCellWatches->toXML(writer);
 			if(m_oDrawing.IsInit())
@@ -578,52 +1016,62 @@ namespace OOX
             if (bIsWritten) return;
 
             bIsWritten = true;
+
 			if (!m_bWriteDirectlyToFile)
 			{
-				NSStringUtils::CStringBuilder sXml;
-				
-				toXMLStart(sXml);
-					toXML(sXml);
-				toXMLEnd(sXml);
+				CXlsb* xlsb = dynamic_cast<CXlsb*>(File::m_pMainDocument);
+				if ((xlsb) && (xlsb->m_bWriteToXlsb))
+				{
+                    auto writerCache = xlsb->GetFileWriter(oPath);
+                    WriteBin(writerCache);
+                    xlsb->WriteSreamCache(writerCache);
+				}
+				else
+				{
+					NSStringUtils::CStringBuilder sXml;
 
-                //NSFile::CFileBinary::SaveToFile(oPath.GetPath(), sXml.GetData());
-                //for memory optimization for large files
+					toXMLStart(sXml);
+						toXML(sXml);
+					toXMLEnd(sXml);
 
-                wchar_t* pXmlData = sXml.GetBuffer();
-                LONG lwcharLen = (LONG)sXml.GetCurSize();
-                const LONG lcurrentLen = 10485760; //10 Mbyte
-                LONG nCycles = lwcharLen / lcurrentLen;
+					//NSFile::CFileBinary::SaveToFile(oPath.GetPath(), sXml.GetData());
+					//for memory optimization for large files
 
-                LONG lLen = 0;
-                BYTE* pData = NULL;
-                NSFile::CFileBinary oFile;
-                oFile.CreateFileW(oPath.GetPath());
+					wchar_t* pXmlData = sXml.GetBuffer();
+					LONG lwcharLen = (LONG)sXml.GetCurSize();
+					const LONG lcurrentLen = 10485760; //10 Mbyte
+					LONG nCycles = lwcharLen / lcurrentLen;
 
-                while(nCycles--)
-                {
-                    NSFile::CUtf8Converter::GetUtf8StringFromUnicode(pXmlData, lcurrentLen, pData, lLen);
+					LONG lLen = 0;
+					BYTE* pData = NULL;
+					NSFile::CFileBinary oFile;
+					oFile.CreateFileW(oPath.GetPath());
 
-                    oFile.WriteFile(pData, lLen);
+					while(nCycles--)
+					{
+						NSFile::CUtf8Converter::GetUtf8StringFromUnicode(pXmlData, lcurrentLen, pData, lLen);
 
-                    pXmlData += lcurrentLen;
+						oFile.WriteFile(pData, lLen);
 
-                    RELEASEARRAYOBJECTS(pData);
-                }
+						pXmlData += lcurrentLen;
 
-                if(lwcharLen % lcurrentLen > 0)
-                {
-                    NSFile::CUtf8Converter::GetUtf8StringFromUnicode(pXmlData, lwcharLen % lcurrentLen, pData, lLen);
+						RELEASEARRAYOBJECTS(pData);
+					}
 
-                    oFile.WriteFile(pData, lLen);
+					if(lwcharLen % lcurrentLen > 0)
+					{
+						NSFile::CUtf8Converter::GetUtf8StringFromUnicode(pXmlData, lwcharLen % lcurrentLen, pData, lLen);
 
-                    RELEASEARRAYOBJECTS(pData);
-                }
+						oFile.WriteFile(pData, lLen);
 
-                oFile.CloseFile();
+						RELEASEARRAYOBJECTS(pData);
+					}
 
-				oContent.Registration( type().OverrideType(), oDirectory, oPath.GetFilename() );
-				IFileContainer::Write( oPath, oDirectory, oContent );
-			}
+					oFile.CloseFile();
+				}
+					oContent.Registration( type().OverrideType(), oDirectory, oPath.GetFilename() );
+					IFileContainer::Write( oPath, oDirectory, oContent );
+				}
 			else
 			{
 				CPath oRealPath(oPath.GetDirectory() + FILE_SEPARATOR_STR + m_sOutputFilename);
@@ -689,14 +1137,14 @@ mc:Ignorable=\"x14ac\">");
 
 			if (!m_oLegacyDrawing.IsInit()) return oElement;
 			if (!m_oLegacyDrawing->m_oId.IsInit()) return oElement;
-            
+
 			smart_ptr<OOX::File>		oFile		= this->Find(m_oLegacyDrawing->m_oId->GetValue());
 			smart_ptr<OOX::CVmlDrawing> oVmlDrawing = oFile.smart_dynamic_cast<OOX::CVmlDrawing>();
 
 			OOX::WritingElement* pShapeElem	= NULL;
 			if (oVmlDrawing.IsInit())
 			{
-				oElement = oVmlDrawing->FindVmlObject(spid);	
+				oElement = oVmlDrawing->FindVmlObject(spid);
 			}
 			return oElement;
 		}
@@ -715,6 +1163,13 @@ mc:Ignorable=\"x14ac\">");
 		}
 		const OOX::FileType CWorksheet::type() const
 		{
+			CXlsb* xlsb = dynamic_cast<CXlsb*>(File::m_pMainDocument);
+			if ((xlsb) && (xlsb->m_bWriteToXlsb))
+			{
+				if(m_bIsChartSheet)
+					return OOX::SpreadsheetBin::FileTypes::ChartsheetsBin;
+				return OOX::SpreadsheetBin::FileTypes::WorksheetBin;
+			}
 			return m_bIsChartSheet?OOX::Spreadsheet::FileTypes::Chartsheets:OOX::Spreadsheet::FileTypes::Worksheet;
 		}
 		const CPath CWorksheet::DefaultDirectory() const
@@ -723,7 +1178,18 @@ mc:Ignorable=\"x14ac\">");
 		}
 		const CPath CWorksheet::DefaultFileName() const
 		{
-			return type().DefaultFileName();
+			CXlsb* xlsb = dynamic_cast<CXlsb*>(File::m_pMainDocument);
+			if ((xlsb) && (xlsb->m_bWriteToXlsb))
+			{
+				CPath name = type().DefaultFileName();
+
+				name.SetExtention(L"bin");
+				return name;
+			}
+			else
+			{
+				return type().DefaultFileName();
+			}
 		}
 		const CPath& CWorksheet::GetReadPath() const
 		{

@@ -7,7 +7,6 @@ TEMPLATE = lib
 
 CONFIG += shared
 CONFIG += plugin
-CONFIG += core_static_link_libstd
 
 CORE_ROOT_DIR = $$PWD/..
 PWD_ROOT_DIR = $$PWD
@@ -15,7 +14,14 @@ include($$CORE_ROOT_DIR/Common/base.pri)
 
 DEFINES += PDFFILE_USE_DYNAMIC_LIBRARY
 
-ADD_DEPENDENCY(graphics, kernel, UnicodeConverter, kernel_network)
+# CryptPad: kernel & UnicodeConverter is linked in a later step. Do not link here.
+# ADD_DEPENDENCY(graphics, kernel, UnicodeConverter, kernel_network)
+
+#CONFIG += use_openssl_hash
+use_openssl_hash {
+    DEFINES += USE_OPENSSL_HASH
+    INCLUDEPATH += $$PWD/../Common/3dParty/openssl/openssl/include
+}
 
 # PdfReader
 
@@ -37,6 +43,7 @@ INCLUDEPATH += \
 
 HEADERS += $$files(lib/*.h, true)
 SOURCES += $$files(lib/*.c, true)
+SOURCES += $$files(lib/*.cpp, true)
 SOURCES += $$files(lib/*.cc, true)
 
 SOURCES -= \
@@ -52,14 +59,18 @@ SOURCES -= \
     lib/xpdf/pdfinfo.cc
 
 SOURCES += \
-    SrcReader/RendererOutputDev.cpp \
+	SrcReader/RendererOutputDev.cpp \
     SrcReader/Adaptors.cpp \
+    SrcReader/PdfAnnot.cpp \
+	SrcReader/PdfFont.cpp \
     SrcReader/GfxClip.cpp
 
 HEADERS += \
-    SrcReader/RendererOutputDev.h \
+	SrcReader/RendererOutputDev.h \
     SrcReader/Adaptors.h \
     SrcReader/MemoryUtils.h \
+    SrcReader/PdfAnnot.h \
+	SrcReader/PdfFont.h \
     SrcReader/GfxClip.h
 
 # Base fonts
@@ -98,17 +109,7 @@ use_external_jpeg2000 {
     SOURCES += SrcReader/JPXStream2.cpp
 }
 
-#CONFIG += build_viewer_module
-build_viewer_module {
-    DEFINES += BUILDING_WASM_MODULE \
-               TEST_CPP_BINARY
-
-    HEADERS += $$CORE_ROOT_DIR/HtmlRenderer/include/HTMLRendererText.h
-    SOURCES += $$CORE_ROOT_DIR/HtmlRenderer/src/HTMLRendererText.cpp
-}
-
 # PdfWriter
-
 DEFINES += CRYPTOPP_DISABLE_ASM \
            NOMINMAX
 # CryptPad: Do not link CryptoPPLib when building PdfFile. It is linked later.
@@ -133,6 +134,7 @@ core_windows {
     DEFINES -= _UNICODE
 }
 
+include($$PWD/../Common/3dParty/brotli/brotli.pri)
 include($$PWD/../DesktopEditor/graphics/pro/freetype.pri)
 
 HEADERS += \
@@ -165,7 +167,8 @@ HEADERS += \
     SrcWriter/Utils.h \
     SrcWriter/Metadata.h \
     SrcWriter/ICCProfile.h \
-    SrcWriter/States.h
+	SrcWriter/States.h \
+	SrcWriter/RedactOutputDev.h
 
 SOURCES += \
     SrcWriter/AcroForm.cpp \
@@ -181,6 +184,7 @@ SOURCES += \
     SrcWriter/FontCidTT.cpp \
     SrcWriter/FontTT.cpp \
     SrcWriter/FontTTWriter.cpp \
+    SrcWriter/FontOTWriter.cpp \
     SrcWriter/GState.cpp \
     SrcWriter/Image.cpp \
     SrcWriter/Info.cpp \
@@ -193,16 +197,19 @@ SOURCES += \
     SrcWriter/Streams.cpp \
     SrcWriter/Utils.cpp \
     SrcWriter/Metadata.cpp \
-    SrcWriter/States.cpp
+	SrcWriter/States.cpp \
+	SrcWriter/RedactOutputDev.cpp
 
 # PdfFile
 
 HEADERS += PdfFile.h \
            PdfWriter.h \
            PdfReader.h \
+           PdfEditor.h \
            OnlineOfficeBinToPdf.h
 
 SOURCES += PdfFile.cpp \
            PdfWriter.cpp \
            PdfReader.cpp \
+           PdfEditor.cpp \
            OnlineOfficeBinToPdf.cpp

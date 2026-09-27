@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -67,6 +67,36 @@ const bool SHAPEPROPS::loadContent(BinProcessor& proc)
 
 	proc.repeated<ContinueFrt12>(0, 0);
 
+	return true;
+}
+
+const bool SHAPEPROPS::saveContent(BinProcessor& proc)
+{
+	if(m_ShapePropsStream == nullptr)
+		return false;
+	proc.mandatory(*m_ShapePropsStream);
+	auto castedPtr = static_cast<ShapePropsStream*>(m_ShapePropsStream.get());
+	const auto limit = 8200;
+	if(castedPtr->xml_.size() > limit)
+	{
+		auto xmlPos = limit;
+		while(xmlPos < castedPtr->xml_.size())
+		{
+			ContinueFrt12 continueRecord;
+			continueRecord.frtHeader.rt = rt_ContinueFrt12;
+			auto continueLength = 0;
+			if((castedPtr->xml_.size() - xmlPos) > limit)
+				continueLength = limit;
+			else
+				continueLength = castedPtr->xml_.size() - xmlPos;
+			continueRecord.rgb = std::vector<char>(
+				castedPtr->xml_.begin() + xmlPos,
+				castedPtr->xml_.begin() + xmlPos + continueLength);
+			proc.mandatory(continueRecord);
+			xmlPos += continueLength;
+
+		}
+	}
 	return true;
 }
 

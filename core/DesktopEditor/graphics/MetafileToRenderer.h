@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -35,6 +35,7 @@
 #pragma once
 
 #include "pro/Image.h"
+#include "MetafileToRendererCheck.h"
 
 #ifndef INT32
 typedef int INT32;
@@ -48,7 +49,6 @@ public:
 
 protected:
 	std::wstring m_sTempDir;
-	std::vector<std::wstring> m_arTempFiles;
 
 	std::wstring m_sThemesDir;
 	std::wstring m_sMediaDir;
@@ -108,6 +108,7 @@ namespace NSOnlineOfficeBinToPdf
 		ctBrushRectableEnabled 		    = 30,
 		ctBrushGradient                 = 31,
 		ctBrushTexturePath              = 32,
+		ctBrushResetRotation			= 33,
 
 		// font
 		ctFontXML						= 40,
@@ -153,6 +154,8 @@ namespace NSOnlineOfficeBinToPdf
 		ctPathCommandGetCurrentPoint	= 101,
 		ctPathCommandText				= 102,
 		ctPathCommandTextEx			    = 103,
+		ctPathCommandOffset				= 104,
+		ctPathCommandScale				= 105,
 
 		// image
 		ctDrawImage					    = 110,
@@ -179,12 +182,22 @@ namespace NSOnlineOfficeBinToPdf
 		ctLink                          = 161,
 		ctFormField                     = 162,
 		ctDocInfo                       = 163,
+		ctAnnotField                    = 164,
+		ctAnnotFieldDelete              = 165,
+		ctWidgetsInfo                   = 166,
+		ctShapeStart                    = 167,
+		ctShapeEnd                      = 168,
+		ctHeadings                      = 169,
+		ctRedact                        = 170,
 
 		ctPageWidth                     = 200,
 		ctPageHeight                    = 201,
 
 		ctPageStart                     = 202,
 		ctPageEnd                       = 203,
+
+		ctPageClear                     = 207,
+		ctPageRotate                    = 208,
 
 		// gradients
 

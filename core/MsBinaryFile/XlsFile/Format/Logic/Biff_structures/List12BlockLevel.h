@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -50,16 +50,17 @@ public:
 	static const ElementType	type = typeList12BlockLevel;
 	
 	virtual void load(CFRecord& record);
+	virtual void save(CFRecord& record);
 
-	_UINT32	cbdxfHeader;
-	_UINT32	istnHeader;
-	_UINT32	cbdxfData;
-	_UINT32	istnData;
-	_UINT32	cbdxfAgg;
-	_UINT32	istnAgg;
-	_UINT32	cbdxfBorder;
-	_UINT32	cbdxfHeaderBorder;
-	_UINT32	cbdxfAggBorder;
+	_INT32	cbdxfHeader = 0;
+	_INT32	istnHeader = -1;
+	_INT32	cbdxfData = 0;
+	_INT32	istnData = -1;
+	_INT32	cbdxfAgg = 0;
+	_INT32	istnAgg= -1;
+	_INT32	cbdxfBorder = 0;
+	_INT32	cbdxfHeaderBorder = 0;
+	_INT32	cbdxfAggBorder = 0;
 
 	DXFN12List dxfHeader;
 	DXFN12List dxfData;

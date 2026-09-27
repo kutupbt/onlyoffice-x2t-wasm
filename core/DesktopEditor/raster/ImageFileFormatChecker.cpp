@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,9 +31,14 @@
  */
 #include "ImageFileFormatChecker.h"
 #include "../common/File.h"
-
 #include "../cximage/CxImage/ximacfg.h"
+#if CXIMAGE_SUPPORT_HEIF
+#include "heif/heif.h"
+#endif
 
+#ifndef IMAGE_CHECKER_DISABLE_XML
+#include "../xml/include/xmlutils.h"
+#endif
 
 #define MIN_SIZE_BUFFER 4096
 #define MAX_SIZE_BUFFER 102400
@@ -56,7 +61,7 @@ CImageFileFormatChecker::CImageFileFormatChecker()
 {
 	eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 }
-CImageFileFormatChecker::CImageFileFormatChecker(std::wstring sFileName)
+CImageFileFormatChecker::CImageFileFormatChecker(const std::wstring& sFileName)
 {
 	eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 	isImageFile(sFileName);
@@ -197,6 +202,19 @@ bool CImageFileFormatChecker::isWbcFile(BYTE* pBuffer,DWORD dwBytes)
 
 	return false;
 }
+//raster graphics file format developed by Google
+bool CImageFileFormatChecker::isWebPFile(BYTE* pBuffer, DWORD dwBytes)
+{
+	if (eFileType)return false;
+
+	if ((20 <= dwBytes) && ('R' == pBuffer[0] && 'I' == pBuffer[1] && 'F' == pBuffer[2] && 'F' == pBuffer[3]
+		//4–7	length + 12
+		&& 'W' == pBuffer[8] && 'E' == pBuffer[9] && 'B' == pBuffer[10] && 'P' == pBuffer[11])
+        && 'V' == pBuffer[12] && 'P' == pBuffer[13] && '8' == pBuffer[14])
+		return true;
+
+	return false;
+}
 //webshot(wb ver 1) HEX 57 57 42 42 31 31 31 31
 //webshot (wb ver 2) HEX 00 00 02 00 02 10 c9 00 02 00 c8 06 4c 00 02 00
 bool CImageFileFormatChecker::isWbFile(BYTE* pBuffer,DWORD dwBytes)
@@ -331,7 +349,7 @@ bool CImageFileFormatChecker::isSvgFile(BYTE* pBuffer,DWORD dwBytes)
 {
 	if (eFileType)return false;
 
-	if ( (6 <= dwBytes) &&(0x3C == pBuffer[0] && 0x3F == pBuffer[1]  && 0x78 == pBuffer[2] && 0x6D == pBuffer[3]
+    if ( (6 <= dwBytes) && (0x3C == pBuffer[0] && 0x3F == pBuffer[1]  && 0x78 == pBuffer[2] && 0x6D == pBuffer[3]
 						   && 0x6C == pBuffer[4] && 0x20 == pBuffer[5]))
 	{
 		std::string sXml_part = std::string((char*)pBuffer, dwBytes);
@@ -340,6 +358,11 @@ bool CImageFileFormatChecker::isSvgFile(BYTE* pBuffer,DWORD dwBytes)
 			return true;
 		}
 	}
+    else if ( (6 <= dwBytes) && (0x3C == pBuffer[0] && 's' == pBuffer[1]  && 'v' == pBuffer[2] && 'g' == pBuffer[3]
+                                  && 0x20 == pBuffer[4]))
+    {
+        return true;
+    }
 	return false;
 }
 
@@ -410,8 +433,37 @@ bool CImageFileFormatChecker::isIpodFile(BYTE* pBuffer,DWORD dwBytes)
 
 	return false;
 }
+
+bool CImageFileFormatChecker::isPicFile(BYTE *pBuffer, DWORD dwBytes)
+{
+    if (dwBytes < 12)
+        return false;
+
+    if (memcmp(pBuffer, "PICT", 4) == 0)
+        return true;
+
+    if (memcmp(pBuffer + 10, "\000\021\002\377\014\000", 6) == 0)
+        return true;
+
+    if (dwBytes < 528)
+        return false;
+
+    if (memcmp(pBuffer + 522, "\000\021\002\377\014\000", 6) == 0)
+        return true;
+
+    return false;
+}
+
+bool CImageFileFormatChecker::isHeifFile(BYTE* pBuffer, DWORD dwBytes)
+{
+#if CXIMAGE_SUPPORT_HEIF
+	return NSHeif::CHeifFile::isHeif(pBuffer, dwBytes);
+#else
+	return false;
+#endif
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool CImageFileFormatChecker::isImageFile(std::wstring& fileName)
+bool CImageFileFormatChecker::isImageFile(const std::wstring& fileName)
 {
 	eFileType  = _CXIMAGE_FORMAT_UNKNOWN;
 	///////////////////////////////////////////////////////////////////////////////
@@ -439,95 +491,106 @@ bool CImageFileFormatChecker::isImageFile(std::wstring& fileName)
 	{
 		eFileType = _CXIMAGE_FORMAT_GIF;
 	}
-	if (isPngFile(buffer,sizeRead))
+	else if (isPngFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_PNG;
 	}
-	if (isTgaFile(buffer,sizeRead))
+	else if (isTgaFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_TGA;
 	}
-	if (isPcxFile(buffer,sizeRead))
+	else if (isPcxFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_PCX;
 	}
-	if (isJpgFile(buffer,sizeRead))
+	else if (isJpgFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_JPG;
 	}
-	if (isEmfFile(buffer,sizeRead))
+	else if (isEmfFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_EMF;
 	}
-	if (isWmfFile(buffer,sizeRead))
+	else if (isWmfFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_WMF;
 	}
-	if (isTiffFile(buffer,sizeRead))
+	else if (isTiffFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_TIF;
 	}
-	if (isIcoFile(buffer,sizeRead))
+	else if (isIcoFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_ICO;
 	}
-	if (isWbFile(buffer,sizeRead))
+	else if (isWbFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_WB;
 	}
-	if (isPsdFile(buffer,sizeRead))
+	else if (isWebPFile(buffer, sizeRead))
+	{
+		eFileType = _CXIMAGE_FORMAT_WEBP;
+	}
+	else if (isPsdFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_PSD;
 	}
-	if (isRasFile(buffer,sizeRead))
+	else if (isRasFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_RAS;
 	}
-
-	if (isIpodFile(buffer,sizeRead))
+	else if (isIpodFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 	}
-	if (isJ2kFile(buffer,sizeRead))
+	else if (isJ2kFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_JP2;
 	}
-	if (isJp2File(buffer,sizeRead))
+	else if (isJp2File(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_JP2;
 	}
-	if (isMj2File(buffer,sizeRead))
+	else if (isMj2File(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_JP2;
 	}
-	if (isSfwFile(buffer,sizeRead))
+	else if (isSfwFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 	}
-	if (isSvmFile(buffer,sizeRead))
+	else if (isSvmFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 	}
-	if (isSwfFile(buffer,sizeRead))
+	else if (isSwfFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 	}
-	if (isWbcFile(buffer,sizeRead))
+	else if (isWbcFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 	}
-	if (isWbzFile(buffer,sizeRead))
+	else if (isWbzFile(buffer,sizeRead))
 	{
 		eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 	}
-	///////////////////////////////////////////////////////////////////////
-	if (isSvgFile(fileName))
+//----------------------------------------------------------------
+	else if (isSvgFile(fileName))
 	{
 		eFileType = _CXIMAGE_FORMAT_SVG;
 	}
-	if (isRawFile(fileName))
+	else if (isRawFile(fileName))
 	{
 		eFileType = _CXIMAGE_FORMAT_UNKNOWN;
+	}
+    else if (isPicFile(buffer, sizeRead))
+    {
+        eFileType = _CXIMAGE_FORMAT_PIC;
+    }
+	else if (isHeifFile(fileName))
+	{
+		eFileType = _CXIMAGE_FORMAT_HEIF;
 	}
 	///////////////////////////////////////////////////////////////////////
 	delete [] buffer;
@@ -640,11 +703,19 @@ bool CImageFileFormatChecker::isImageFile(BYTE* buffer, DWORD sizeRead)
 	{
 		eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 	}
-	///////////////////////////////////////////////////////////////////////
+    if (isPicFile(buffer, sizeRead))
+    {
+        eFileType = _CXIMAGE_FORMAT_PIC;
+    }
+	if (isHeifFile(buffer, sizeRead))
+	{
+		eFileType = _CXIMAGE_FORMAT_HEIF;
+	}
+    ///////////////////////////////////////////////////////////////////////
 	if (eFileType) return true;
 	return false;
 }
-bool CImageFileFormatChecker::isSvmFile(std::wstring & fileName)
+bool CImageFileFormatChecker::isSvmFile(const std::wstring & fileName)
 {
 	eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 	////////////////////////////////////////////////////////////////////////////////
@@ -674,7 +745,7 @@ bool CImageFileFormatChecker::isSvmFile(std::wstring & fileName)
 	if (eFileType)return true;
 	else return false;
 }
-bool CImageFileFormatChecker::isPngFile(std::wstring & fileName)
+bool CImageFileFormatChecker::isPngFile(const std::wstring & fileName)
 {
 	eFileType = _CXIMAGE_FORMAT_UNKNOWN;
 	////////////////////////////////////////////////////////////////////////////////
@@ -706,7 +777,7 @@ bool CImageFileFormatChecker::isPngFile(std::wstring & fileName)
 
 }
 
-bool CImageFileFormatChecker::isRawFile(std::wstring& fileName)
+bool CImageFileFormatChecker::isRawFile(const std::wstring& fileName)
 {
 	// TODO:
 	return false;
@@ -716,15 +787,27 @@ bool CImageFileFormatChecker::isRawFile(BYTE* pBuffer, DWORD dwBytes)
 	// TODO:
 	return false;
 }
-bool CImageFileFormatChecker::isSvgFile(std::wstring& fileName)
+bool CImageFileFormatChecker::isSvgFile(const std::wstring& fileName)
 {
+#ifndef IMAGE_CHECKER_DISABLE_XML
+	XmlUtils::CXmlLiteReader oReader;
+	if (!oReader.FromFile(fileName))
+		return false;
+	if (!oReader.ReadNextNode())
+		return false;
+
+	if (L"svg" == oReader.GetNameNoNS())
+		return true;
+	else
+		return false;
+#else
 	NSFile::CFileBinary file;
 	if (!file.OpenFile(fileName))
 		return false;
 
 	DWORD nSize = (DWORD)file.GetFileSize();
-	if (nSize > 100)
-		nSize = 100;
+	if (nSize > 1000)
+		nSize = 1000;
 
 	BYTE* buffer = new BYTE[nSize];
 	if (!buffer)
@@ -738,31 +821,20 @@ bool CImageFileFormatChecker::isSvgFile(std::wstring& fileName)
 	}
 	file.CloseFile();
 
-	if ('<' == buffer[0] &&
-			's' == buffer[1] &&
-			'v' == buffer[2] &&
-			'g' == buffer[3])
-	{
-		delete [] buffer;
-		return true;
-	}
-
-	if ('<' == buffer[0] &&
-			'?' == buffer[1] &&
-			'x' == buffer[2] &&
-			'm' == buffer[3] &&
-			'l' == buffer[4])
-	{
-		std::string test((char*)buffer, nSize);
-		if (std::string::npos != test.find("<svg"))
-		{
-			delete [] buffer;
-			return true;
-		}
-	}
+	std::string test((char*)buffer, nSize);
+	bool bFind = (std::string::npos != test.find("<svg")) ? true : false;
 
 	delete [] buffer;
+	return bFind;
+#endif
+}
+bool CImageFileFormatChecker::isHeifFile(const std::wstring& fileName)
+{
+#if CXIMAGE_SUPPORT_HEIF
+	return NSHeif::CHeifFile::isHeif(fileName);
+#else
 	return false;
+#endif
 }
 
 std::wstring CImageFileFormatChecker::DetectFormatByData(BYTE *Data, int DataSize)

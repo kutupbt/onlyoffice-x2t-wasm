@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -32,6 +32,7 @@
 
 #include "SqRefU.h"
 #include "CellRangeRef.h"
+#include <boost/algorithm/string.hpp>
 
 namespace XLS
 {
@@ -55,6 +56,22 @@ void SqRefU::load(CFRecord& record)
 		strValue += std::wstring (ref8.toString(false).c_str()) + ((i == cref - 1) ? L"" : L" ");
 	}
 }
+void SqRefU::save(CFRecord& record)
+{
+    std::vector<std::wstring> results;
+
+    boost::algorithm::split(results, strValue, boost::is_any_of(L" "));
+    unsigned short crfx = results.size();
+
+    record << crfx;
+
+    for (auto& item : results)
+    {
+        Ref8U rfx(item);
+        record << rfx;
+    }
+}
+
 struct refs_sort
 {
 	inline bool operator() (const CellRangeRef& ref1, const CellRangeRef& ref2)

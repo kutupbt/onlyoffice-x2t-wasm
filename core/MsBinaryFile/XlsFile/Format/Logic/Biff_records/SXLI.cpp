@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -93,6 +93,39 @@ void SXLI::readFields(CFRecord& record)
 
 		m_arItems.push_back(item);
 	}
+}
+
+void SXLIItem::save(CFRecord& record)
+{
+    unsigned short flags = 0;
+    SETBIT(flags, 0, fMultiDataName)
+    SETBITS(flags, 1, 8, iData)
+    SETBIT(flags, 9, fSbt)
+    SETBIT(flags, 10, fBlock)
+    SETBIT(flags, 11, fGrand)
+    SETBIT(flags, 12, fMultiDataOnAxis)
+    if (fGrand)
+        isxviMac = 1;
+    record << cSic << itmType << isxviMac << flags;
+    for(auto i : rgisxvi)
+        record << i;
+}
+
+void SXLI::writeFields(CFRecord& record)
+{
+    const auto maxRecSize = 8224;
+    while(!m_arItems.empty())
+    {
+        auto itemPose = record.getRdPtr();
+        m_arItems.at(0).save(record);
+        if(record.getRdPtr() > maxRecSize)
+        {
+            auto itemSize = record.getRdPtr() - itemPose;
+            record.RollRdPtrBack(itemSize);
+            return;
+        }
+        m_arItems.erase(m_arItems.begin());
+    }
 }
 
 } // namespace XLS

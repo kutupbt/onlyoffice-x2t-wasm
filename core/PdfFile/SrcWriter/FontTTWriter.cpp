@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -50,22 +50,6 @@
 
 namespace PdfWriter
 {
-	struct TrueTypeTable
-	{
-		unsigned int unTag;
-		unsigned int unChecksum;
-		int          nOffset;
-		int          nOrigOffset;
-		int          nLen;
-	};
-	struct TrueTypeCmap
-	{
-		int nPlatform;
-		int nEncoding;
-		int nOffset;
-		int nLen;
-		int nFormat;
-	};
 	struct TrueTypeLoca
 	{
 		int nIndex;
@@ -321,7 +305,6 @@ namespace PdfWriter
 			0, 0,                   // idDelta[0]
 			0, 0                    // pad to a mulitple of four bytes
 		};
-
 		static char arrNameTab[8] =
 		{
 			0, 0,			// format
@@ -394,7 +377,7 @@ namespace PdfWriter
 		// Записываем OpenType шрифт не меняя его
 		if (m_bOpenTypeCFF)
 		{
-			WriteOTF(pOutputStream, sName, pCodeToGID);
+			WriteCIDFontType0C(pOutputStream, pCodeToGID, unCodesCount);
 			return;
 		}
 
@@ -623,11 +606,11 @@ namespace PdfWriter
 			arrNewCmapTable[0] = 0;           // table version number = 0
 			arrNewCmapTable[1] = 0;           //
 			arrNewCmapTable[2] = 0;           // number of encoding tables = 1
-			arrNewCmapTable[3] = 1;           //                          
+			arrNewCmapTable[3] = 1;           //
 			arrNewCmapTable[4] = 0;           // platform ID = 1 (MacOS) // Эти два поля обязательно должны
 			arrNewCmapTable[5] = 1;           //                         // иметь таки значения, иначе, Adobe
 			arrNewCmapTable[6] = 0;           // encoding ID = 0         // Acrobat может открыть данный шрифт.
-			arrNewCmapTable[7] = 0;           //                         // 
+			arrNewCmapTable[7] = 0;           //
 			arrNewCmapTable[8] = 0;           // offset of subtable
 			arrNewCmapTable[9] = 0;           //
 			arrNewCmapTable[10] = 0;          //
@@ -1052,6 +1035,8 @@ namespace PdfWriter
 	{
 		return m_nWeight;
 	}
+	bool CFontFileTrueType::GetOpenTypeCFF() { return m_bOpenTypeCFF; }
+	void CFontFileTrueType::SetName(const std::string& sName) { m_sName = sName; }
 	unsigned int CFontFileTrueType::ComputeTableChecksum(unsigned char *sData, int nLength)
 	{
 		unsigned int nWord = 0;
@@ -1125,9 +1110,7 @@ namespace PdfWriter
 			m_pTables[nIndex].nOffset = (int)GetU32BE(nPos + 8, &m_bSuccess);
 			m_pTables[nIndex].nLen = (int)GetU32BE(nPos + 12, &m_bSuccess);
 			if (m_pTables[nIndex].nOffset + m_pTables[nIndex].nLen < m_pTables[nIndex].nOffset || m_pTables[nIndex].nOffset + m_pTables[nIndex].nLen > m_nLen)
-			{
 				m_bSuccess = false;
-			}
 			nPos += 16;
 		}
 		if (!m_bSuccess)

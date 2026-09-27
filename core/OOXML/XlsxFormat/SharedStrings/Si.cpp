@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -32,8 +32,10 @@
 #include "Si.h"
 #include "../../XlsbFormat/Biff12_records/SSTItem.h"
 
-#include "../../Binary/Presentation/BinaryFileReaderWriter.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_structures/XLUnicodeRichExtendedString.h"
 
+#include "../../Binary/Presentation/BinaryFileReaderWriter.h"
+#include "../../Common/SimpleTypes_Shared.h"
 namespace OOX
 {
 	namespace Spreadsheet
@@ -118,17 +120,138 @@ namespace OOX
 
 				WritingElement *pItem = NULL;
 				if ( _T("phoneticPr") == sName )
-					pItem = new CPhonetic( oReader );
+					AssignPtrXmlContent(pItem, CPhonetic, oReader)
 				else if ( _T("r") == sName )
-					pItem = new CRun( oReader );
+					AssignPtrXmlContent(pItem, CRun, oReader)
 				else if ( _T("rPh") == sName )
-					pItem = new CRPh( oReader );
+					AssignPtrXmlContent(pItem, CRPh, oReader)
 				else if ( _T("t") == sName )
-					pItem = new CText( oReader );
+					AssignPtrXmlContent(pItem, CText, oReader)
 
 				if ( NULL != pItem )
 					m_arrItems.push_back( pItem );
 			}
+		}
+		XLS::BaseObjectPtr CSi::toBin() const
+		{
+			auto sString(new XLSB::SSTItem);
+			XLS::BaseObjectPtr objectPtr(sString);
+			auto ptr = &sString->richStr;
+			ptr->fExtStr = false;
+			ptr->fRichStr = false;
+			for(auto i = 0; i < m_arrItems.size(); i++)
+			{
+				
+				
+				if(m_arrItems[i]->getType() == OOX::et_x_t)
+				{
+					auto text = static_cast<CText*>(m_arrItems[i]);
+					ptr->str = text->ToString();
+					continue;
+				}
+				
+				if(m_arrItems[i]->getType() == OOX::et_x_r)
+				{
+					auto crunPtr = static_cast<CRun*>(m_arrItems[i]);
+					ptr->fRichStr = true;
+					USHORT ind = 0;
+                    XLSB::StrRun run;
+                    run.ich = ptr->str.value().size();
+					ptr->str = ptr->str.value() + crunPtr->toBin(ind);
+					run.ifnt = ind;
+                    if(run.ich != 0 || run.ifnt != 0)
+                        ptr->rgsStrRun.push_back(run);
+					continue;
+				}
+				auto phonPtr = static_cast<CPhonetic*>(m_arrItems[i]);
+				if(phonPtr)
+				{
+					ptr->fExtStr = true;
+					ptr->phoneticStr = L"";
+					XLSB::PhRun phRun;
+					phonPtr->toBin(&phRun);
+					if(i < m_arrItems.size() - 1)
+					{
+						auto ph = static_cast<CRPh*>(m_arrItems[i+1]);
+						if(ph)
+						{
+							auto phoneticStr  = ph->toBin(&phRun);
+							if(!phoneticStr.empty())
+								ptr->phoneticStr = phoneticStr;
+						}
+						i++;
+					}
+
+					ptr->rgsPhRun.push_back(phRun);
+				}
+			}
+
+			return objectPtr;
+		}
+		XLS::BiffStructurePtr CSi::toXLS() const
+		{
+			XLS::XLUnicodeRichExtendedString* StringPtr;
+			{
+				std::list<XLS::CFRecordPtr> cfRecordPtr;// just for construction
+				StringPtr = new XLS::XLUnicodeRichExtendedString(cfRecordPtr);
+			}
+			for(auto i = 0; i < m_arrItems.size(); i++)
+			{
+				if(m_arrItems[i]->getType() == OOX::et_x_t)
+				{
+					auto text = static_cast<CText*>(m_arrItems[i]);
+					StringPtr->str_ = text->ToString();
+					continue;
+				}
+				if(m_arrItems[i]->getType() == OOX::et_x_r)
+				{
+					auto crunPtr = static_cast<CRun*>(m_arrItems[i]);
+					StringPtr->fRichSt = true;
+					USHORT ind = 0;
+					XLS::FormatRun run;
+					run.ich = StringPtr->str_.size();
+					StringPtr->str_ = StringPtr->str_ + crunPtr->toBin(ind);
+					if(ind != 0)
+						run.ifnt.value() = ind+1;
+					if(run.ich != 0 || run.ifnt != 0)
+						StringPtr->rgRun.push_back(run);
+					continue;
+				}
+				auto phonPtr = static_cast<CPhonetic*>(m_arrItems[i]);
+				if(phonPtr)
+				{
+					StringPtr->fExtSt  = true;
+					StringPtr->extRst.rphssub.st = L"";
+					if(phonPtr->m_oFontId.IsInit())
+						StringPtr->extRst.phs.ifnt = phonPtr->m_oFontId->GetValue();
+					if(phonPtr->m_oAlignment.IsInit())
+						StringPtr->extRst.phs.data.alcH = phonPtr->m_oAlignment->GetValue();
+					if(phonPtr->m_oType.IsInit())
+						StringPtr->extRst.phs.data.phType = phonPtr->m_oType->GetValue();
+
+					if(i < m_arrItems.size() - 1)
+					{
+						auto ph = static_cast<CRPh*>(m_arrItems[i+1]);
+						if(ph)
+						{
+							XLS::PhRuns runs;
+							if(ph->m_oEb.IsInit())
+								runs.ichMom = ph->m_oEb->GetValue();
+							if(ph->m_oSb.IsInit())
+								runs.ichFirst = ph->m_oSb->GetValue();
+							if(!ph->m_arrItems.empty())
+							{
+								StringPtr->extRst.rphssub.st.value() +=  ph->m_arrItems.back()->ToString();
+								runs.ichMom = ph->m_arrItems.back()->ToString().size();
+							}
+							StringPtr->extRst.rgphruns.push_back(runs);
+						}
+						i++;
+					}
+				}
+			}
+			auto StructPtr = XLS::BiffStructurePtr(StringPtr);
+			return StructPtr;
 		}
 		void CSi::fromBin(XLS::BiffStructure& obj, bool flagIsComment)
 		{
@@ -137,6 +260,7 @@ namespace OOX
 			CPhonetic* phoneticPr   = nullptr;
 			CRPh* rPh               = nullptr;
 			CRun* r                 = nullptr;
+
 			if(ptr != nullptr)
 			{
 				if(ptr->rgsStrRun.empty() || flagIsComment)
@@ -289,7 +413,7 @@ namespace OOX
 						if(OOX::et_x_t == we->getType())
 						{
 							OOX::Spreadsheet::CText* pText = static_cast<OOX::Spreadsheet::CText*>(we);
-							nLen += 4 + 2 * pText->m_sText.length();
+							nLen += 4 + NSFile::CUtf8Converter::GetUtf16SizeFromUnicode(pText->m_sText.c_str(), pText->m_sText.length());
 						}
 						else
 						{
@@ -300,7 +424,7 @@ namespace OOX
 				else if(OOX::et_x_t == we->getType())
 				{
 					OOX::Spreadsheet::CText* pText = static_cast<OOX::Spreadsheet::CText*>(we);
-					nLen += 4 + 2 * pText->m_sText.length();
+					nLen += 4 + NSFile::CUtf8Converter::GetUtf16SizeFromUnicode(pText->m_sText.c_str(), pText->m_sText.length());
 				}
 			}
 			return nLen;

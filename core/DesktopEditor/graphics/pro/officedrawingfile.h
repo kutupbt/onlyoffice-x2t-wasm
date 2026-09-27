@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -40,7 +40,20 @@ enum OfficeDrawingFileType
     odftPDF = 0,
     odftXPS = 1,
     odftDJVU = 2,
+    odftOFD = 3,
     odftUndefined = 255
+};
+
+struct COfficeDrawingPageParams
+{
+	bool m_bNeedDrawAnnotation;
+
+	COfficeDrawingPageParams() : m_bNeedDrawAnnotation(true){}
+
+	void SetDrawAnnotation(bool bDraw)
+	{
+		m_bNeedDrawAnnotation = bDraw;
+	}
 };
 
 class GRAPHICS_DECL IOfficeDrawingFile
@@ -50,9 +63,9 @@ public:
 
     // Open
     virtual bool LoadFromFile(const std::wstring& file, const std::wstring& options = L"",
-                                const std::wstring& owner_password = L"", const std::wstring& user_password = L"") = 0;
+								const wchar_t* owner_password = NULL, const wchar_t* user_password = NULL) = 0;
     virtual bool LoadFromMemory(unsigned char* data, unsigned long length, const std::wstring& options = L"",
-                                const std::wstring& owner_password = L"", const std::wstring& user_password = L"") = 0;
+								const wchar_t* owner_password = NULL, const wchar_t* user_password = NULL) = 0;
 
     // Close
     virtual void Close() = 0;
@@ -70,19 +83,21 @@ public:
     // Pages info/draw
     virtual int GetPagesCount() = 0;
     virtual void GetPageInfo(int nPageIndex, double* pdWidth, double* pdHeight, double* pdDpiX, double* pdDpiY) = 0;
-    virtual void DrawPageOnRenderer(IRenderer* pRenderer, int nPageIndex, bool* pBreak) = 0;
+    virtual void DrawPageOnRenderer(IRenderer* pRenderer, int nPageIndex, bool* pBreak, COfficeDrawingPageParams* pParams = NULL) = 0;
 
     // Common methods/wrappers on GetPageInfo + DrawPageOnRenderer
     virtual unsigned char* ConvertToPixels(int nPageIndex, int nRasterW, int nRasterH,
                                            bool bIsFlip = false,
                                            NSFonts::IFontManager* pFonts = NULL,
                                            int nBackgroundColor = 0xFFFFFF,
-                                           bool bIsDarkMode = false);
+                                           bool bIsDarkMode = false,
+                                           int nBackgroundOpacity = 0xFF);
     virtual void ConvertToRaster(int nPageIndex, const std::wstring& path, int nImageType, const int nRasterW = -1, const int nRasterH = -1,
                                  bool bIsFlip = false,
                                  NSFonts::IFontManager* pFonts = NULL,
                                  int nBackgroundColor = 0xFFFFFF,
-                                 bool bIsDarkMode = false);
+                                 bool bIsDarkMode = false,
+                                 int nBackgroundOpacity = 0xFF);
 
     // Common methods for viewer
     virtual std::wstring GetInfo() = 0;

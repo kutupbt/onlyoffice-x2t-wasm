@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -35,6 +35,52 @@ namespace PPTX
 {
 	namespace Logic
 	{
+		EffectProperties& EffectProperties::operator=(const EffectProperties& oSrc)
+		{
+			parentFile = oSrc.parentFile;
+			parentElement = oSrc.parentElement;
+
+			List.reset();
+			if (oSrc.List.IsInit())
+			{
+				if (oSrc.List.is<EffectLst>())
+				{
+					List.reset(new EffectLst());
+					List.as<EffectLst>() = oSrc.List.as<EffectLst>();
+				}
+				else if (oSrc.List.is<EffectDag>())
+				{
+					List.reset(new EffectDag());
+					List.as<EffectDag>() = oSrc.List.as<EffectDag>();
+				}
+			}
+			return *this;
+		}
+		OOX::EElementType EffectProperties::getType() const
+		{
+			if (List.IsInit())
+				return List->getType();
+			return OOX::et_Unknown;
+		}
+		void EffectProperties::fromXML(XmlUtils::CXmlLiteReader& oReader)
+		{
+			std::wstring strName = XmlUtils::GetNameNoNS(oReader.GetName());
+
+			if (strName == L"effectLst")
+			{
+				Logic::EffectLst* pEffectLst = new Logic::EffectLst();
+				*pEffectLst = oReader;
+				List.reset(pEffectLst);
+			}
+			else if (strName == L"effectDag")
+			{
+				Logic::EffectDag* pEffectDag = new Logic::EffectDag();
+				*pEffectDag = oReader;
+				List.reset(pEffectDag);
+			}
+			else
+				List.reset();
+		}
 		void EffectProperties::fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader)
 		{
 			LONG pos = pReader->GetPos();
@@ -59,6 +105,50 @@ namespace PPTX
 			{
 				pReader->SkipRecord();
 			}
+		}
+		void EffectProperties::fromXML(XmlUtils::CXmlNode& node)
+		{
+			std::wstring strName = XmlUtils::GetNameNoNS(node.GetName());
+
+			if (L"effectLst" == strName)
+			{
+				Logic::EffectLst* pEffectLst = new Logic::EffectLst();
+				pEffectLst->fromXML(node);
+				List.reset(pEffectLst);
+			}
+			else if (L"effectDag" == strName)
+			{
+				Logic::EffectDag* pEffectDag = new Logic::EffectDag();
+				pEffectDag->fromXML(node);
+				List.reset(pEffectDag);
+			}
+			else List.reset();
+		}
+		std::wstring EffectProperties::toXML() const
+		{
+			if (!List.IsInit())
+				return L"";
+			return List->toXML();
+		}
+		void EffectProperties::toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const
+		{
+			if (List.is_init())
+				List->toXmlWriter(pWriter);
+		}
+
+		void EffectProperties::Merge(EffectProperties& effectProperties) const
+		{
+			if (List.IsInit() && List.is<EffectLst>())
+			{
+				effectProperties.List.reset(new EffectLst());
+				List.as<EffectLst>().Merge(effectProperties.List.as<EffectLst>());
+			}
+		}
+
+		void EffectProperties::toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const
+		{
+			if (List.is_init())
+				List->toPPTY(pWriter);
 		}
 
 	} // namespace Logic

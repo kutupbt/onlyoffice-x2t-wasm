@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -154,16 +154,59 @@ namespace Txt2Docx
 		return converter_->m_inputFile.read(path);
 	}
 
-	void Converter::write(/*const std::wstring& path*/NSStringUtils::CStringBuilder & stringWriter)
-	{
-		for (size_t	i = 0; i < converter_->m_outputFile.m_arrItems.size(); ++i)
-		{
-			if ( converter_->m_outputFile.m_arrItems[i] )
-				stringWriter.WriteString(converter_->m_outputFile.m_arrItems[i]->toXML());
-		}
-		//BOOL res = converter_->m_outputFile.Write(std_string2string(path.string()));
-		return;
-	}
+
+    void Converter::write(NSStringUtils::CStringBuilderA &stringWriter)
+    {
+        const char* fontName = "Courier New";
+        const char* defaultSpacing = "<w:spacing w:after=\"0\" w:line=\"240\" w:lineRule=\"auto\"/>";
+
+        for (const std::string &lineRaw : converter_->m_inputFile.m_listContentutf8)
+        {
+            std::string line = lineRaw;
+
+            line.erase(std::remove(line.begin(), line.end(), '\x08'), line.end());
+
+            stringWriter.WriteString("<w:p><w:pPr>");
+            stringWriter.WriteString(defaultSpacing);
+            stringWriter.WriteString("<w:rPr><w:rFonts w:ascii=\"");
+            stringWriter.WriteString(fontName);
+            stringWriter.WriteString("\" w:hAnsi=\"");
+            stringWriter.WriteString(fontName);
+            stringWriter.WriteString("\" w:cs=\"");
+            stringWriter.WriteString(fontName);
+            stringWriter.WriteString("\"/></w:rPr></w:pPr>");
+
+            size_t start = 0;
+            while (true)
+            {
+                size_t pos = line.find('\x09', start);
+                std::string segment = (pos == std::string::npos) ? line.substr(start) : line.substr(start, pos - start);
+
+                if (!segment.empty())
+                {
+                    stringWriter.WriteString("<w:r><w:rPr><w:rFonts w:ascii=\"");
+                    stringWriter.WriteString(fontName);
+                    stringWriter.WriteString("\" w:hAnsi=\"");
+                    stringWriter.WriteString(fontName);
+                    stringWriter.WriteString("\" w:cs=\"");
+                    stringWriter.WriteString(fontName);
+                    stringWriter.WriteString("\"/></w:rPr><w:t xml:space=\"preserve\">");
+                    stringWriter.WriteString(segment.c_str());
+                    stringWriter.WriteString("</w:t></w:r>");
+                }
+
+                if (pos == std::string::npos)
+                    break;
+
+                stringWriter.WriteString("<w:tab/>");
+                start = pos + 1;
+            }
+
+            stringWriter.WriteString("</w:p>");
+        }
+    }
+
+
 
 	Converter_Impl::Converter_Impl(int encoding) : m_outputFile(NULL)
 	{
@@ -211,17 +254,16 @@ namespace Txt2Docx
 				}
 				while(line.find(_T("\x09")) != line.npos)
 				{
-					int pos = line.find(_T("\x09"));
+					size_t pos = line.find(_T("\x09"));
 					
-					if (pos > 0)
+					if (pos != std::wstring::npos)
 					{
-						std::wstring s = line.substr(0, pos - 1);
+						std::wstring s = line.substr(0, pos);
 						if (!s.empty())
 						{
 							OOX::Logic::CRunProperty *rPr_	= new OOX::Logic::CRunProperty();
-							rPr_->m_oRFonts		= font;
-							std::wstring s_ = XmlUtils::EncodeXmlString(s);
-                            AddText(paragraph, s_, rPr_);
+							rPr_->m_oRFonts	= font;
+                            AddText(paragraph, s, rPr_);
 						}
 					}
                     AddTab(paragraph);
@@ -230,8 +272,7 @@ namespace Txt2Docx
 
 				if (!line.empty())
 				{
-					std::wstring s_ = XmlUtils::EncodeXmlString(line);
-                    AddText(paragraph, s_, rPr);
+                    AddText(paragraph, line, rPr);
 				}
 				pDocument->m_arrItems.push_back(paragraph);
 			}

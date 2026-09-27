@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -113,14 +113,13 @@ namespace PPTX
 			if (oNode.IsValid())
 				XmlMacroLoadArray(oNode, _T("*"), GsLst, Gs);
 
-			XmlUtils::CXmlNodes oNodes;
+			std::vector<XmlUtils::CXmlNode> oNodes;
 			if (node.GetNodes(_T("*"), oNodes))
 			{
-				int nCount = oNodes.GetCount();
-				for (int i = 0; i < nCount; ++i)
+				size_t nCount = oNodes.size();
+				for (size_t i = 0; i < nCount; ++i)
 				{
-					XmlUtils::CXmlNode oNode;
-					oNodes.GetAt(i, oNode);
+					XmlUtils::CXmlNode& oNode = oNodes[i];
 
 					std::wstring strName = XmlUtils::GetNameNoNS(oNode.GetName());
 
@@ -165,12 +164,12 @@ namespace PPTX
 			std::wstring strName;
 			if (XMLWRITER_DOC_TYPE_WORDART == pWriter->m_lDocType)
 			{
-				sAttrNamespace = _T("w14:");
-				strName = _T("w14:gradFill");
+				sAttrNamespace = L"w14:";
+				strName = L"w14:gradFill";
 			}
 			else
 			{
-				strName = m_namespace.empty() ? _T("gradFill") : (m_namespace + _T(":gradFill"));
+				strName = m_namespace.empty() ? L"gradFill" : (m_namespace + L":gradFill");
 			}
 
 			pWriter->StartNode(strName);
@@ -181,9 +180,9 @@ namespace PPTX
 			pWriter->EndAttributes();
 
 			if (XMLWRITER_DOC_TYPE_WORDART == pWriter->m_lDocType)
-				pWriter->WriteArray(_T("w14:gsLst"), GsLst);
+				pWriter->WriteArray(L"w14:gsLst", GsLst);
 			else
-				pWriter->WriteArray(_T("a:gsLst"), GsLst);
+				pWriter->WriteArray(L"a:gsLst", GsLst);
 			pWriter->Write(path);
 			pWriter->Write(lin);
 			pWriter->Write(tileRect);
@@ -216,6 +215,92 @@ namespace PPTX
 			pWriter->WriteRecord2(3, tileRect);
 
 			pWriter->EndRecord();
+		}
+
+		void GradFill::fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader)
+		{
+			pReader->Skip(4); // len
+			BYTE _type = pReader->GetUChar(); // FILL_TYPE_GRAD
+			LONG _e = pReader->GetPos() + pReader->GetRecordSize() + 4;
+
+			pReader->Skip(1);
+
+			while (true)
+			{
+				BYTE _at = pReader->GetUChar_TypeNode();
+				if (_at == NSBinPptxRW::g_nodeAttributeEnd)
+					break;
+
+				switch (_at)
+				{
+				case 0:
+					flip = pReader->GetUChar();
+					break;
+				case 1:
+					rotWithShape = pReader->GetBool();
+					break;
+				default:
+					break;
+				}
+			}
+
+			while (pReader->GetPos() < _e)
+			{
+				BYTE rec = pReader->GetUChar();
+
+				switch (rec)
+				{
+				case 0:
+				{
+					LONG _s1 = pReader->GetPos();
+					LONG _e1 = _s1 + pReader->GetLong() + 4;
+
+					ULONG _count = pReader->GetULong();
+					for (ULONG i = 0; i < _count; ++i)
+					{
+						if (pReader->GetPos() >= _e1)
+							break;
+
+						pReader->Skip(1); // type
+						pReader->Skip(4); // len
+
+						size_t _countGs = GsLst.size();
+						GsLst.push_back(Gs());
+
+						pReader->Skip(1); // start attr
+						pReader->Skip(1); // pos type
+						GsLst[_countGs].pos = pReader->GetLong();
+						pReader->Skip(1); // end attr
+
+						pReader->Skip(1);
+						GsLst[_countGs].color.fromPPTY(pReader);
+					}
+
+					pReader->Seek(_e1);
+				}break;
+				case 1:
+				{
+					lin = new PPTX::Logic::Lin();
+					lin->fromPPTY(pReader);
+				}break;
+				case 2:
+				{
+					path = new PPTX::Logic::Path();
+					path->fromPPTY(pReader);
+				}break;
+				case 3:
+				{
+					tileRect = new PPTX::Logic::Rect();
+					tileRect->m_name = L"a:tileRect";
+					tileRect->fromPPTY(pReader);
+				}break;
+				default:
+				{
+					pReader->SkipRecord();
+				}
+				}
+			}
+			pReader->Seek(_e);
 		}
 		void GradFill::Merge(GradFill& fill)const
 		{

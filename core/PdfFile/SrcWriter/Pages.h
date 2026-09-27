@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -55,6 +55,7 @@ namespace PdfWriter
 	class CTextWord;
 	class CFieldBase;
 	class CPage;
+	class CResourcesDict;
 	//----------------------------------------------------------------------------------------
 	// CPageTree
 	//----------------------------------------------------------------------------------------
@@ -62,14 +63,18 @@ namespace PdfWriter
 	{
 	public:
 		CPageTree(CXref* pXref);
-		CPageTree(CXref* pXref, bool bEmpty);
+		CPageTree();
 		void Fix();
-		void AddPage(CDictObject* pPage);
+		void AddPage(CObjectBase* pPage);
 		CObjectBase* GetObj(int nPageIndex);
 		CPage* GetPage(int nPageIndex);
 		CObjectBase* RemovePage(int nPageIndex);
-		bool InsertPage(int nPageIndex, CPage* pPage);
+		bool InsertPage(int nPageIndex, CObjectBase* pPage);
+		bool ReplacePage(int nPageIndex, CPage* pPage);
 		bool Join(CPageTree* pPageTree);
+		bool Find(CPage* pPage, int& nI);
+		void CreateFakePages(int nPages, int nPageIndex = -1);
+		void ClearFakePages();
 		unsigned int GetCount()
 		{
 			return m_pCount ? m_pCount->Get() : 0;
@@ -79,11 +84,10 @@ namespace PdfWriter
 			return dict_type_PAGES;
 		}
 	private:
-		CObjectBase* GetFromPageTree(int nPageIndex, int& nI, bool bRemove = false, bool bInsert = false, CPage* pPage = NULL);
+		CObjectBase* GetFromPageTree(int nPageIndex, int& nI, bool bRemove = false, bool bInsert = false, CObjectBase* pPage = NULL);
 
 		CNumberObject* m_pCount;
 		CArrayObject*  m_pPages;
-		CXref*         m_pXref;
 	};
 	//----------------------------------------------------------------------------------------
 	// CPage
@@ -91,7 +95,7 @@ namespace PdfWriter
 	class CPage : public CDictObject
 	{
 	public:
-		CPage(CXref* pXref, CDocument* pDocument);
+		CPage(CDocument* pDocument);
 		CPage(CXref* pXref, CPageTree* pParent, CDocument* pDocument);
 		~CPage();
 
@@ -104,6 +108,14 @@ namespace PdfWriter
 		EDictType GetDictType() const
 		{
 			return dict_type_PAGE;
+		}
+		CStream* GetStream() const
+		{
+			return m_pStream;
+		}
+		void SetStream(CStream* pStream)
+		{
+			m_pStream = pStream;
 		}
 		void      BeforeWrite();
 
@@ -130,14 +142,27 @@ namespace PdfWriter
 		void      GrSave();
 		void      GrRestore();
 		void      SetStrokeColor(unsigned char unR, unsigned char unG, unsigned char unB);
+		void      SetStrokeG(double dG);
+		void      SetStrokeRGB(double dR, double dG, double dB);
+		void      SetStrokeCMYK(double dC, double dM, double dY, double dK);
 		void      SetFillColor(unsigned char unR, unsigned char unG, unsigned char unB);
+		void      SetFillG(double dG);
+		void      SetFillRGB(double dR, double dG, double dB);
+		void      SetFillCMYK(double dC, double dM, double dY, double dK);
 		void      Concat(double dM11, double dM12, double dM21, double dM22, double dX, double dY);
+		void      StartTransform(double dM11, double dM12, double dM21, double dM22, double dX, double dY);
 		void      SetTransform(double dM11, double dM12, double dM21, double dM22, double dX, double dY);
 		void      SetExtGrState(CExtGrState* pExtGrState);
+		void      SetExtGrStateKey(const char* sKey);
 		void      AddAnnotation(CDictObject* pAnnot);
+		bool      DeleteAnnotation(unsigned int nID);
 		void      DrawShading(CShading* pShading);
 		void      SetStrokeAlpha(unsigned char unAlpha);
 		void      SetFillAlpha(unsigned char unAlpha);
+		void      BeginMarkedContent(const std::string& sName);
+		void      BeginMarkedContentDict(const std::string& sName, CDictObject* pBDC);
+		void      EndMarkedContent();
+		void      SetRenderingIntent(ERenderingIntent eRenderingIntent);
 
 		void      BeginText();
 		void      EndText();
@@ -145,13 +170,18 @@ namespace PdfWriter
 		void      ShowText(const BYTE* sText, unsigned int unLen);
 		void      DrawText(double dX, double dY, const BYTE* sText, unsigned int unLen);
 		void      SetCharSpace(double dValue);
-		void      SetHorizontalScalling(double dValue);
+		void      SetWordSpace(double dValue);
+		void      SetHorizontalScaling(double dValue);
 		void      SetFontAndSize(CFontDict* pFont, double dSize);
+		void      SetFontKeyAndSize(const char* sKey, double dSize);
+		void      SetFontType(EFontType nType);
 		void      SetTextRenderingMode(ETextRenderingMode eMode);
 		void      SetTextMatrix(double dM11, double dM12, double dM21, double dM22, double dX, double dY);
 		void      DrawTextLine(const CTextLine* pTextLine);
+		void      SetTextRise(double dS);
 
 		void      ExecuteXObject(CXObject* pXObject);
+		void      ExecuteXObject(const char* sXObjectName);
 		void      DrawImage(CImageDict* pImage, double dX, double dY, double dWidth, double dHeight);
 		void      SetPatternColorSpace(CImageTilePattern* pPattern);
 		void      SetFilter(unsigned int unFiler);
@@ -161,24 +191,24 @@ namespace PdfWriter
 		void      AddContents(CXref* pXref);
         void      SetRotate(int nRotate);
         int       GetRotate();
+		void      ClearContent(CXref* pXref);
+		void      ClearContentFull(CXref* pXref);
+		CResourcesDict* GetResourcesItem();
+		void      AddResource(CXref* pXref = NULL);
+		TBox      GetBox(const std::string& sBox);
 
 	private:
 
-		void          Init(CXref* pXref, CDocument* pDocument);
+		void          Init(CDocument* pDocument);
 		void          EllipseArc(double dX, double dY, double dXRad, double dYRad, double dAngle1, double dAngle2, bool bClockDirection);
 		CArrayObject* GetMediaBoxItem();
-		CDictObject*  GetResourcesItem();
-		CObjectBase*  GetCropBoxItem();
+		CArrayObject* GetCropBoxItem();
         CObjectBase*  GetRotateItem();
 		TBox          GetMediaBox();
 		void          SetMediaBoxValue(unsigned int unIndex, double dValue);
-		void          AddResource();
 		void          SetGrMode(EGrMode eMode);
 		void          CheckGrMode(EGrMode eMode);
 		void          WriteText(const BYTE* sText, unsigned int unLen);
-		const char*   GetExtGrStateName(CExtGrState* pState);
-		const char*   GetLocalFontName(CFontDict* pFont);
-		const char*   GetXObjectName(CXObject* pObject);
 		const char*   GetLocalShadingName(CShading* pShading);
 		const char*   GetLocalPatternName(CImageTilePattern* pPattern);
 
@@ -186,7 +216,6 @@ namespace PdfWriter
 
 		CDocument*   m_pDocument;
 		CPageTree*   m_pParent;
-		CXref*       m_pXref;
 		CPoint       m_oStartPos;          // Позиция начала текущего пата
 		CPoint       m_oCurPos;            // Текущая позиция пата
 		CPoint       m_oTextPos;           // Текущая позиция текста
@@ -194,19 +223,28 @@ namespace PdfWriter
 		CArrayObject* m_pContents;
 		CStream*     m_pStream;
 		unsigned int m_unCompressionMode;
-		CDictObject* m_pExtGStates;
-		unsigned int m_unExtGStatesCount;
 		EGrMode      m_eGrMode;
 		CGrState*    m_pGrState;
-		CDictObject* m_pFonts;
-		unsigned int m_unFontsCount;
 		CFontDict*   m_pFont;              // Текущий шрифт
-		CDictObject* m_pXObjects;
-		unsigned int m_unXObjectsCount;
 		CDictObject* m_pShadings;
 		unsigned int m_unShadingsCount;
 		CDictObject* m_pPatterns;
 		unsigned int m_unPatternsCount;
+		EFontType    m_eType;
+	};
+	class CFakePage : public CObjectBase
+	{
+	public:
+		CFakePage(int nOriginIndex);
+		virtual CObjectBase* Copy(CObjectBase* pOut = NULL) const
+		{
+			return pOut ? pOut : new CFakePage(m_nOriginIndex);
+		}
+
+		int GetOriginIndex();
+
+	private:
+		int m_nOriginIndex;
 	};
 	//----------------------------------------------------------------------------------------
 	// CTextWord

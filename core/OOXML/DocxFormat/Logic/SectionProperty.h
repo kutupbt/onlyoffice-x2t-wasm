@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -32,10 +32,7 @@
 #pragma once
 
 #include "../../Base/Nullable.h"
-
 #include "../WritingElement.h"
-#include "../../Common/SimpleTypes_Shared.h"
-#include "../../Common/SimpleTypes_Word.h"
 #include "../../Common/ComplexTypes.h"
 
 namespace ComplexTypes
@@ -57,12 +54,10 @@ namespace ComplexTypes
 
 			virtual std::wstring ToString() const;
 
-		private:
-			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
-		public:
 			nullable<SimpleTypes::CTwipsMeasure > m_oSpace;
 			nullable<SimpleTypes::CTwipsMeasure > m_oW;
+		private:
+			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 		};
 
 		//--------------------------------------------------------------------------------
@@ -284,10 +279,10 @@ namespace ComplexTypes
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 
 		public:
-			nullable<SimpleTypes::CChapterSep      > m_oChapSep;
-			nullable<SimpleTypes::CDecimalNumber   > m_oChapStyle;
-			nullable<SimpleTypes::CNumberFormat    > m_oFmt;
-			nullable<SimpleTypes::CDecimalNumber   > m_oStart;
+			nullable<SimpleTypes::CChapterSep>		m_oChapSep;
+			nullable<SimpleTypes::CDecimalNumber>	m_oChapStyle;
+			nullable<SimpleTypes::CNumberFormat>	m_oFmt;
+			nullable<SimpleTypes::CDecimalNumber>	m_oStart;
 		};
 
 		//--------------------------------------------------------------------------------
@@ -350,27 +345,24 @@ namespace OOX
 		class CColumns : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CColumns)
+			WritingElement_AdditionMethods(CColumns)
 			CColumns();
 			virtual ~CColumns();
 
-		public:
 			virtual void fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
 			virtual std::wstring toXML() const;
 			virtual EElementType getType () const;
 
-		private:
-			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
-
-		public:
 			nullable<SimpleTypes::COnOff             > m_oEqualWidth;
 			nullable<SimpleTypes::CDecimalNumber     > m_oNum;
 			nullable<SimpleTypes::COnOff             > m_oSep;
 			nullable<SimpleTypes::CTwipsMeasure      > m_oSpace;
 
-			std::vector<ComplexTypes::Word::CColumn *> m_arrColumns;
+			std::vector< nullable<ComplexTypes::Word::CColumn>> m_arrColumns;
+		private:
+			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 		};
 
 		//--------------------------------------------------------------------------------
@@ -379,7 +371,7 @@ namespace OOX
 		class CEdnProps : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CEdnProps)
+			WritingElement_AdditionMethods(CEdnProps)
 			CEdnProps();
 			virtual ~CEdnProps();
 
@@ -403,7 +395,7 @@ namespace OOX
 		class CFtnProps : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CFtnProps)
+			WritingElement_AdditionMethods(CFtnProps)
 			CFtnProps();
 			virtual ~CFtnProps();
 
@@ -427,7 +419,7 @@ namespace OOX
 		class CPageBorders : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CPageBorders)
+			WritingElement_AdditionMethods(CPageBorders)
 			CPageBorders();
 			virtual ~CPageBorders();
 
@@ -462,10 +454,10 @@ namespace OOX
 		class CSectPrChange : public WritingElement
 		{
 		public:
-			CSectPrChange();
-			CSectPrChange(XmlUtils::CXmlNode &oNode);
-			CSectPrChange(XmlUtils::CXmlLiteReader& oReader);
+			WritingElement_AdditionMethods(CSectPrChange)
+			CSectPrChange();			
 			virtual ~CSectPrChange();
+
 			virtual void    fromXML(XmlUtils::CXmlNode& oNode);
 			virtual void    fromXML(XmlUtils::CXmlLiteReader& oReader);
             virtual std::wstring toXML() const;
@@ -493,53 +485,54 @@ namespace OOX
 		class CSectionProperty : public WritingElement
 		{
 		public:
-			CSectionProperty(OOX::Document *pMain = NULL);
-			CSectionProperty(XmlUtils::CXmlNode &oNode);
-			CSectionProperty(XmlUtils::CXmlLiteReader& oReader);
+			CSectionProperty(OOX::Document *pMain = NULL);			
 			virtual ~CSectionProperty();
 
 			virtual void ClearItems();
-			const CSectionProperty& operator =(const XmlUtils::CXmlNode &oNode);
-			const CSectionProperty& operator =(const XmlUtils::CXmlLiteReader& oReader);
+			CSectionProperty& operator =(const XmlUtils::CXmlNode &oNode);
+			CSectionProperty& operator =(const XmlUtils::CXmlLiteReader& oReader);
 
 			virtual void fromXML(XmlUtils::CXmlNode &oNode);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
+
             virtual std::wstring toXML() const;
 			virtual EElementType getType() const;
 
+			static const CSectionProperty Merge(const CSectionProperty& oPrev, const CSectionProperty& oCurrent);
 		private:
 			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
 
 		public:
-			bool m_bSectPrChange;
+			bool m_bSectPrChange = false;
+			bool m_bEmpty = false;
 
-			nullable<SimpleTypes::CLongHexNumber                       > m_oRsidDel;
-			nullable<SimpleTypes::CLongHexNumber                       > m_oRsidR;
-			nullable<SimpleTypes::CLongHexNumber                       > m_oRsidRPr;
-			nullable<SimpleTypes::CLongHexNumber                       > m_oRsidSect;
+			nullable<SimpleTypes::CLongHexNumber> m_oRsidDel;
+			nullable<SimpleTypes::CLongHexNumber> m_oRsidR;
+			nullable<SimpleTypes::CLongHexNumber> m_oRsidRPr;
+			nullable<SimpleTypes::CLongHexNumber> m_oRsidSect;
 
 			nullable<ComplexTypes::Word::COnOff2>		m_oBidi;
-			nullable<OOX::Logic::CColumns>										m_oCols;
-			nullable<ComplexTypes::Word::CDocGrid>								m_oDocGrid;
-			nullable<OOX::Logic::CEdnProps>										m_oEndnotePr;
-			std::vector<ComplexTypes::Word::CHdrFtrRef*>						m_arrFooterReference;
-			nullable<OOX::Logic::CFtnProps>										m_oFootnotePr;
+			nullable<OOX::Logic::CColumns>				m_oCols;
+			nullable<ComplexTypes::Word::CDocGrid>		m_oDocGrid;
+			nullable<OOX::Logic::CEdnProps>				m_oEndnotePr;
+			std::vector< nullable<ComplexTypes::Word::CHdrFtrRef>>	m_arrFooterReference;
+			nullable<OOX::Logic::CFtnProps>				m_oFootnotePr;
 			nullable<ComplexTypes::Word::COnOff2>		m_oFormProt;
-			std::vector<ComplexTypes::Word::CHdrFtrRef*>						m_arrHeaderReference;
-			nullable<ComplexTypes::Word::CLineNumber>							m_oLnNumType;
+			std::vector< nullable<ComplexTypes::Word::CHdrFtrRef>>	m_arrHeaderReference;
+			nullable<ComplexTypes::Word::CLineNumber>	m_oLnNumType;
 			nullable<ComplexTypes::Word::COnOff2>		m_oNoEndnote;
-			nullable<ComplexTypes::Word::CPaperSource>							m_oPaperSrc;
-			nullable<OOX::Logic::CPageBorders>									m_oPgBorders;
-			nullable<ComplexTypes::Word::CPageMar>								m_oPgMar;
-			nullable<ComplexTypes::Word::CPageNumber>							m_oPgNumType;
-			nullable<ComplexTypes::Word::CPageSz>								m_oPgSz;
-			nullable<ComplexTypes::Word::CRel>									m_oPrinterSettings;
+			nullable<ComplexTypes::Word::CPaperSource>	m_oPaperSrc;
+			nullable<OOX::Logic::CPageBorders>			m_oPgBorders;
+			nullable<ComplexTypes::Word::CPageMar>		m_oPgMar;
+			nullable<ComplexTypes::Word::CPageNumber>	m_oPgNumType;
+			nullable<ComplexTypes::Word::CPageSz>		m_oPgSz;
+			nullable<ComplexTypes::Word::CRel>			m_oPrinterSettings;
 			nullable<ComplexTypes::Word::COnOff2>		m_oRtlGutter;
-			nullable<OOX::Logic::CSectPrChange>									m_oSectPrChange;
-			nullable<ComplexTypes::Word::CTextDirection>						m_oTextDirection;
+			nullable<OOX::Logic::CSectPrChange>			m_oSectPrChange;
+			nullable<ComplexTypes::Word::CTextDirection>	m_oTextDirection;
 			nullable<ComplexTypes::Word::COnOff2 >		m_oTitlePg;
-			nullable<ComplexTypes::Word::CSectType>								m_oType;
-			nullable<ComplexTypes::Word::CVerticalJc>							m_oVAlign;
+			nullable<ComplexTypes::Word::CSectType>		m_oType;
+			nullable<ComplexTypes::Word::CVerticalJc>	m_oVAlign;
 		};
 
 	} // namespace Logic

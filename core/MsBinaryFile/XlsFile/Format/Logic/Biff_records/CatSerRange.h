@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -50,17 +50,18 @@ public:
 
 	
 	void readFields(CFRecord& record);
+	void writeFields(CFRecord& record);
 
 	static const ElementType	type = typeCatSerRange;
 
 //-----------------------------
-	_INT16 catCross;
-	_INT16 catLabel;
-	_INT16 catMark;
+	_INT16 catCross = 0;
+	_INT16 catLabel = 1;
+	_INT16 catMark = 0;
 	
-	bool fBetween;
-	bool fMaxCross;
-	bool fReversed;
+	bool fBetween = false;
+	bool fMaxCross = false;
+	bool fReversed = false;
 };
 
 } // namespace XLS

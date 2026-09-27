@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -69,6 +69,75 @@ const bool MDXTUPLESET::loadContent(BinProcessor& proc)
 	m_MDXVarious = elements_.back();	elements_.pop_back();
 	
 	proc.repeated<ContinueFrt12>(0, 0);
+	return true;
+}
+
+const bool MDXTUPLESET::saveContent(BinProcessor& proc)
+{
+	if(m_MDXVarious == nullptr)
+		return false;
+	proc.mandatory(*m_MDXVarious);
+	auto type = m_MDXVarious->get_type();
+	if(type == typeMDXTuple)
+	{
+		auto tuple = static_cast<MDXTuple*>(m_MDXVarious.get());
+		auto maxSize = 2050;
+		if(tuple->cistr > maxSize)
+		{
+			auto currentPose = maxSize;
+			while(currentPose < tuple->cistr)
+			{
+
+				CFRecord tempRecord(rt_ContinueFrt12, proc.getGlobalWorkbookInfo());
+				auto limit = 0;
+				if(currentPose + maxSize > tuple->cistr)
+					limit = tuple->cistr;
+				else
+					limit = currentPose + maxSize;
+				for(auto i = currentPose; i < limit; i++)
+					tempRecord << *(tuple->rgistr[i]);
+				{
+					ContinueFrt12 continueRecord;
+					auto capacity = 4*(limit - currentPose);
+					continueRecord.rgb.reserve(capacity);
+					auto CopyData =  tempRecord.getCurStaticData<char>() - tempRecord.getRdPtr();
+					memcpy(continueRecord.rgb.data(), CopyData, capacity);
+					proc.mandatory(continueRecord);
+				}
+				currentPose = limit;
+			}
+		}
+	}
+	else
+	{
+		auto set = static_cast<MDXSet*>(m_MDXVarious.get());
+		auto maxSize = 2049;
+		if(set->cistr > maxSize)
+		{
+			auto currentPose = maxSize;
+			while(currentPose < set->cistr)
+			{
+
+				CFRecord tempRecord(rt_ContinueFrt12, proc.getGlobalWorkbookInfo());
+				auto limit = 0;
+				if(currentPose + maxSize > set->cistr)
+					limit = set->cistr;
+				else
+					limit = currentPose + maxSize;
+				for(auto i = currentPose; i < limit; i++)
+					tempRecord << *(set->rgistr[i]);
+				{
+					ContinueFrt12 continueRecord;
+					auto capacity = 4*(limit - currentPose);
+					continueRecord.rgb.reserve(capacity);
+					auto CopyData =  tempRecord.getCurStaticData<char>() - tempRecord.getRdPtr();
+					memcpy(continueRecord.rgb.data(), CopyData, capacity);
+					proc.mandatory(continueRecord);
+				}
+				currentPose = limit;
+			}
+		}
+	}
 	return true;
 }
 

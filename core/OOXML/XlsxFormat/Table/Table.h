@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,18 +31,33 @@
  */
 #pragma once
 
-#include "../CommonInclude.h"
-
 #include "Autofilter.h"
+#include "../../DocxFormat/IFileContainer.h"
+#include "../FileTypes_Spreadsheet.h"
+
+namespace SimpleTypes
+{
+	namespace Spreadsheet
+	{
+		class CTableType;
+		class CTotalsRowFunction;
+		class CXmlDataType;
+	}
+}
 
 namespace OOX
 {
+	namespace Drawing
+	{
+		class COfficeArtExtensionList;
+	}
+
 	namespace Spreadsheet
 	{
 		class CAltTextTable : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CAltTextTable)
+			WritingElement_AdditionMethods(CAltTextTable)
             WritingElement_XlsbConstructors(CAltTextTable)
 			CAltTextTable()
 			{
@@ -60,6 +75,7 @@ namespace OOX
 			virtual void toXML(NSStringUtils::CStringBuilder& writer) const;
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
             void fromBin(XLS::BaseObjectPtr& obj);
+			XLS::BaseObjectPtr toBin();
 
 			virtual EElementType getType () const
 			{
@@ -78,7 +94,7 @@ namespace OOX
 		class CTableStyleInfo : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CTableStyleInfo)
+			WritingElement_AdditionMethods(CTableStyleInfo)
             WritingElement_XlsbConstructors(CTableStyleInfo)
 			CTableStyleInfo()
 			{
@@ -97,6 +113,8 @@ namespace OOX
 			virtual void toXML(NSStringUtils::CStringBuilder& writer) const;
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
             void fromBin(XLS::BaseObjectPtr& obj);
+			XLS::BaseObjectPtr toBin();
+			XLS::BaseObjectPtr toXLS();
 			virtual EElementType getType () const
 			{
 				return et_x_TableStyleInfo;
@@ -108,26 +126,46 @@ namespace OOX
 
 		public:
 			nullable<std::wstring > m_oName;
-			nullable<SimpleTypes::COnOff > m_oShowColumnStripes;
-			nullable<SimpleTypes::COnOff > m_oShowFirstColumn;
-			nullable<SimpleTypes::COnOff > m_oShowLastColumn;
-			nullable<SimpleTypes::COnOff > m_oShowRowStripes;
+			nullable<SimpleTypes::COnOff> m_oShowColumnStripes;
+			nullable<SimpleTypes::COnOff> m_oShowFirstColumn;
+			nullable<SimpleTypes::COnOff> m_oShowLastColumn;
+			nullable<SimpleTypes::COnOff> m_oShowRowStripes;
 		};
+		class CXmlColumnPr : public WritingElement
+		{
+		public:
+			WritingElement_AdditionMethods(CXmlColumnPr)
+			CXmlColumnPr() {}
+			virtual ~CXmlColumnPr() {}
 
+			virtual void fromXML(XmlUtils::CXmlNode& node) {}
+			virtual std::wstring toXML() const { return L""; }
+			virtual void toXML(NSStringUtils::CStringBuilder& writer) const;
+
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
+
+			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
+
+			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
+			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
+			virtual EElementType getType() const;
+
+			nullable_uint mapId;
+			nullable_string xpath;
+			nullable_bool denormalized;
+			nullable<SimpleTypes::Spreadsheet::CXmlDataType> xmlDataType;
+
+			//ext
+		};
 		class CTableColumn : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CTableColumn)
+			WritingElement_AdditionMethods(CTableColumn)
             WritingElement_XlsbConstructors(CTableColumn)
-			CTableColumn()
-			{
-			}
-			virtual ~CTableColumn()
-			{
-			}
-			virtual void fromXML(XmlUtils::CXmlNode& node)
-			{
-			}
+			CTableColumn() {}
+			virtual ~CTableColumn() {}
+			virtual void fromXML(XmlUtils::CXmlNode& node) {}
             virtual std::wstring toXML() const
 			{
 				return _T("");
@@ -135,6 +173,8 @@ namespace OOX
 			virtual void toXML(NSStringUtils::CStringBuilder& writer) const;
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
             void fromBin(XLS::BaseObjectPtr& obj);
+			XLS::BaseObjectPtr toBin();
+			XLS::BiffStructurePtr toXLS();
 			virtual EElementType getType () const
 			{
 				return et_x_TableColumn;
@@ -145,30 +185,30 @@ namespace OOX
             void ReadAttributes(XLS::BaseObjectPtr& obj);
 
 		public:
-			nullable_string												m_oDataCellStyle;
-			nullable<SimpleTypes::CUnsignedDecimalNumber>				m_oDataDxfId;
-			nullable_string												m_oHeaderRowCellStyle;
-			nullable<SimpleTypes::CUnsignedDecimalNumber>				m_oHeaderRowDxfId;
-			nullable<SimpleTypes::CUnsignedDecimalNumber>				m_oId;
-			nullable_string												m_oName;
-			nullable<SimpleTypes::CUnsignedDecimalNumber>				m_oQueryTableFieldId;
-			nullable_string												m_oTotalsRowCellStyle;
-			nullable<SimpleTypes::CUnsignedDecimalNumber>				m_oTotalsRowDxfId;
-			nullable<SimpleTypes::Spreadsheet::CTotalsRowFunction>		m_oTotalsRowFunction;
-			nullable_string												m_oTotalsRowLabel;
-			nullable_string												m_oUniqueName;
-			nullable_string												m_oUid;
+			nullable_string m_oDataCellStyle;
+			nullable<SimpleTypes::CUnsignedDecimalNumber> m_oDataDxfId;
+			nullable_string m_oHeaderRowCellStyle;
+			nullable<SimpleTypes::CUnsignedDecimalNumber> m_oHeaderRowDxfId;
+			nullable<SimpleTypes::CUnsignedDecimalNumber> m_oId;
+			nullable_string m_oName;
+			nullable<SimpleTypes::CUnsignedDecimalNumber> m_oQueryTableFieldId;
+			nullable_string m_oTotalsRowCellStyle;
+			nullable<SimpleTypes::CUnsignedDecimalNumber> m_oTotalsRowDxfId;
+			nullable<SimpleTypes::Spreadsheet::CTotalsRowFunction> m_oTotalsRowFunction;
+			nullable_string m_oTotalsRowLabel;
+			nullable_string m_oUniqueName;
+			nullable_string m_oUid;
 
-			nullable_string												m_oTotalsRowFormula;
-			nullable_string												m_oCalculatedColumnFormula;
-																		//xmlColumnPr;
-																		//ext
+			nullable_string m_oTotalsRowFormula;
+			nullable_string m_oCalculatedColumnFormula;
+			nullable<CXmlColumnPr> m_oXmlColumnPr;
+		//ext
 		};
 
 		class CTableColumns : public WritingElementWithChilds<CTableColumn>
 		{
 		public:
-			WritingElement_AdditionConstructors(CTableColumns)
+			WritingElement_AdditionMethods(CTableColumns)
             WritingElement_XlsbConstructors(CTableColumns)
 			CTableColumns()
 			{
@@ -187,6 +227,7 @@ namespace OOX
 			virtual void toXML(NSStringUtils::CStringBuilder& writer) const;
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
             void fromBin(XLS::BaseObjectPtr& obj);
+			XLS::BaseObjectPtr toBin();
 
 			virtual EElementType getType () const
 			{
@@ -204,7 +245,7 @@ namespace OOX
 		class CTable : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CTable)
+			WritingElement_AdditionMethods(CTable)
             WritingElement_XlsbConstructors(CTable)
 			CTable()
 			{
@@ -224,6 +265,8 @@ namespace OOX
 			virtual void toXML2(NSStringUtils::CStringBuilder& writer, int nIndex);
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
             void fromBin(XLS::BaseObjectPtr& obj);
+			XLS::BaseObjectPtr toBin();
+			XLS::BaseObjectPtr toXLS();
 			virtual EElementType getType () const
 			{
 				return et_x_Table;
@@ -268,7 +311,7 @@ namespace OOX
 		class CTablePart : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CTablePart)
+			WritingElement_AdditionMethods(CTablePart)
             WritingElement_XlsbConstructors(CTablePart)
 			CTablePart()
 			{
@@ -286,6 +329,8 @@ namespace OOX
 			virtual void toXML(NSStringUtils::CStringBuilder& writer) const;
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
             void fromBin(XLS::BaseObjectPtr& obj);
+			XLS::BaseObjectPtr toBin();
+            void toBin(XLS::StreamCacheWriterPtr& writer);
 			virtual EElementType getType () const
 			{
 				return et_x_TablePart;
@@ -302,7 +347,7 @@ namespace OOX
 		class CTableParts : public WritingElementWithChilds<CTablePart>
 		{
 		public:
-			WritingElement_AdditionConstructors(CTableParts)
+			WritingElement_AdditionMethods(CTableParts)
             WritingElement_XlsbConstructors(CTableParts)
 			CTableParts()
 			{
@@ -320,6 +365,8 @@ namespace OOX
 			virtual void toXML(NSStringUtils::CStringBuilder& writer) const;
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
             void fromBin(XLS::BaseObjectPtr& obj);
+            void toBin(XLS::StreamCacheWriterPtr& writer);
+			XLS::BaseObjectPtr toBin();
 
 			virtual EElementType getType () const
 			{
@@ -352,6 +399,7 @@ namespace OOX
 			{
 			}
             void readBin(const CPath& oPath);
+			XLS::BaseObjectPtr WriteBin() const;
 			virtual void read(const CPath& oPath)
 			{
 				//don't use this. use read(const CPath& oRootPath, const CPath& oFilePath)
@@ -360,10 +408,7 @@ namespace OOX
 			}
 			virtual void read(const CPath& oRootPath, const CPath& oPath);
 			virtual void write(const CPath& oPath, const CPath& oDirectory, CContentTypes& oContent) const;
-			virtual const OOX::FileType type() const
-			{
-				return OOX::Spreadsheet::FileTypes::Table;
-			}
+			virtual const OOX::FileType type() const;
 			virtual const CPath DefaultDirectory() const
 			{
 				return type().DefaultDirectory();
@@ -376,16 +421,129 @@ namespace OOX
 			{
 				return m_oReadPath;
 			}
-
-			nullable<CTable>	m_oTable;
-
+			nullable<CTable> m_oTable;
 		private:
-			CPath				m_oReadPath;
-
-			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader)
-			{
-			}
+			CPath m_oReadPath;
 		};
+//---------------------------------------------------------------------------------------------------------------------------------
+		class CXmlPr : public WritingElement
+		{
+		public:
+			WritingElement_AdditionMethods(CXmlPr)
+			CXmlPr() {}
+			virtual ~CXmlPr() {}
 
+			virtual void fromXML(XmlUtils::CXmlNode& node) {}
+			virtual std::wstring toXML() const { return L""; }
+			virtual void toXML(NSStringUtils::CStringBuilder& writer) const {}
+
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
+
+			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
+
+			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
+			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
+			virtual EElementType getType() const;
+
+			nullable_uint mapId;
+			nullable_string xpath;
+			nullable<SimpleTypes::Spreadsheet::CXmlDataType> xmlDataType;
+
+			//ext
+		};
+		class CXmlCellPr : public WritingElement
+		{
+		public:
+			WritingElement_AdditionMethods(CXmlCellPr)
+			CXmlCellPr() {}
+			virtual ~CXmlCellPr() {}
+
+			virtual void fromXML(XmlUtils::CXmlNode& node) {}
+			virtual std::wstring toXML() const { return L""; }
+			virtual void toXML(NSStringUtils::CStringBuilder& writer) const {}
+
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
+
+			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
+
+			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
+			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
+			virtual EElementType getType() const;
+
+			nullable_uint id;
+			nullable_string uniqueName;
+
+			nullable<CXmlPr> xmlPr;
+			//ext
+		};
+		class CSingleXmlCell : public WritingElement
+		{
+		public:
+			WritingElement_AdditionMethods(CSingleXmlCell)
+			CSingleXmlCell() {}
+			virtual ~CSingleXmlCell() {}
+
+			virtual void fromXML(XmlUtils::CXmlNode& node) {}
+			virtual std::wstring toXML() const { return L""; }
+			virtual void toXML(NSStringUtils::CStringBuilder& writer) const {}
+
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
+
+			void ReadAttributes(XmlUtils::CXmlLiteReader& oReader);
+
+			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
+			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
+			virtual EElementType getType() const;
+
+			nullable_uint connectionId;
+			nullable_uint id;
+			nullable_string r; //ref
+
+			nullable<CXmlCellPr> xmlCellPr;
+			//ext
+		};
+		class CSingleXmlCells : public WritingElementWithChilds<CSingleXmlCell>
+		{
+		public:
+			WritingElement_AdditionMethods(CSingleXmlCells)
+			CSingleXmlCells() {}
+			virtual ~CSingleXmlCells() {}
+
+			virtual void toXML(NSStringUtils::CStringBuilder& writer) const {}
+			virtual std::wstring toXML() const { return L""; }
+			virtual void fromXML(XmlUtils::CXmlNode& node) {}
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
+			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
+
+			virtual EElementType getType() const;
+
+			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
+			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
+		};
+		class CTableSingleCellsFile : public OOX::File
+		{
+		public:
+			CTableSingleCellsFile(OOX::Document* pMain);
+			CTableSingleCellsFile(OOX::Document* pMain, const CPath& uri);
+			CTableSingleCellsFile(OOX::Document* pMain, const CPath& oRootPath, const CPath& oPath);
+			virtual ~CTableSingleCellsFile();
+
+			virtual void read(const CPath& oFilePath);
+			virtual void read(const CPath& oRootPath, const CPath& oFilePath);
+			virtual void write(const CPath& oFilePath, const CPath& oDirectory, CContentTypes& oContent) const;
+
+			virtual const OOX::FileType type() const;
+
+			virtual const CPath DefaultDirectory() const;
+			virtual const CPath DefaultFileName() const;
+
+			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
+			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
+
+			nullable<CSingleXmlCells> singleXmlCells;
+		};
 	} //Spreadsheet
 } // namespace OOX

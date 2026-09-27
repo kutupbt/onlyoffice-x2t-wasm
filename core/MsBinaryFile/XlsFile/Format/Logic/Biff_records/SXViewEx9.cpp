@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -62,6 +62,19 @@ void SXViewEx9::readFields(CFRecord& record)
 	fPrintTitles					= GETBIT(flags2, 1);
 	fLineMode						= GETBIT(flags2, 2);
 	fRepeatItemsOnEachPrintedPage	= GETBIT(flags2, 5);
+}
+
+void SXViewEx9::writeFields(CFRecord& record)
+{
+	unsigned short flags = 0;
+	_UINT32 flags2 = 0;
+	SETBIT(flags, 1, fFrtAlert)
+	SETBIT(flags2, 1, fPrintTitles)
+	SETBIT(flags2, 2, fLineMode)
+	SETBIT(flags2, 5, fRepeatItemsOnEachPrintedPage)
+	record << rt << flags;
+	record.reserveNunBytes(4);
+	record << flags2 << itblAutoFmt << chGrand;
 }
 
 } // namespace XLS

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -88,6 +88,32 @@ const bool PROTECTION::loadContent(BinProcessor& proc)
 	}
 	return m_WinProtect || m_Protect || m_Password;
 }
+
+const bool PROTECTION::saveContent(BinProcessor& proc)
+{
+    if(m_WinProtect != nullptr)
+        proc.mandatory(*m_WinProtect);
+    else
+        proc.mandatory<WinProtect>();
+    if(m_Protect != nullptr)
+        proc.mandatory(*m_Protect);
+    else
+        proc.mandatory<Protect>();
+    if(m_Password != nullptr)
+        proc.mandatory(*m_Password);
+    else
+        proc.mandatory<Password>();
+    if(m_Prot4Rev != nullptr)
+        proc.mandatory(*m_Prot4Rev);
+    else
+        proc.mandatory<Prot4Rev>();
+    if(m_Prot4RevPass != nullptr)
+        proc.mandatory(*m_Prot4RevPass);
+    else
+        proc.mandatory<Prot4RevPass>();
+    return true;
+}
+
 int PROTECTION::serialize (std::wostream & _stream)
 {
 	WinProtect		*win_protect	= dynamic_cast<WinProtect*>		(m_WinProtect.get());

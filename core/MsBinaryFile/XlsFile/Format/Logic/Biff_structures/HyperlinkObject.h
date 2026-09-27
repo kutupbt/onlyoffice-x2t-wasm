@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -55,25 +55,27 @@ public:
 	XLS::BiffStructurePtr clone();
 
 	virtual void load(XLS::CFRecord& record);
+    virtual void save(XLS::CFRecord& record);
 	void load(IBinaryReader* reader);
 
 	std::wstring loadHyperlinkString(XLS::CFRecord& record);
+    void saveHyperlinkString(XLS::CFRecord& record, std::wstring hlinkString);
 	std::wstring loadHyperlinkString(IBinaryReader* reader);
 
-	_UINT32 streamVersion;
+    _UINT32 streamVersion = 2;
 
 	static const XLS::ElementType type = XLS::typeHyperlinkObject;
 
-	bool hlstmfHasMoniker;
-	bool hlstmfIsAbsolute;
-	bool hlstmfSiteGaveDisplayName;
-	bool hlstmfHasLocationStr;
-	bool hlstmfHasDisplayName;
-	bool hlstmfHasGUID;
-	bool hlstmfHasCreationTime;
-	bool hlstmfHasFrameName;
-	bool hlstmfMonikerSavedAsStr;
-	bool hlstmfAbsFromGetdataRel;
+    bool hlstmfHasMoniker = 0;
+    bool hlstmfIsAbsolute = 0;
+    bool hlstmfSiteGaveDisplayName = 0;
+    bool hlstmfHasLocationStr = 0;
+    bool hlstmfHasDisplayName = 0;
+    bool hlstmfHasGUID = 0;
+    bool hlstmfHasCreationTime = 0;
+    bool hlstmfHasFrameName = 0;
+    bool hlstmfMonikerSavedAsStr = 0;
+    bool hlstmfAbsFromGetdataRel = 0;
 
 	std::wstring		displayName;
 	std::wstring		targetFrameName;

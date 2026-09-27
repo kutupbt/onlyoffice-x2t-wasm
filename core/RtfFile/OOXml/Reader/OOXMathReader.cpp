@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -105,23 +105,31 @@ bool OOXMathReader::ParseElement(ReaderParameter oParam , OOX::WritingElement * 
 			OOXrPrReader orPrReader(ooxRPr);
 			orPrReader.Parse( oParam, m_oCharProperty);
 
-		//-----------------------------------------------------------------------------------
-			OOX::Logic::CMText *ooxTextMath = dynamic_cast<OOX::Logic::CMText *>(ooxRunMath->m_oMText.GetPointer());
-			if (ooxTextMath)
+			bool result = false;
+			for (size_t i = 0; i < ooxRunMath->m_arrItems.size(); ++i)
 			{
-				RtfCharPtr oChar(new RtfChar);
-				
-				oChar->m_oProperty = m_oCharProperty;
-				oChar->setText( ooxTextMath->m_sText );
-				rtfMath->m_oVal.AddItem( oChar );
-			}
-			else
-			{
-				bool res = false;
-				if (!res) res = ParseElement(oParam, ooxRunMath->m_oIns.GetPointer(), rtfMath);
-				if (!res) res = ParseElement(oParam, ooxRunMath->m_oDel.GetPointer(), rtfMath);
+				switch (ooxRunMath->m_arrItems[i]->getType())
+				{
+					case OOX::et_m_t:
+					{
+						OOX::Logic::CMText* ooxTextMath = dynamic_cast<OOX::Logic::CMText*>(ooxRunMath->m_arrItems[i]);
+						if (ooxTextMath)
+						{
+							RtfCharPtr oChar(new RtfChar);
 
+							oChar->m_oProperty = m_oCharProperty;
+							oChar->setText(ooxTextMath->m_sText);
+							rtfMath->m_oVal.AddItem(oChar);
+
+							result = true;
+						}
+					}break;
+					default:
+						break;
+				}
 			}
+			if (!result) result = ParseElement(oParam, ooxRunMath->m_oIns.GetPointer(), rtfMath);
+			if (!result) result = ParseElement(oParam, ooxRunMath->m_oDel.GetPointer(), rtfMath);
 			m_oCharProperty = oCurrentProp;
 		}break;
 		case OOX::et_m_t:
@@ -236,6 +244,20 @@ bool OOXMathReader::ParseElement(ReaderParameter oParam , OOX::WritingElement * 
 					rtfMath->AddItem(oSubMath);
 			}
 		}break;		
+		case OOX::et_m_borderBox:
+		{
+			OOX::Logic::CBorderBox* ooxSubMath = dynamic_cast<OOX::Logic::CBorderBox*>(ooxMath);
+			if (ooxSubMath)
+			{
+				RtfMathPtr oSubMath;
+				if (ParseElement(oParam, ooxSubMath->m_oBorderBoxPr.GetPointer(), oSubMath))
+					rtfMath->AddItem(oSubMath);
+
+				oSubMath.reset();
+				if (ParseElement(oParam, ooxSubMath->m_oElement.GetPointer(), oSubMath))
+					rtfMath->AddItem(oSubMath);
+			}
+		}break;
 		case OOX::et_m_box:
 		{
 			OOX::Logic::CBox *ooxSubMath = dynamic_cast<OOX::Logic::CBox *>(ooxMath);
@@ -248,6 +270,25 @@ bool OOXMathReader::ParseElement(ReaderParameter oParam , OOX::WritingElement * 
 				oSubMath.reset();
 				if (ParseElement(oParam, ooxSubMath->m_oElement.GetPointer(), oSubMath))
 					rtfMath->AddItem(oSubMath);
+			}
+		}break;
+		case OOX::et_m_borderBoxPr:
+		{
+			OOX::Logic::CBorderBoxPr* ooxSubMath = dynamic_cast<OOX::Logic::CBorderBoxPr*>(ooxMath);
+			if (ooxSubMath)
+			{
+				RtfMathPtr oSubMath;
+				if (ParseElement(oParam, ooxSubMath->m_oCtrlPr.GetPointer(), oSubMath))
+					rtfMath->AddItem(oSubMath);
+
+				//nullable<OOX::Logic::CHideBot>		m_oHideBot;
+				//nullable<OOX::Logic::CHideLeft>		m_oHideLeft;
+				//nullable<OOX::Logic::CHideRight>		m_oHideRight;
+				//nullable<OOX::Logic::CHideTop>		m_oHideTop;
+				//nullable<OOX::Logic::CStrikeBLTR>		m_oStrikeBLTR;
+				//nullable<OOX::Logic::CStrikeH>		m_oStrikeH;
+				//nullable<OOX::Logic::CStrikeTLBR>		m_oStrikeTLBR;
+				//nullable<OOX::Logic::CStrikeV>		m_oStrikeV;
 			}
 		}break;
 		case OOX::et_m_boxPr:

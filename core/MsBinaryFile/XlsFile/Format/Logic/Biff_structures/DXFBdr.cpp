@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -64,6 +64,31 @@ void DXFBdr::load(CFRecord& record)
 	
 	dgDiag		= static_cast<unsigned char>(GETBITS(flags, 21, 24));
 
+}
+
+void DXFBdr::save(CFRecord& record)
+{
+    _UINT32 flags = 0;
+    SETBITS(flags, 0, 3, dgLeft)
+    SETBITS(flags, 4, 7, dgRight)
+    SETBITS(flags, 8, 11, dgTop)
+    SETBITS(flags, 12, 15, dgBottom)
+
+    SETBITS(flags, 16, 22, icvLeft)
+    SETBITS(flags, 23, 29, icvRight)
+
+    SETBIT(flags, 30, bitDiagDown);
+    SETBIT(flags, 31, bitDiagUp);
+
+    record << flags;
+    flags = 0;
+
+    SETBITS(flags, 0, 6, icvTop)
+    SETBITS(flags, 7, 13, icvBottom)
+    SETBITS(flags, 14, 20, icvDiag)
+    SETBITS(flags, 21, 24, dgDiag)
+
+    record << flags;
 }
 
 void serialize_one(std::wostream & stream, const std::wstring & name, unsigned char type,  unsigned char color, FullColorExt* colorExt)

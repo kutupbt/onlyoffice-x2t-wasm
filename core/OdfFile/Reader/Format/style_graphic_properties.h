@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -79,8 +79,12 @@ public:
 	_CP_OPT(std::wstring)					draw_stroke_dash_;
 	_CP_OPT(odf_types::length_or_percent)	svg_stroke_width_;
 
+	_CP_OPT(std::wstring)					draw_stroke_gradient_name_;
+
 	_CP_OPT(odf_types::marker_style)		draw_marker_end_;
 	_CP_OPT(odf_types::marker_style)		draw_marker_start_;
+    _CP_OPT(odf_types::length)              draw_marker_start_width_;
+    _CP_OPT(odf_types::length)              draw_marker_end_width_;
 
 	_CP_OPT(odf_types::text_align)			draw_textarea_horizontal_align_;
 	_CP_OPT(odf_types::vertical_align)		draw_textarea_vertical_align_;
@@ -93,6 +97,8 @@ public:
 	_CP_OPT(bool)							draw_fit_to_size_; // draw:fit-to-size="shrink-to-fit" style:shrink-to-fit="true" - cebre_1.odp
 	_CP_OPT(bool)							draw_fit_to_contour_;
 	_CP_OPT(std::wstring)					draw_wrap_influence_on_position_;
+
+    _CP_OPT(unsigned int)					draw_ole_draw_aspect_;
 
 	odf_types::common_draw_rel_size_attlist			common_draw_rel_size_attlist_;
 	odf_types::common_draw_fill_attlist				common_draw_fill_attlist_;  
@@ -127,11 +133,11 @@ public:
 
     _CP_OPT(std::wstring)					fo_clip_;
     _CP_OPT(odf_types::wrap_option)			fo_wrap_option_;
-
     
-    office_element_ptr		style_background_image_;
-        
+    office_element_ptr		style_background_image_;        
+    office_element_ptr      style_columns_;
 };
+typedef boost::shared_ptr<graphic_format_properties> graphic_format_properties_ptr;
 
 class style_graphic_properties : public office_element_impl<style_graphic_properties>
 {

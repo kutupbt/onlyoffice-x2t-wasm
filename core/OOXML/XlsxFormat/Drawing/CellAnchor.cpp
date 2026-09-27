@@ -1,5 +1,5 @@
-/*
- * (c) Copyright Ascensio System SIA 2010-2019
+﻿/*
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -32,6 +32,12 @@
 #pragma once
 
 #include "CellAnchor.h"
+
+#include "FromTo.h"
+#include "Pos.h"
+
+#include "../../PPTXFormat/Logic/Shape.h"
+#include "../../PPTXFormat/Logic/GraphicFrame.h"
 
 namespace OOX
 {
@@ -76,7 +82,9 @@ namespace OOX
 				WritingElement_ReadAttributes_End(oReader)
 			}
 
-
+		CCellAnchor::CCellAnchor() : m_bShapeOle(false), m_bShapeControl(false)
+		{
+		}
 		CCellAnchor::CCellAnchor(const SimpleTypes::Spreadsheet::ECellAnchorType& oAnchorType) :	m_oAnchorType(oAnchorType),
 																						m_bShapeOle(false), m_bShapeControl(false)
 		{
@@ -257,18 +265,51 @@ namespace OOX
 				return false;
 			return true;
 		}
+		void CCellAnchor::getAnchorPos(_INT32 &colL, _INT32 &dxL, _INT32 &rwT, _INT32 &dyT, _INT32 &colR, _INT32 &dxR, _INT32 &rwB, _INT32 &dyB)
+		{
+			if(m_oAnchorType == SimpleTypes::Spreadsheet::ECellAnchorType::cellanchorAbsolute)
+			{
+
+			}
+			else if(m_oAnchorType == SimpleTypes::Spreadsheet::ECellAnchorType::cellanchorTwoCell)
+			{
+				if(m_oFrom.IsInit())
+				{
+					if(m_oFrom->m_oCol.IsInit())
+						colL = m_oFrom->m_oCol->GetValue();
+					if(m_oFrom->m_oRow.IsInit())
+						rwT = m_oFrom->m_oRow->GetValue();
+					if(m_oFrom->m_oRowOff.IsInit())
+						dyT = m_oFrom->m_oRowOff->GetValue();
+					if(m_oFrom->m_oColOff.IsInit())
+						dxL = m_oFrom->m_oColOff->GetValue();
+				}
+				if(m_oTo.IsInit())
+				{
+					if(m_oTo->m_oCol.IsInit())
+						colR = m_oTo->m_oCol->GetValue();
+					if(m_oTo->m_oRow.IsInit())
+						rwB = m_oTo->m_oRow->GetValue();
+					if(m_oFrom->m_oRowOff.IsInit())
+						dyB = m_oFrom->m_oRowOff->GetValue();
+					if(m_oFrom->m_oColOff.IsInit())
+						dxR = m_oFrom->m_oColOff->GetValue();
+				}
+
+			}
+		}
 		void CCellAnchor::ReadAttributes(XmlUtils::CXmlLiteReader& oReader)
 		{
 			WritingElement_ReadAttributes_Start( oReader )
-			WritingElement_ReadAttributes_ReadSingle( oReader, L"editAs", m_oEditAs )
+				WritingElement_ReadAttributes_ReadSingle( oReader, L"editAs", m_oEditAs )
 			WritingElement_ReadAttributes_End( oReader )
 		}
 		void CCellAnchor::ReadAttributesRequire(XmlUtils::CXmlLiteReader& oReader, std::wstring& sRequire)
-			{
-				WritingElement_ReadAttributes_Start( oReader )
+		{
+			WritingElement_ReadAttributes_Start( oReader )
 				WritingElement_ReadAttributes_ReadSingle( oReader, L"Requires", sRequire )
-				WritingElement_ReadAttributes_End( oReader )
-			}
+			WritingElement_ReadAttributes_End( oReader )
+		}
 
 	} //Spreadsheet
 } // namespace OOX

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -107,6 +107,50 @@ void List12BlockLevel::load(CFRecord& record)
 		record >> stData;
 	if (istnAgg != -1)
 		record >> stAgg;
+}
+void saveDXFN(CFRecord& record, const size_t cbPos, DXFN12List & dxfnList)
+{
+	_INT32 listSize = 0;
+	auto dxfnStart = record.getRdPtr();
+	dxfnList.save(record);
+	listSize = record.getRdPtr() - dxfnStart;
+	record.RollRdPtrBack(record.getRdPtr() - cbPos);
+	record << listSize;
+	record.skipNunBytes(dxfnStart - record.getRdPtr() + listSize);
+}
+void List12BlockLevel::save(CFRecord& record)
+{
+	auto headerSizePos = record.getRdPtr();
+	record << cbdxfHeader << istnHeader;
+	auto dataSizePos = record.getRdPtr();
+	record << cbdxfData << istnData;
+	auto aggPos = record.getRdPtr();
+	record << cbdxfAgg << istnAgg;
+	auto BorderPos = record.getRdPtr();
+	record << cbdxfBorder;
+	auto HeaderBorderPos = record.getRdPtr();
+	record << cbdxfHeaderBorder;
+	auto aggBorderPos = record.getRdPtr();
+	record << cbdxfAggBorder;
+
+	if(dxfHeader.bExist)
+		saveDXFN(record, headerSizePos, dxfHeader);
+	if(dxfData.bExist)
+		saveDXFN(record, dataSizePos, dxfData);
+	if(dxfAgg.bExist)
+		saveDXFN(record, aggPos, dxfAgg);
+	if(dxfBorder.bExist)
+		saveDXFN(record, BorderPos, dxfBorder);
+	if(dxfHeaderBorder.bExist)
+		saveDXFN(record, HeaderBorderPos, dxfHeaderBorder);
+	if(dxfAggBorder.bExist)
+		saveDXFN(record, aggBorderPos, dxfAggBorder);
+	if(istnHeader != -1)
+		record << stHeader;
+	if(istnData != -1)
+		record << stData;
+	if(istnAgg != -1)
+		record << stAgg;
 }
 
 

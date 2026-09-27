@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -94,6 +94,24 @@ const bool WINDOW::loadContent(BinProcessor& proc)
 	return true;
 }
 
+const bool WINDOW::saveContent(BinProcessor& proc)
+{
+	if(m_Window2 != nullptr)
+		proc.mandatory(*m_Window2);
+	else
+		proc.mandatory<Window2>();
+	if(m_PLV != nullptr)
+		proc.mandatory(*m_PLV);
+	if(m_Scl != nullptr)
+		proc.mandatory(*m_Scl);
+	if(m_Pane != nullptr)
+		proc.mandatory(*m_Pane);
+	for(auto i : m_arSelection)
+		if(i != nullptr)
+			proc.mandatory(*i);
+    return true;
+}
+
 int WINDOW::serialize(std::wostream & stream)
 {
 	Window2 * window2 = dynamic_cast<Window2*>(m_Window2.get());
@@ -136,7 +154,7 @@ int WINDOW::serialize(std::wostream & stream)
 				{
 					CP_XML_ATTR(L"view", L"pageLayout");
 				}
-				if (window2->topLeftCell != L"A1")
+				if (!window2->topLeftCell.empty() && window2->topLeftCell != L"A1")
 				{
 					CP_XML_ATTR(L"topLeftCell", window2->topLeftCell);
 				}

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -32,6 +32,11 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
+
+#if defined(GetTempPath)
+#undef GetTempPath
+#endif
+
 #include <list>
 #include <sstream>
 
@@ -48,6 +53,9 @@ class BinProcessor;
 class StreamCacheReader;
 typedef boost::shared_ptr<StreamCacheReader> StreamCacheReaderPtr;
 
+class StreamCacheWriter;
+typedef boost::shared_ptr<StreamCacheWriter> StreamCacheWriterPtr;
+
 class BaseObject;
 typedef boost::shared_ptr<BaseObject> BaseObjectPtr;
 
@@ -60,6 +68,8 @@ public:
 	virtual boost::shared_ptr<BaseObject> clone() = 0;
 
 	virtual const bool read(StreamCacheReaderPtr reader, BaseObject* parent, const bool mandatory) = 0; // Read self and children
+
+	virtual const bool write(StreamCacheWriterPtr writer, BaseObject* parent) = 0; // Write self and children
 
 	virtual const std::string & getClassName() const = 0; // Must be overridden in every deriver. The return value must be a reference to a static variable inside the getter
 

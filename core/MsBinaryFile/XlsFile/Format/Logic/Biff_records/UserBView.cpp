@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -177,6 +177,61 @@ void UserBView::readFields(CFRecord& record)
         fPersonalView	= GETBIT(flags, 16);
         record >> stName;
     }
+}
+
+void UserBView::writeFields(CFRecord& record)
+{
+	record.reserveNunBytes(4);
+	_UINT16			tabId_2b = tabId;
+	record << tabId_2b;
+	record.reserveNunBytes(2); // reserved1
+
+	_GUID_ guid_num;
+	_UINT16	wTabRatio_2b = wTabRatio;
+	STR::bstr2guid(guid, guid_num);
+	record << guid_num << x << y << dx << dy << wTabRatio_2b;
+
+	unsigned short flags1 = 0;
+
+	SETBIT(flags1, 0, fDspFmlaBar)
+	SETBIT(flags1, 1, fDspStatus)
+
+	unsigned char mdNoteDisp_num = 0;
+	if(mdNoteDisp == L"commIndAndComment")
+		mdNoteDisp_num = 0x2;
+	else if(mdNoteDisp == L"commIndicator")
+		mdNoteDisp_num =0x1;
+	SETBITS(flags1, 2, 3, mdNoteDisp_num)
+
+	SETBIT(flags1, 4, fDspHScroll)
+	SETBIT(flags1, 5, fDspVScroll)
+	SETBIT(flags1, 6, fBotAdornment)
+	SETBIT(flags1, 7, fZoom)
+
+	unsigned char fHideObj_num = 0;
+
+	if(fHideObj == L"placeholders")
+		fHideObj_num = 0x1;
+	else if(fHideObj == L"none")
+		fHideObj_num = 0x2;
+	SETBITS(flags1, 8, 9, fHideObj_num)
+	SETBIT(flags1, 10, fPrintIncl)
+	SETBIT(flags1, 11, fRowColIncl)
+	SETBIT(flags1, 12, fInvalidTabId)
+	SETBIT(flags1, 13, fTimedUpdate)
+	SETBIT(flags1, 14, fAllMemChanges)
+	SETBIT(flags1, 15, fOnlySync)
+
+	record << flags1;
+	record.reserveNunBytes(2); // unused2
+
+	unsigned short flags2 = 0;
+
+	SETBIT(flags2, 0, fPersonalView)
+	SETBIT(flags2, 1, fIconic)
+	record << flags2;
+
+	record << wMergeInterval << st;
 }
 
 int UserBView::serialize(std::wostream & stream)

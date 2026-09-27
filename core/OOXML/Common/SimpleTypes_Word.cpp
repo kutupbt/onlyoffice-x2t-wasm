@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -1680,10 +1680,11 @@ namespace SimpleTypes
 
 	EHeightRule CHeightRule::FromString(const std::wstring &sValue)
 	{
-		if      ( (L"atLeast") == sValue ) this->m_eValue = heightruleAtLeast;
-		else if ( (L"auto")    == sValue ) this->m_eValue = heightruleAuto;
-		else if ( (L"exact")   == sValue ) this->m_eValue = heightruleExact;
-		else                                this->m_eValue = heightruleAuto;
+		if      (L"atLeast"		== sValue) this->m_eValue = heightruleAtLeast;
+		else if (L"at-least"	== sValue) this->m_eValue = heightruleAtLeast;
+		else if (L"auto"		== sValue) this->m_eValue = heightruleAuto;
+		else if (L"exact"		== sValue) this->m_eValue = heightruleExact;
+		else                               this->m_eValue = heightruleAuto;
 
 		return this->m_eValue;
 	}
@@ -1733,6 +1734,7 @@ namespace SimpleTypes
 		if (L"custom" == sValue || L"none" == sValue) this->m_eValue = complexFormTypeCustom;
 		else if (L"telephone" == sValue || L"phone" == sValue) this->m_eValue = complexFormTypeTelephone;
 		else if (L"email" == sValue) this->m_eValue = complexFormTypeEmail;
+		else if (L"labeledCheckBox" == sValue) this->m_eValue = complexFormTypeLabeledCheckBox;
 		else this->m_eValue = complexFormTypeCustom;
 
 		return this->m_eValue;
@@ -1745,6 +1747,7 @@ namespace SimpleTypes
 		case complexFormTypeCustom: return L"custom";
 		case complexFormTypeTelephone: return L"telephone";
 		case complexFormTypeEmail: return L"email";
+		case complexFormTypeLabeledCheckBox: return L"labeledCheckBox";
 		default: return (L"custom");
 		}
 	}
@@ -1756,46 +1759,65 @@ namespace SimpleTypes
 
 	///
 
-	CHexColor::CHexColor(unsigned char r, unsigned char g, unsigned char b)
+	CHexColor::CHexColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 	{
 		this->m_eValue = hexcolorRGB;
+		
+		m_unA = a;
 		m_unR = r;
 		m_unG = g;
 		m_unB = b;
 	}
 
-	int	CHexColor::HexToInt(int nHex)
+	int	CHexColor::HexToInt(int nHex, bool& bResult)
 	{
 		if ( nHex >= '0' && nHex <= '9' ) return (nHex - '0');
 		if ( nHex >= 'a' && nHex <= 'f' ) return (nHex - 'a' + 10);
 		if ( nHex >= 'A' && nHex <= 'F' ) return (nHex - 'A' + 10);
 
+		bResult = false;
 		return 0;
 	}
 
-	void CHexColor::Parse()
+	bool CHexColor::Parse()
 	{
 		if ( m_sValue.length() < 6 )
-			return;
+			return false;
 
-		m_unR = HexToInt( (int)m_sValue[1] ) + (unsigned char)(HexToInt( (int)m_sValue[0] ) << 4);
-		m_unG = HexToInt( (int)m_sValue[3] ) + (unsigned char)(HexToInt( (int)m_sValue[2] ) << 4);
-		m_unB = HexToInt( (int)m_sValue[5] ) + (unsigned char)(HexToInt( (int)m_sValue[4] ) << 4);
+		bool bResult = true;
+		if (m_sValue.length() > 6)
+		{
+			m_unR = HexToInt((int)m_sValue[1], bResult) + (unsigned char)(HexToInt((int)m_sValue[0], bResult) << 4);
+			m_unG = HexToInt((int)m_sValue[3], bResult) + (unsigned char)(HexToInt((int)m_sValue[2], bResult) << 4);
+			m_unB = HexToInt((int)m_sValue[5], bResult) + (unsigned char)(HexToInt((int)m_sValue[4], bResult) << 4);
+			m_unA = HexToInt((int)m_sValue[7], bResult) + (unsigned char)(HexToInt((int)m_sValue[6], bResult) << 4);
+		}
+		else
+		{
+			m_unR = HexToInt((int)m_sValue[1], bResult) + (unsigned char)(HexToInt((int)m_sValue[0], bResult) << 4);
+			m_unG = HexToInt((int)m_sValue[3], bResult) + (unsigned char)(HexToInt((int)m_sValue[2], bResult) << 4);
+			m_unB = HexToInt((int)m_sValue[5], bResult) + (unsigned char)(HexToInt((int)m_sValue[4], bResult) << 4);
+		}
+		return bResult;
 	}
 
-	void CHexColor::Parse3()
+	bool CHexColor::Parse3()
 	{
 		if ( m_sValue.length() < 3 )
-			return;
+			return false;
 
-		m_unR = HexToInt( (int)m_sValue[0] ) + (unsigned char)(HexToInt( (int)m_sValue[0]) << 4);
-		m_unG = HexToInt( (int)m_sValue[1] ) + (unsigned char)(HexToInt( (int)m_sValue[1]) << 4);
-		m_unB = HexToInt( (int)m_sValue[2] ) + (unsigned char)(HexToInt( (int)m_sValue[2]) << 4);
+		bool bResult = true;
+		
+		m_unR = HexToInt( (int)m_sValue[0], bResult) + (unsigned char)(HexToInt( (int)m_sValue[0], bResult) << 4);
+		m_unG = HexToInt( (int)m_sValue[1], bResult) + (unsigned char)(HexToInt( (int)m_sValue[1], bResult) << 4);
+		m_unB = HexToInt( (int)m_sValue[2], bResult) + (unsigned char)(HexToInt( (int)m_sValue[2], bResult) << 4);
+		
+		return bResult;
 	}
 
 	EHexColor CHexColor::FromString(const std::wstring &sValueSrc)
 	{
-		if ( L"auto" == sValueSrc || L"none" == sValueSrc )
+		if (L"automatic" == sValueSrc || L"auto" == sValueSrc || L"none" == sValueSrc )
 			this->m_eValue = hexcolorAuto;
 		else
 		{
@@ -1816,71 +1838,50 @@ namespace SimpleTypes
 			if(oPresetColorVal.FromStringIgnoreCase(sValue))
 			{
 				this->m_eValue = hexcolorRGB;
+				
 				m_unR = oPresetColorVal.Get_R();
 				m_unG = oPresetColorVal.Get_G();
 				m_unB = oPresetColorVal.Get_B();
+			}
+			else if (8 <= sValue.length())
+			{
+				this->m_eValue = hexcolorARGB;
+				m_sValue = sValue.substr(0, 8);
+				
+				if (false == Parse()) 
+					this->m_eValue = hexcolorAuto;
 			}
 			else if ( 6 <= sValue.length() )
 			{
 				this->m_eValue = hexcolorRGB;
 				m_sValue = sValue.substr( 0, 6 );
-				Parse();
+				if (false == Parse()) this->m_eValue = hexcolorAuto;
 			}
 			else if ( 3 == sValue.length() )// a la #339 (Compo 3AP.docx)
 			{
 				this->m_eValue = hexcolorRGB;
 				m_sValue = sValue;
-				Parse3();
+				
+				if (false == Parse3()) 
+					this->m_eValue = hexcolorAuto;
 			}
 			else   this->m_eValue = EHexColor::hexcolorAuto;//eDefValue;
 
 		}
-
 		return this->m_eValue;
 	}
 
-	/*
-	template<>
-	EHexColor CHexColor<EHexColor::hexcolorRGB>::FromString(const std::wstring &sValue)
-	{
-		if ( _T("auto") == sValue || _T("none") == sValue )
-			this->m_eValue = hexcolorAuto;
-		else
-		{
-			//В документации не написано, что цвет может приходить строкой, но в реальных докуентах встречается и word это разруливает.
-			//CHighlightColor<highlightcolorNone> oHighlightColor(sValue);
-			CPresetColorVal<> oPresetColorVal;
-			if(oPresetColorVal.FromStringIgnoreCase(sValue))
-			{
-				this->m_eValue = hexcolorRGB;
-				m_unR = oPresetColorVal.Get_R();
-				m_unG = oPresetColorVal.Get_G();
-				m_unB = oPresetColorVal.Get_B();
-			}
-			else if ( 6 <= sValue.length() )
-			{
-				this->m_eValue = hexcolorRGB;
-				m_sValue = sValue.substr( 0, 6 );
-				Parse();
-			}
-			else if ( 3 == sValue.length() )// a la #339 (Compo 3AP.docx)
-			{
-				this->m_eValue = hexcolorRGB;
-				m_sValue = sValue;
-				Parse3();
-			}
-			else   this->m_eValue = EHexColor::hexcolorAuto;//eDefValue;
-
-		}
-
-		return this->m_eValue;
-	}
-	*/
-
-	std::wstring CHexColor::ToString  () const
+	std::wstring CHexColor::ToString () const
 	{
 		switch(this->m_eValue)
 		{
+		case hexcolorARGB:
+		{
+			std::wstringstream sstream;
+			sstream << boost::wformat(L"%02x%02x%02x%02x") % m_unR % m_unG % m_unB % m_unA;
+
+			return sstream.str();
+		}
 		case hexcolorRGB  :
 		{
 			std::wstringstream sstream;
@@ -1894,42 +1895,43 @@ namespace SimpleTypes
 		}
 	}
 
-	std::wstring CHexColor::ToStringNoAlpha  () const
+	std::wstring CHexColor::ToStringNoAlpha () const
 	{
-		switch(this->m_eValue)
+		switch (this->m_eValue)
 		{
-		case hexcolorRGB  :
-		{
-			std::wstringstream sstream;
-			sstream << boost::wformat( L"%02x%02x%02x" ) % m_unR % m_unG % m_unB;
+			case hexcolorARGB:
+			case hexcolorRGB:
+			{
+				std::wstringstream sstream;
+				sstream << boost::wformat(L"%02x%02x%02x") % m_unR % m_unG % m_unB;
 
-			return sstream.str();
+				return sstream.str();
+			}
+			case hexcolorAuto:
+			default:
+				return (L"auto");
 		}
-		case hexcolorAuto :
-		default :
-			return (L"auto");			}
 	}
-
+	void CHexColor::Set_A(unsigned char A)
+	{
+		m_unA = A;
+	}
 	void CHexColor::Set_R(unsigned char R)
 	{
 		m_unR = R;
 	}
-
 	void CHexColor::Set_G(unsigned char G)
 	{
 		m_unG = G;
 	}
-
 	void CHexColor::Set_B(unsigned char B)
 	{
 		m_unB = B;
 	}
-
 	unsigned char CHexColor::Get_R() const
 	{
 		return m_unR;
 	}
-
 	unsigned char CHexColor::Get_G() const
 	{
 		return m_unG;
@@ -1942,7 +1944,7 @@ namespace SimpleTypes
 
 	unsigned char CHexColor::Get_A() const
 	{
-		return 255;
+		return m_unA;
 	}
 
 	//--------------------------------------------------------------------------------
@@ -2284,7 +2286,7 @@ namespace SimpleTypes
 		else if ( (L"thaiDistribute") == sValue ) this->m_eValue = jcThaiDistribute;
 		else if ( (L"left")           == sValue ) this->m_eValue = jcLeft;
 		else if ( (L"right")          == sValue ) this->m_eValue = jcRight;
-		else                                       this->m_eValue = jcLeft;
+		else									  this->m_eValue = jcLeft;
 
 		return this->m_eValue;
 	}
@@ -2296,12 +2298,12 @@ namespace SimpleTypes
 		case jcBoth            : return (L"both");
 		case jcCenter          : return (L"center");
 		case jcDistribute      : return (L"distribute");
-		case jcEnd             : return (L"end");
+		case jcEnd             : /*return (L"end");*/ return (L"right"); //Transitional Migration Features
 		case jcHighKashida     : return (L"highKashida");
 		case jcLowKashida      : return (L"lowKashida");
 		case jcMediumKashida   : return (L"mediumKashida");
 		case jcNumTab          : return (L"numTab");
-		case jcStart           : return (L"start");
+		case jcStart           : /*return (L"start");*/ return (L"left"); //Transitional Migration Features
 		case jcThaiDistribute  : return (L"thaiDistribute");
 		case jcLeft            : return (L"left");
 		case jcRight           : return (L"right");
@@ -2315,12 +2317,12 @@ namespace SimpleTypes
 
 	EJcTable CJcTable::FromString(const std::wstring &sValue)
 	{
-		if      ( (L"center")         == sValue ) this->m_eValue = jctableCenter;
-		else if ( (L"end")            == sValue ) this->m_eValue = jctableEnd;
-		else if ( (L"start")          == sValue ) this->m_eValue = jctableStart;
-		else if ( (L"left")           == sValue ) this->m_eValue = jctableLeft;
-		else if ( (L"right")          == sValue ) this->m_eValue = jctableRight;
-		else                                       this->m_eValue = jctableLeft;
+		if      ( (L"center")	== sValue ) this->m_eValue = jctableCenter;
+		else if ( (L"end")		== sValue ) this->m_eValue = jctableEnd;
+		else if ( (L"start")	== sValue ) this->m_eValue = jctableStart;
+		else if ( (L"left")		== sValue ) this->m_eValue = jctableLeft;
+		else if ( (L"right")	== sValue ) this->m_eValue = jctableRight;
+		else								this->m_eValue = jctableLeft;
 
 		return this->m_eValue;
 	}
@@ -2332,8 +2334,8 @@ namespace SimpleTypes
 		case jctableCenter : return (L"center");
 		case jctableEnd    : return (L"end");
 		case jctableStart  : return (L"start");
-		case jctableLeft   : return (L"left");
-		case jctableRight  : return (L"right");
+		case jctableLeft   : /*return (L"start");*/ return (L"left"); //Transitional Migration Features
+		case jctableRight  : /*return (L"end");*/ return (L"right"); //Transitional Migration Features
 		default            : return (L"left");
 		}
 	}
@@ -2444,32 +2446,14 @@ namespace SimpleTypes
 	// LongHexNumber 17.18.50 (Part 1)
 	//--------------------------------------------------------------------------------
 
-	int	CLongHexNumber::HexToInt(int nHex, bool &bResult)
-	{
-		if ( nHex >= '0' && nHex <= '9' ) return (nHex - '0');
-		if ( nHex >= 'a' && nHex <= 'f' ) return (nHex - 'a' + 10);
-		if ( nHex >= 'A' && nHex <= 'F' ) return (nHex - 'A' + 10);
-
-		bResult = false;
-
-		return 0;
-	}
-
 	bool CLongHexNumber::Parse(const std::wstring &sValue)
 	{
-		if ( sValue.length() < 8 )
+		if ( sValue.empty())
 			return false;
 
 		bool bResult = true;
 
-		this->m_eValue  = HexToInt( (int)sValue[7], bResult );
-		this->m_eValue += HexToInt( (int)sValue[6], bResult ) <<  4;
-		this->m_eValue += HexToInt( (int)sValue[5], bResult ) <<  8;
-		this->m_eValue += HexToInt( (int)sValue[4], bResult ) << 12;
-		this->m_eValue += HexToInt( (int)sValue[3], bResult ) << 16;
-		this->m_eValue += HexToInt( (int)sValue[2], bResult ) << 20;
-		this->m_eValue += HexToInt( (int)sValue[1], bResult ) << 24;
-		this->m_eValue += HexToInt( (int)sValue[0], bResult ) << 28;
+		this->m_eValue  = XmlUtils::GetHex(sValue);
 
 		return bResult;
 	}
@@ -3380,7 +3364,7 @@ namespace SimpleTypes
 		else if ( (L"thinReverseDiagStripe") == sValue ) this->m_eValue = shdThinReverseDiagStripe;
 		else if ( (L"thinVertStripe")        == sValue ) this->m_eValue = shdThinVertStripe;
 		else if ( (L"vertStripe")            == sValue ) this->m_eValue = shdVertStripe;
-		else                                              this->m_eValue = shdSolid;
+		else                                             this->m_eValue = shdClear;
 
 		return this->m_eValue;
 	}
@@ -3742,9 +3726,9 @@ namespace SimpleTypes
 
 	ETblLayoutType CTblLayoutType::FromString(const std::wstring &sValue)
 	{
-		if      ( (L"autofit") == sValue ) this->m_eValue = tbllayouttypeAutofit;
-		else if ( (L"fixed")   == sValue ) this->m_eValue = tbllayouttypeFixed;
-		else                                this->m_eValue = tbllayouttypeAutofit;
+		if (L"autofit" == sValue) this->m_eValue = tbllayouttypeAutofit;
+		else if (L"fixed" == sValue || L"Fixed" == sValue) this->m_eValue = tbllayouttypeFixed;
+		else this->m_eValue = tbllayouttypeAutofit;
 
 		return this->m_eValue;
 	}
@@ -4327,12 +4311,13 @@ namespace SimpleTypes
 
 	EWrap CWrap::FromString(const std::wstring &sValue)
 	{
-		if      ( (L"around")    == sValue ) this->m_eValue = wrapAround;
-		else if ( (L"auto")      == sValue ) this->m_eValue = wrapAuto;
-		else if ( (L"none")      == sValue ) this->m_eValue = wrapNone;
-		else if ( (L"notBeside") == sValue ) this->m_eValue = wrapNotBeside;
-		else if ( (L"through")   == sValue ) this->m_eValue = wrapThrough;
-		else if ( (L"tight")     == sValue ) this->m_eValue = wrapTight;
+		if      (L"around"		== sValue ) this->m_eValue = wrapAround;
+		else if (L"auto"		== sValue ) this->m_eValue = wrapAuto;
+		else if (L"none"		== sValue ) this->m_eValue = wrapNone;
+		else if (L"notBeside"	== sValue ) this->m_eValue = wrapNotBeside;
+		else if (L"not-beside"	== sValue) this->m_eValue = wrapNotBeside;
+		else if (L"through"		== sValue ) this->m_eValue = wrapThrough;
+		else if (L"tight"		== sValue ) this->m_eValue = wrapTight;
 		else                                  this->m_eValue = wrapAuto;
 
 		return this->m_eValue;
@@ -4681,16 +4666,17 @@ namespace SimpleTypes
 
 	ECryptAlgoritmName CCryptAlgoritmName::FromString(const std::wstring &sValue)
 	{
-		if       ( L"MD2"        == sValue || L"1"	== sValue ) this->m_eValue = cryptalgoritmnameMD2;
-		else if  ( L"MD4"        == sValue || L"2"	== sValue ) this->m_eValue = cryptalgoritmnameMD4;
-		else if  ( L"MD5"        == sValue || L"3"	== sValue ) this->m_eValue = cryptalgoritmnameMD5;
-		else if  ( L"RIPEMD-128" == sValue || L"6"	== sValue ) this->m_eValue = cryptalgoritmnameRIPEMD128;
-		else if  ( L"RIPEMD-160" == sValue || L"7"	== sValue ) this->m_eValue = cryptalgoritmnameRIPEMD160;
-		else if  ( L"SHA-1"      == sValue || L"4"	== sValue ) this->m_eValue = cryptalgoritmnameSHA1;
-		else if  ( L"SHA-256"    == sValue || L"12"	== sValue ) this->m_eValue = cryptalgoritmnameSHA256;
-		else if  ( L"SHA-384"    == sValue || L"13"	== sValue ) this->m_eValue = cryptalgoritmnameSHA384;
-		else if  ( L"SHA-512"    == sValue || L"14"	== sValue ) this->m_eValue = cryptalgoritmnameSHA512;
-		else if  ( L"WHIRLPOOL"  == sValue ) this->m_eValue = cryptalgoritmnameWHIRLPOOL;
+		if (L"MD2" == sValue || L"1" == sValue) this->m_eValue = cryptalgoritmnameMD2;
+		else if (L"MD4" == sValue || L"2" == sValue) this->m_eValue = cryptalgoritmnameMD4;
+		else if (L"MD5" == sValue || L"3" == sValue) this->m_eValue = cryptalgoritmnameMD5;
+		else if (L"RIPEMD-128" == sValue || L"6" == sValue) this->m_eValue = cryptalgoritmnameRIPEMD128;
+		else if (L"RIPEMD-160" == sValue || L"7" == sValue) this->m_eValue = cryptalgoritmnameRIPEMD160;
+		else if (L"SHA-1" == sValue || L"4" == sValue) this->m_eValue = cryptalgoritmnameSHA1;
+		else if (L"SHA-256" == sValue || L"12" == sValue) this->m_eValue = cryptalgoritmnameSHA256;
+		else if (L"SHA-384" == sValue || L"13" == sValue) this->m_eValue = cryptalgoritmnameSHA384;
+		else if (L"SHA-512" == sValue || L"14" == sValue) this->m_eValue = cryptalgoritmnameSHA512;
+		else if (L"WHIRLPOOL" == sValue) this->m_eValue = cryptalgoritmnameWHIRLPOOL;
+		else if (L"PBKDF2" == sValue) this->m_eValue = cryptalgoritmnamePBKDF2;
 		else
 			this->m_eValue = cryptalgoritmnameUnknown;
 
@@ -4711,6 +4697,7 @@ namespace SimpleTypes
 		case cryptalgoritmnameSHA384    : return (L"SHA-384");
 		case cryptalgoritmnameSHA512    : return (L"SHA-512");
 		case cryptalgoritmnameWHIRLPOOL : return (L"WHIRLPOOL");
+		case cryptalgoritmnamePBKDF2	: return (L"PBKDF2");
 		default                         : return (L"");
 		}
 	}

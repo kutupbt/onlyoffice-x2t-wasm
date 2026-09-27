@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -33,9 +33,13 @@
 #ifndef OOX_DRAWING_FILE_INCLUDE_H_
 #define OOX_DRAWING_FILE_INCLUDE_H_
 
-#include "../CommonInclude.h"
-#include "../../XlsbFormat/Biff12_records/Drawing.h"
 #include "CellAnchor.h"
+
+#include "../../DocxFormat/IFileContainer.h"
+#include "../../Common/SimpleTypes_Shared.h"
+
+#include "../../PPTXFormat/Logic/GraphicFrame.h"
+#include "../../XlsbFormat/Biff12_records/Drawing.h"
 
 namespace OOX
 {
@@ -46,8 +50,8 @@ namespace OOX
 		class CDrawingWorksheet : public WritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(CDrawingWorksheet)
-                        WritingElement_XlsbConstructors(CDrawingWorksheet)
+			WritingElement_AdditionMethods(CDrawingWorksheet)
+			WritingElement_XlsbConstructors(CDrawingWorksheet)
 			CDrawingWorksheet();
 			virtual ~CDrawingWorksheet();
 
@@ -58,6 +62,8 @@ namespace OOX
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 
 			void fromBin(XLS::BaseObjectPtr& obj);
+			XLS::BaseObjectPtr toBin();
+            void toBin(XLS::StreamCacheWriterPtr& writer);
 			virtual EElementType getType () const;
 
 		private:
@@ -79,6 +85,8 @@ namespace OOX
 			virtual void read(const CPath& oRootPath, const CPath& oPath);
 			virtual void write(const CPath& oPath, const CPath& oDirectory, CContentTypes& oContent) const;
 
+			void toXLSChart(XLS::BaseObjectPtr chartStreamPtr);
+
 			virtual const OOX::FileType type() const;
 
 			virtual const CPath DefaultDirectory() const;
@@ -86,6 +94,7 @@ namespace OOX
 
 			const CPath& GetReadPath();
 			bool IsEmpty();
+			bool IsChart();
 
 		private:
 			CPath m_oReadPath;
@@ -94,7 +103,8 @@ namespace OOX
 			void ClearItems();
 
 		public:
-			std::vector<CCellAnchor *>	m_arrItems;
+			std::vector<CCellAnchor*> m_arrItems;
+			std::map<unsigned int, OOX::WritingElement*> m_mapShapes;
 		};
 	} //Spreadsheet
 } // namespace OOX

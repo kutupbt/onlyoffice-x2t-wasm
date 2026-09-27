@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -48,32 +48,33 @@ public:
 	BaseObjectPtr clone();
 	
 	void readFields(CFRecord& record);
+    void writeFields(CFRecord& record);
 
 	static const ElementType type = typeSXVDEx;
 	
-	bool					fShowAllItems;
-	bool					fDragToRow;
-	bool					fDragToColumn;
-	bool					fDragToPage;
-	bool					fDragToHide;
-	bool					fNotDragToData;
-	bool					fServerBased;
-	bool					fAutoSort;
-	bool					fAscendSort;
-	bool					fAutoShow;
-	bool					fTopAutoShow;
-	bool					fCalculatedField;
-	bool					fPageBreaksBetweenItems;
-	bool					fHideNewItems;
-	bool					fOutline;
-	bool					fInsertBlankRow;
-	bool					fSubtotalAtTop;
+    bool					fShowAllItems = false;
+	bool					fDragToRow = true;
+	bool					fDragToColumn = true;
+	bool					fDragToPage = true;
+	bool					fDragToHide = true;
+    bool					fNotDragToData = false;
+    bool					fServerBased = false;
+    bool					fAutoSort = false;
+    bool					fAscendSort = false;
+    bool					fAutoShow = false;
+	bool					fTopAutoShow = true;
+    bool					fCalculatedField = false;
+    bool					fPageBreaksBetweenItems = false;
+    bool					fHideNewItems = false;
+	bool					fOutline = true;
+    bool					fInsertBlankRow = false;
+	bool					fSubtotalAtTop = true;
 
-	unsigned char			citmAutoShow;
-	short					isxdiAutoSort;
-	short					isxdiAutoShow;
-	unsigned short			ifmt;
-	unsigned short			cchSubName;
+	unsigned char			citmAutoShow = 10;
+	short					isxdiAutoSort = -1;
+	short					isxdiAutoShow = -1;
+    unsigned short			ifmt = 0;
+    unsigned short			cchSubName = 0;
 	XLUnicodeStringNoCch	stSubName;
 
 };

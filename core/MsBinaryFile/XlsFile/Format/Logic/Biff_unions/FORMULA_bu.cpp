@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -145,6 +145,54 @@ const bool FORMULA::loadContent(BinProcessor& proc)
 	}
 
 	return true;
+}
+
+const bool FORMULA::saveContent(BinProcessor& proc)
+{
+    if(m_Formula != nullptr)
+        proc.mandatory(*m_Formula);
+    if(m_ArrayFormula != nullptr)
+        proc.mandatory(*m_ArrayFormula);
+    else if (m_TableFormula != nullptr)
+        proc.mandatory(*m_TableFormula);
+    else if (m_SharedFormula != nullptr)
+        proc.mandatory(*m_SharedFormula);
+    if(m_stringValCache.IsInit())
+    {
+        String strVal;
+        _UINT32 maxRecordSize = 4112;
+        auto cachePtr = m_stringValCache.GetPointer();
+        if(cachePtr->getSize() <= maxRecordSize)
+        {
+            strVal.string = *cachePtr;
+            proc.mandatory(strVal);
+        }
+        else
+        {
+            auto tempVal = cachePtr->value();
+            strVal.string = tempVal.substr(0, maxRecordSize);
+            proc.mandatory(strVal);
+            tempVal.erase(0, maxRecordSize);
+            while(tempVal.size() > 0)
+            {
+                size_t bytesSize = 0;
+                if(tempVal.size() > maxRecordSize)
+                    bytesSize = sizeof(wchar_t) * maxRecordSize;
+                else
+                    bytesSize = sizeof(wchar_t) * tempVal.size();
+                Continue continueRecord;
+                continueRecord.m_pData = new char[bytesSize * 2];
+                continueRecord.m_iDataSize = bytesSize * 2;
+                memcpy(continueRecord.m_pData, tempVal.data() ,bytesSize * 2);
+                proc.mandatory(continueRecord);
+                if(tempVal.size() > bytesSize)
+                    tempVal.erase(0, bytesSize);
+                else
+                    break;
+            }
+        }
+    }
+    return true;
 }
 
 const CellRef FORMULA::getLocation() const

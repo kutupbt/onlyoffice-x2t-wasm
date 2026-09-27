@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -118,13 +118,6 @@ namespace PPTX
 		}
 		void TableProperties::fromXML(XmlUtils::CXmlNode& node)
 		{
-			Fill.GetFillFrom(node);
-			Effects.GetEffectListFrom(node);
-
-			XmlUtils::CXmlNode oNode;
-			if (node.GetNode(_T("a:tableStyleId"), oNode))
-				TableStyleId = oNode.GetTextExt();
-
 			XmlMacroReadAttributeBase(node, L"rtl", Rtl);
 			XmlMacroReadAttributeBase(node, L"firstRow", FirstRow);
 			XmlMacroReadAttributeBase(node, L"firstCol", FirstCol);
@@ -133,6 +126,36 @@ namespace PPTX
 			XmlMacroReadAttributeBase(node, L"bandRow", BandRow);
 			XmlMacroReadAttributeBase(node, L"bandCol", BandCol);
 
+			std::vector<XmlUtils::CXmlNode> oNodes;
+			if (node.GetNodes(L"*", oNodes))
+			{
+				size_t nCount = oNodes.size();
+				for (size_t i = 0; i < nCount; ++i)
+				{
+					XmlUtils::CXmlNode& oNode = oNodes[i];
+
+					std::wstring strName = XmlUtils::GetNameNoNS(oNode.GetName());
+
+					if (L"tableStyleId" == strName)
+					{
+						TableStyleId = oNode.GetTextExt();
+					}
+					else if (L"blipFill" == strName ||
+						L"gradFill" == strName ||
+						L"grpFill" == strName ||
+						L"noFill" == strName ||
+						L"pattFill" == strName ||
+						L"solidFill" == strName)
+					{
+						Fill.fromXML(oNode);
+					}
+					else if (L"effectDag" == strName ||
+						L"effectLst" == strName)
+					{
+						Effects.fromXML(oNode);
+					}
+				}
+			}
 			FillParentPointersForChilds();
 		}
 		void TableProperties::toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const

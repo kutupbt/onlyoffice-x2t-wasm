@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -44,19 +44,11 @@ namespace PPTX
 		class EffectStyle : public WrapperWritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(EffectStyle)
+			WritingElement_AdditionMethods(EffectStyle)
 			PPTX_LOGIC_BASE2(EffectStyle)
 
-			EffectStyle& operator=(const EffectStyle& oSrc)
-			{
-				parentFile		= oSrc.parentFile;
-				parentElement	= oSrc.parentElement;
+			EffectStyle& operator=(const EffectStyle& oSrc);
 
-				EffectList = oSrc.EffectList;
-				scene3d = oSrc.scene3d;
-				sp3d = oSrc.sp3d;
-				return *this;
-			}
 			virtual OOX::EElementType getType() const
 			{
 				return OOX::et_a_effectStyle;
@@ -64,20 +56,12 @@ namespace PPTX
 			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
             virtual void fromXML(XmlUtils::CXmlNode& node);
 
-			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const
-			{
-				pWriter->StartNode(_T("a:effectStyle"));
-				pWriter->EndAttributes();
+			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
+			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
 
-				EffectList.toXmlWriter(pWriter);
-				pWriter->Write(scene3d);
-				pWriter->Write(sp3d);
+			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
 
-				pWriter->EndNode(_T("a:effectStyle"));
-			}
-
-		public:
-			EffectProperties	EffectList;
+			EffectProperties	Effects;
 			nullable<Scene3d>	scene3d;
 			nullable<Sp3d>		sp3d;
 		protected:

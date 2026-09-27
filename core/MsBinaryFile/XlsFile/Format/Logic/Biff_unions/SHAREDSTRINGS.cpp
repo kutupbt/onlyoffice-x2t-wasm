@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -68,6 +68,41 @@ const bool SHAREDSTRINGS::loadContent(BinProcessor& proc)
 
 	size_ = sst.rgb.size();
 	return true;
+}
+
+const bool SHAREDSTRINGS::saveContent(BinProcessor& proc)
+{
+    if(sstPtr == nullptr)
+        return false;
+    proc.mandatory(*sstPtr);
+    auto castedSst = static_cast<SST*>(sstPtr.get());
+    if(!castedSst->rgb.empty())
+    {
+		const auto MaxRecordSize = 8000;
+        while(!castedSst->rgb.empty())
+        {
+            CFRecordPtr tempRecord(new CFRecord(rt_Continue, proc.getGlobalWorkbookInfo()));
+            Continue continueRecord;
+            while(!castedSst->rgb.empty())
+            {
+                auto oldPose = tempRecord->getRdPtr();
+				castedSst->rgb.at(0)->save(*tempRecord);
+				if(tempRecord->getRdPtr() >= MaxRecordSize)
+                {
+                    tempRecord->RollRdPtrBack(tempRecord->getRdPtr() - oldPose);
+                    break;
+                }
+                castedSst->rgb.erase(castedSst->rgb.begin());
+            }
+            continueRecord.m_iDataSize = tempRecord->getRdPtr();
+            continueRecord.m_pData = new char[continueRecord.m_iDataSize];
+            auto copyData = tempRecord->getCurStaticData<char>() - continueRecord.m_iDataSize;
+            memcpy(continueRecord.m_pData, copyData, continueRecord.m_iDataSize);
+            proc.mandatory(continueRecord);
+        }
+
+    }
+    return true;
 }
 
 int SHAREDSTRINGS::serialize(std::wostream & stream)

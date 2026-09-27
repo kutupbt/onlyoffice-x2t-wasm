@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -34,8 +34,11 @@
 #include "../../../../DesktopEditor/common/Directory.h"
 #include "../../../../DesktopEditor/common/File.h"
 #include "../../../../DesktopEditor/common/Path.h"
-#include "../../Sheets/Reader/BinaryWriter.h"
-#include "../../Sheets/Writer/BinaryReader.h"
+
+#include "../../../XlsxFormat/Chart/Chart.h"
+
+#include "../../Sheets/Reader/BinaryWriterS.h"
+#include "../../Sheets/Writer/BinaryReaderS.h"
 #include "../../Presentation/FontPicker.h"
 
 #include "../../../../OfficeUtils/src/OfficeUtils.h"
@@ -54,7 +57,7 @@ namespace BinXlsxRW{
 	{
 	}
 
-    void CXlsxSerializer::CreateXlsxFolders(const std::wstring& sXmlOptions, const std::wstring& sDstPath,  std::wstring& sMediaPath, std::wstring& sEmbedPath)
+    void CXlsxSerializer::CreateXlsxFolders(const std::wstring& sDstPath,  std::wstring& sMediaPath, std::wstring& sEmbedPath)
 	{
         OOX::CPath pathMediaDir = sDstPath + FILE_SEPARATOR_STR + _T("xl") + FILE_SEPARATOR_STR + _T("media");
 		OOX::CPath pathEmbedDir = sDstPath + FILE_SEPARATOR_STR + _T("xl") + FILE_SEPARATOR_STR + _T("embeddings");
@@ -90,7 +93,7 @@ namespace BinXlsxRW{
 		NSBinPptxRW::CDrawingConverter oDrawingConverter;
 		
         oDrawingConverter.SetDstPath(sDstPath + FILE_SEPARATOR_STR + L"xl");
-        oDrawingConverter.SetSrcPath(strFileInDir, 2);
+        oDrawingConverter.SetSrcPath(strFileInDir, XMLWRITER_DOC_TYPE_XLSX);
 
 		oDrawingConverter.SetMediaDstPath(sMediaDir);
 		oDrawingConverter.SetEmbedDstPath(sEmbedDir);
@@ -147,7 +150,7 @@ namespace BinXlsxRW{
 		NSBinPptxRW::CDrawingConverter oDrawingConverter;
 
 		oDrawingConverter.SetDstPath(sDstPath + FILE_SEPARATOR_STR + L"xl");
-		oDrawingConverter.SetSrcPath(strFileInDir, 2);
+		oDrawingConverter.SetSrcPath(strFileInDir, XMLWRITER_DOC_TYPE_XLSX);
 		oDrawingConverter.SetFontDir(m_sFontDir);
 		
 		BinXlsxRW::BinaryFileReader oBinaryFileReader;
@@ -198,7 +201,7 @@ namespace BinXlsxRW{
 			
 			bResult = (0 == oBinaryChartReader.ReadCT_ChartFile(lLength, chart_file.GetPointer()));
 
-			bool bXlsxPresent = (chart_file->m_oChartSpace.m_externalData) && (chart_file->m_oChartSpace.m_externalData->m_id);
+			bool bXlsxPresent = (chart_file->m_oChartSpace.m_externalData) && (chart_file->m_oChartSpace.m_externalData->m_id.IsInit());
 			
 			if (bResult && pReader->m_nDocumentType != XMLWRITER_DOC_TYPE_XLSX && !sEmbedingPath.empty() && !bXlsxPresent)
 			{
@@ -220,11 +223,8 @@ namespace BinXlsxRW{
 					m_pExternalDrawingConverter->WriteRels(sChartsWorksheetRelType, sChartsWorksheetRelsName, std::wstring(), &rId);
 
 					chart_file->m_oChartSpace.m_externalData = new OOX::Spreadsheet::CT_ExternalData();
-					chart_file->m_oChartSpace.m_externalData->m_id = new std::wstring();
-					chart_file->m_oChartSpace.m_externalData->m_id->append(L"rId");
-					chart_file->m_oChartSpace.m_externalData->m_id->append(std::to_wstring(rId));
-					chart_file->m_oChartSpace.m_externalData->m_autoUpdate = new OOX::Spreadsheet::CT_Boolean();
-					chart_file->m_oChartSpace.m_externalData->m_autoUpdate->m_val = new bool(false);
+					chart_file->m_oChartSpace.m_externalData->m_id = L"rId" + std::to_wstring(rId);
+					chart_file->m_oChartSpace.m_externalData->m_autoUpdate = false;
 				}
 			}
 		}
@@ -286,6 +286,10 @@ namespace BinXlsxRW{
 	{
 		m_bIsMacro = val;
 	}
+	bool CXlsxSerializer::getMacroEnabled()
+	{
+		return m_bIsMacro;
+	}
 
 	bool CXlsxSerializer::writeChartXlsx(const std::wstring& sDstFile, NSCommon::smart_ptr<OOX::File> &file)
 	{
@@ -300,10 +304,9 @@ namespace BinXlsxRW{
 		NSDirectory::CreateDirectory(sTempDir);
 		OOX::CPath oPath(sTempDir.c_str());
 	//шиблонные папки
-        std::wstring sXmlOptions = _T("");
         std::wstring sMediaPath;// will be filled by 'CreateXlsxFolders' method
         std::wstring sEmbedPath; // will be filled by 'CreateXlsxFolders' method
-		CreateXlsxFolders (sXmlOptions, sTempDir, sMediaPath, sEmbedPath);
+		CreateXlsxFolders (sTempDir, sMediaPath, sEmbedPath);
 	//заполняем Xlsx
 		OOX::Spreadsheet::CXlsx oXlsx;
 		helper.toXlsx(oXlsx);
@@ -319,12 +322,5 @@ namespace BinXlsxRW{
 	//clean
 		NSDirectory::DeleteDirectory(sTempDir);
 		return res;
-	}
-	bool CXlsxSerializer::hasPivot(const std::wstring& sSrcPath)
-	{
-		//todo CXlsx
-		std::wstring sData;
-		NSFile::CFileBinary::ReadAllTextUtf8(sSrcPath + FILE_SEPARATOR_STR + L"[Content_Types].xml", sData);
-		return std::wstring::npos != sData.find(OOX::Spreadsheet::FileTypes::PivotTable.OverrideType());
 	}
 };

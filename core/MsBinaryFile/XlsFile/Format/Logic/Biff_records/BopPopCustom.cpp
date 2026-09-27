@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -56,6 +56,11 @@ void BopPopCustom::readFields(CFRecord& record)
 	record >> rggrbit;
 }
 
+void BopPopCustom::writeFields(CFRecord& record)
+{
+    record << rggrbit;
+}
+
 BiffStructurePtr BopPopCustomPiesIndices::clone()
 {
 	return BiffStructurePtr(new BopPopCustomPiesIndices(*this));
@@ -64,7 +69,6 @@ BiffStructurePtr BopPopCustomPiesIndices::clone()
 
 void BopPopCustomPiesIndices::load(CFRecord& record)
 {
-	unsigned short cxi;
 	record >> cxi;
 
 	const unsigned short padding = 8 - cxi % 8;
@@ -85,6 +89,45 @@ void BopPopCustomPiesIndices::load(CFRecord& record)
 			pie_indices.push_back(i - padding);
 		}
 	}
+}
+
+void BopPopCustomPiesIndices::save(CFRecord& record)
+{
+   // 1. Сохраняем количество точек
+    record << cxi;
+
+    const unsigned short padding = (8 - (cxi % 8)) % 8;
+    const unsigned short total_bits = padding + cxi + 1; // +1 = final flag bit
+    const unsigned short total_bytes = (total_bits + 7) / 8;
+
+    // 2. Создаем массив нулевых байтов
+    std::vector<unsigned char> rggrbit(total_bytes, 0);
+
+    // 3. Устанавливаем биты точек
+    for (unsigned short idx : pie_indices)
+    {
+        if (idx >= cxi)
+            continue; // игнорируем некорректные индексы
+
+        unsigned short bit_pos = padding + idx;
+        unsigned short byte_index = bit_pos / 8;
+        unsigned short bit_in_byte = 7 - (bit_pos % 8); // MSB-first
+
+        rggrbit[byte_index] |= (1 << bit_in_byte);
+    }
+
+    // 4. Устанавливаем финальный бит (последний бит последнего байта)
+    bool no_secondary = pie_indices.empty();
+    if (no_secondary)
+    {
+        rggrbit.back() |= 0x01; // LSB = 1
+    }
+
+    // 5. Пишем все байты в поток
+    for (unsigned char b : rggrbit)
+    {
+        record << b;
+    }
 }
 
 

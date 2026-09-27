@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -37,8 +37,6 @@
 #include "unicode/ucnv.h"     /* C   Converter API    */
 #include "unicode/usprep.h"
 
-//#include "../DesktopEditor/common/File.h"
-
 #if !defined (_WIN32) && !defined (_WIN64)
 #if defined (_LINUX) && !defined(__ANDROID__) && !defined(_IOS) && !defined(_MAC)
 #define USE_ICONV
@@ -48,8 +46,13 @@
 #include <windows.h>
 #endif
 
-// CryptPad: for some reason TRUE is unknown here
-#define TRUE true
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
 
 std::string g_overrideIcuDataPath = "";
 

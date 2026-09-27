@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -59,6 +59,25 @@ void MDXSet::readFields(CFRecord& record)
 		MDXStrIndexPtr element(new MDXStrIndex);
 		record >> *element;
 		rgistr.push_back(element);
+	}
+}
+
+void MDXSet::writeFields(CFRecord& record)
+{
+	frtHeader.rt = rt_MDXTuple;
+	record << frtHeader << istrConnName << tfnSrc << sso << istrSetDef << cistr;
+	const auto maxElemCount = 2049;
+	if(rgistr.size() < maxElemCount)
+	{
+		for(auto i : rgistr)
+			if(i != nullptr)
+				record << *i;
+	}
+	else
+	{
+		for(auto i = 0; i < maxElemCount; i++)
+			if(rgistr[i] != nullptr)
+				record << *rgistr[i];
 	}
 }
 

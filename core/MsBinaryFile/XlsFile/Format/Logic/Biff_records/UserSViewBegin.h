@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -49,14 +49,15 @@ public:
 	BaseObjectPtr clone();
 	
 	void readFields(CFRecord& record);
+    void writeFields(CFRecord& record);
 
 	static const ElementType	type = typeUserSViewBegin;
 
 //-----------------------------
-	std::wstring	guid;
-	TabId			iTabid;
-	_UINT32			wScale;
-	Icv				icvHdr;
+    std::wstring	guid = L"";
+    TabId			iTabid = 0;
+    _UINT32			wScale = 0;
+	Icv				icvHdr = 64;
 	PaneType		pnnSel;
 
 	bool fShowBrks;
@@ -90,8 +91,8 @@ public:
 	Xnum			operNumX;
 	Xnum			operNumY;
 	
-	ForwardOnlyParam<unsigned short> colRPane;
-	ForwardOnlyParam<unsigned short> rwBPane;
+	unsigned short colRPane;
+	unsigned short rwBPane;
 
 	std::wstring	pane_top_left_cell;
 

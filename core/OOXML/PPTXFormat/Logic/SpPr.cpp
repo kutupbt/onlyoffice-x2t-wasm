@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -34,6 +34,9 @@
 #include "SpPr.h"
 #include "PrstGeom.h"
 #include "CustGeom.h"
+
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_unions/FRAME.h"
+#include "../../../MsBinaryFile/XlsFile/Format/Logic/Biff_records/Frame.h"
 
 namespace PPTX
 {
@@ -126,34 +129,47 @@ namespace PPTX
 		{
 			m_namespace = XmlUtils::GetNamespace(node.GetName());
 
-			Geometry.GetGeometryFrom(node);
-			Fill.GetFillFrom(node);
-			EffectList.GetEffectListFrom(node);
-
             XmlMacroReadAttributeBase(node,L"bwMode", bwMode);
 
-			XmlUtils::CXmlNodes oNodes;
-			if (node.GetNodes(_T("*"), oNodes))
+			std::vector<XmlUtils::CXmlNode> oNodes;
+			if (node.GetNodes(L"*", oNodes))
 			{
-				int nCount = oNodes.GetCount();
-				for (int i = 0; i < nCount; ++i)
+				size_t nCount = oNodes.size();
+				for (size_t i = 0; i < nCount; ++i)
 				{
-					XmlUtils::CXmlNode oNode;
-					oNodes.GetAt(i, oNode);
+					XmlUtils::CXmlNode& oNode = oNodes[i];
 
 					std::wstring strName = XmlUtils::GetNameNoNS(oNode.GetName());
 
-					if (_T("xfrm") == strName)
+					if (L"xfrm" == strName)
 						xfrm = oNode;
-					else if (_T("ln") == strName)
+					else if (L"ln" == strName)
 						ln = oNode;
-					else if (_T("scene3d") == strName)
+					else if (L"scene3d" == strName)
 						scene3d = oNode;
-					else if (_T("sp3d") == strName)
+					else if (L"sp3d" == strName)
 						sp3d = oNode;
+					else if (L"blipFill" == strName ||
+							L"gradFill" == strName ||
+							L"grpFill" == strName ||
+							L"noFill" == strName ||
+							L"pattFill" == strName ||
+							L"solidFill" == strName)
+					{
+						Fill.fromXML(oNode);
+					}
+					else if (	L"effectDag" == strName ||
+								L"effectLst" == strName)
+					{
+						EffectList.fromXML(oNode);
+					}
+					else if (L"prstGeom" == strName ||
+							L"custGeom" == strName)
+					{
+						Geometry.fromXML(oNode);
+					}
 				}
 			}
-
 			FillParentPointersForChilds();
 		}
 		std::wstring SpPr::toXML() const
@@ -182,6 +198,8 @@ namespace PPTX
 				spPr.Fill = Fill;//.fromXML(Fill.toXML());
 			if(ln.IsInit())
 				ln->Merge(spPr.ln);
+			
+			EffectList.Merge(spPr.EffectList);
 		}
 		void SpPr::FillParentPointersForChilds()
 		{
@@ -225,48 +243,50 @@ namespace PPTX
 					case 0:
 					{
 						xfrm = new Logic::Xfrm();
-						xfrm->fromPPTY(pReader);
-						break;
-					}
+						xfrm->fromPPTY(pReader);						
+					}break;
 					case 1:
 					{
-						Geometry.fromPPTY(pReader);
-						break;
-					}
+						Geometry.fromPPTY(pReader);						
+					}break;
 					case 2:
 					{
-						Fill.fromPPTY(pReader);
-						break;
-					}
+						Fill.fromPPTY(pReader);						
+					}break;
 					case 3:
 					{
 						ln = new Logic::Ln();
-						ln->fromPPTY(pReader);
-						break;
-					}
+						ln->fromPPTY(pReader);						
+					}break;
 					case 4:
 					{
-						EffectList.fromPPTY(pReader);
-						break;
-					}
+						EffectList.fromPPTY(pReader);						
+					}break;
 					case 5:
 					{
 						scene3d = new Logic::Scene3d();
-						scene3d->fromPPTY(pReader);
-						break;
-					}
+						scene3d->fromPPTY(pReader);						
+					}break;
 					case 6:
 					{
 						sp3d = new Logic::Sp3d();
-						sp3d->fromPPTY(pReader);
-						break;
-					}
+						sp3d->fromPPTY(pReader);						
+					}break;
 					default:
 						break;
 				}
 			}
 
 			pReader->Seek(_end_rec);
+		}
+		XLS::BaseObjectPtr SpPr::toXLSFrame()const
+		{
+			auto Frame = new XLS::FRAME;
+			if(ln.IsInit())
+				Frame->m_LineFormat = ln->toXLS();
+			if(Fill.is_init())
+				Frame->m_AreaFormat = Fill.toXLS();
+			return XLS::BaseObjectPtr(Frame);
 		}
 		OOX::EElementType SpPr::getType () const
 		{
@@ -275,7 +295,7 @@ namespace PPTX
 		void SpPr::ReadAttributes(XmlUtils::CXmlLiteReader& oReader)
 		{
 			WritingElement_ReadAttributes_Start( oReader )
-				WritingElement_ReadAttributes_ReadSingle( oReader, _T("bwMode"), bwMode )
+				WritingElement_ReadAttributes_ReadSingle( oReader, L"bwMode", bwMode )
 			WritingElement_ReadAttributes_End( oReader )
 		}
 		void SpPr::toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const
@@ -302,7 +322,7 @@ namespace PPTX
 			pWriter->StartNode(name_);
 
 			pWriter->StartAttributes();
-			pWriter->WriteAttribute(_T("bwMode"), bwMode);
+			pWriter->WriteAttribute(L"bwMode", bwMode);
 			pWriter->EndAttributes();
 
 			pWriter->Write(xfrm);
@@ -310,7 +330,7 @@ namespace PPTX
 
 			if ((pWriter->m_lFlag & 0x02) != 0 && !Fill.is_init())
 			{
-				pWriter->WriteString(_T("<a:grpFill/>"));
+				pWriter->WriteString(L"<a:grpFill/>");
 			}
 			Fill.toXmlWriter(pWriter);
 

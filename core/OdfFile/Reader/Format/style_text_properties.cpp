@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -38,7 +38,7 @@
 #include "../Format/odf_document.h"
 #include "calcs_styles.h"
 
-#include "odfcontext.h"
+#include "../Format/odfcontext.h"
 #include "../../DataTypes/fontvariant.h"
 
 #include "draw_shapes.h"
@@ -70,7 +70,7 @@ std::wstring delete_apostroph_in_name(std::wstring value)
 	return value;
 }
 
-void text_format_properties_content::add_attributes( const xml::attributes_wc_ptr & Attributes )
+void text_format_properties::add_attributes( const xml::attributes_wc_ptr & Attributes )
 {
     CP_APPLY_ATTR(L"fo:font-variant",					fo_font_variant_);
     CP_APPLY_ATTR(L"fo:text-transform",					fo_text_transform_);
@@ -154,7 +154,7 @@ void text_format_properties_content::add_attributes( const xml::attributes_wc_pt
 
 
 
-int text_format_properties_content::process_font_size(const _CP_OPT(font_size) & FontSize, const style_instance * currnetStyle, bool Complex, double Mul)
+int text_format_properties::process_font_size(const _CP_OPT(font_size) & FontSize, const style_instance * currnetStyle, bool Complex, double Mul)
 {
     if (FontSize)
     {
@@ -165,7 +165,7 @@ int text_format_properties_content::process_font_size(const _CP_OPT(font_size) &
     return 0;
 }
 
-double text_format_properties_content::process_font_size_impl(const _CP_OPT(font_size) & FontSize, const style_instance * currnetStyle, bool Complex, double Mul)
+double text_format_properties::process_font_size_impl(const _CP_OPT(font_size) & FontSize, const style_instance * currnetStyle, bool Complex, double Mul)
 {
     font_size usedFontSize = (!FontSize) ? font_size(percent(100)) : *FontSize;
 
@@ -201,7 +201,7 @@ double text_format_properties_content::process_font_size_impl(const _CP_OPT(font
     return -1.0;
 }
 
-int text_format_properties_content::process_font_weight(const _CP_OPT(font_weight) & FontWeight)
+int text_format_properties::process_font_weight(const _CP_OPT(font_weight) & FontWeight)
 {
     if (FontWeight)
     {
@@ -213,7 +213,7 @@ int text_format_properties_content::process_font_weight(const _CP_OPT(font_weigh
     return 0; //not set
 }
 
-int text_format_properties_content::process_font_style(const _CP_OPT(font_style) & FontStyle)
+int text_format_properties::process_font_style(const _CP_OPT(font_style) & FontStyle)
 {
     if (FontStyle)
     {
@@ -224,7 +224,7 @@ int text_format_properties_content::process_font_style(const _CP_OPT(font_style)
     }
     return 0;   
 }
-void text_format_properties_content::pptx_convert_as_list(oox::pptx_conversion_context & Context)
+void text_format_properties::pptx_convert_as_list(oox::pptx_conversion_context & Context)
 {
 	oox::styles_context & styles_context_ = Context.get_text_context().get_styles_context();
 	CP_XML_WRITER(styles_context_.text_style())
@@ -311,7 +311,7 @@ void text_format_properties_content::pptx_convert_as_list(oox::pptx_conversion_c
 		}
 	}
 }
-void text_format_properties_content::drawing_serialize(std::wostream & strm, std::wstring node, fonts_container & fonts, const odf_reader::style_instance *current_style, std::wstring hlink)
+void text_format_properties::drawing_serialize(std::wostream & strm, std::wstring node, fonts_container & fonts, const odf_reader::style_instance *current_style, const oox::hyperlink_data link)
 {
 	CP_XML_WRITER(strm)
 	{  
@@ -352,11 +352,17 @@ void text_format_properties_content::drawing_serialize(std::wostream & strm, std
 			
 			if ((style_text_position_) && (style_text_position_->has_font_size()))
 			{
-				mul = style_text_position_->font_size().get_value() / 100.0;
+				mul = style_text_position_->font_size().get_value() / 100.;
+
+				if (style_text_position_->get_type() != text_position::Percent || 
+						style_text_position_->get_position().get_value() > 0.1 || style_text_position_->get_position().get_value() < -0.1)
+				{
+					mul *= 1.725;
+				}
 			}
-			if (fontSizeVal > 0)
+			if (fontSizeVal > 0) 
 			{
-				CP_XML_ATTR(L"sz", (int)(fontSizeVal/2. * mul *100 + 0.5));//in pt *100 
+				CP_XML_ATTR(L"sz", (int)(fontSizeVal/2. * mul * 100 + 0.5)); //in pt *100 
 			}
 			if (fo_font_variant_)
 			{
@@ -380,6 +386,16 @@ void text_format_properties_content::drawing_serialize(std::wostream & strm, std
 				{
 					underline = L"sng";
 				}
+			}
+
+			if ((fo_letter_spacing_) && (fo_letter_spacing_->get_type() != letter_spacing::Normal))
+			{
+				CP_XML_ATTR(L"spc", (int)(100. * fo_letter_spacing_->get_length().get_value_unit(length::pt)));
+			}
+			else if (style_text_scale_)
+			{
+				mul = style_text_scale_->get_value();
+				CP_XML_ATTR(L"spc", (int)(mul * 2));
 			}
 			const int W = process_font_weight(fo_font_weight_);
 			if (W > 0) CP_XML_ATTR(L"b", true);
@@ -456,11 +472,6 @@ void text_format_properties_content::drawing_serialize(std::wostream & strm, std
 			}
 			else CP_XML_ATTR(L"strike",L"noStrike");
 			
-			if ((fo_letter_spacing_) && (fo_letter_spacing_->get_type() != letter_spacing::Normal))
-			{
-				CP_XML_ATTR(L"spc",(int)(100. * fo_letter_spacing_->get_length().get_value_unit(length::pt)));
-			}
-		
 			if (style_text_position_)
 			{
 				if (style_text_position_->get_type() == text_position::Percent)
@@ -541,20 +552,23 @@ void text_format_properties_content::drawing_serialize(std::wostream & strm, std
 				}
 
 			}
-			if (!hlink.empty())
+			if (!link.rId.empty())
 			{
 				CP_XML_NODE(L"a:hlinkClick")
 				{
-					CP_XML_ATTR(L"xmlns:r", L"http://schemas.openxmlformats.org/officeDocument/2006/relationships");
-					CP_XML_ATTR(L"r:id", hlink);
+					if (link.action == L"ppaction://hlinksldjump")
+						CP_XML_ATTR(L"action", link.action);
+					else 
+						CP_XML_ATTR(L"xmlns:r", L"http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+					CP_XML_ATTR(L"r:id", link.rId);
 				}
 			}
 		}
 	}
 }
-void text_format_properties_content::xlsx_serialize(std::wostream & strm, oox::xlsx_conversion_context & Context)
+void text_format_properties::xlsx_serialize(std::wostream & strm, oox::xlsx_conversion_context & Context)
 {
-	double font_size = process_font_size_impl(fo_font_size_, NULL);
+	double font_size = process_font_size_impl(fo_font_size_, NULL, 1., 0.5); // sz in pt
 
 	bool bBold = false, bItalic = false;
 	if (font_size > 0)
@@ -585,7 +599,7 @@ void text_format_properties_content::xlsx_serialize(std::wostream & strm, oox::x
 		if (font)
 			font_name = font->name();
 	}
-	//if (font_name.empty())
+	if (font_name.empty())
 	{
 		font_name = L"-";
 	}
@@ -617,7 +631,7 @@ void text_format_properties_content::xlsx_serialize(std::wostream & strm, oox::x
 		strm << L"&amp;K" << fo_color_->get_hex_value();
 	}
 }
-void text_format_properties_content::docx_serialize(std::wostream & _rPr, fonts_container & fonts)
+void text_format_properties::docx_serialize(std::wostream & _rPr, fonts_container & fonts)
 {//упрощенный вариант
 	
 	_rPr << L"<w:rPr>";
@@ -690,7 +704,7 @@ void text_format_properties_content::docx_serialize(std::wostream & _rPr, fonts_
 	if (text_display_)
 	{
 		if (text_display_->get_type() == text_display::None)
-			_rPr << L"<w:vanish />";        
+			_rPr << L"<w:vanish w:val=\"true\"/>";
 	}    
 	// underline
 	{
@@ -1026,15 +1040,17 @@ void text_format_properties_content::docx_serialize(std::wostream & _rPr, fonts_
 	_rPr << L"</w:rPr>";	
 }
 
-void text_format_properties_content::pptx_convert(oox::pptx_conversion_context & Context)
+void text_format_properties::pptx_convert(oox::pptx_conversion_context & Context)
 {
-	oox::styles_context	& styles_context_	= Context.get_text_context().get_styles_context();
-	fonts_container & fonts_			= Context.root()->odf_context().fontContainer();	  
+	oox::styles_context	& styles_context_ = Context.get_text_context().get_styles_context();
+	fonts_container & fonts_ = Context.root()->odf_context().fontContainer();	  
 
-	drawing_serialize(styles_context_.text_style(), styles_context_.extern_node(), fonts_, styles_context_.get_current_processed_style(), styles_context_.hlinkClick());
+	oox::hyperlink_data link = Context.get_text_context().get_hyperlink();
+
+	drawing_serialize(styles_context_.text_style(), styles_context_.extern_node(), fonts_, styles_context_.get_current_processed_style(), link); // styles_context_.hlinkClick()
 }
 
-void text_format_properties_content::docx_convert(oox::docx_conversion_context & Context)
+void text_format_properties::docx_convert(oox::docx_conversion_context & Context)
 {//расширенный вариант
     std::wostream & _pPr = Context.get_styles_context().paragraph_nodes();
 
@@ -1133,7 +1149,7 @@ void text_format_properties_content::docx_convert(oox::docx_conversion_context &
     if (text_display_)
     {
         if (text_display_->get_type() == text_display::None)
-            _rPr << L"<w:vanish/>";        
+			_rPr << L"<w:vanish w:val=\"true\"/>";
     }    
     // underline
     {
@@ -1252,11 +1268,12 @@ void text_format_properties_content::docx_convert(oox::docx_conversion_context &
     bool needProcessFontSize = true;
 
     // 17.3.2.42
-	if (Context.get_drop_cap_context().state() == 2)
-	{
-		_rPr << L"<w:position w:val=\"-" << (2+Context.get_drop_cap_context().Scale*2-3)*2 << "\"/> ";//формула ачуметь !! - подбор вручную
-	}
-	else if (style_text_position_)
+	//if (Context.get_drop_cap_context().state() == 2)
+	//{
+	//	_rPr << L"<w:position w:val=\"-" << (2+Context.get_drop_cap_context().Scale*2-3)*2 << "\"/> ";//формула ачуметь !! - подбор вручную
+	//}
+	//else
+		if (style_text_position_)
     {
         bool noNeedSize = false;
         if (style_text_position_->get_type() == text_position::Sub)
@@ -1330,9 +1347,8 @@ void text_format_properties_content::docx_convert(oox::docx_conversion_context &
 		 {
 			 fontSize = process_font_size(fo_font_size_, Context.get_styles_context().get_current_processed_style(),false,
 				 Context.get_drop_cap_context().Scale + (Context.get_drop_cap_context().Scale-1) * 0.7);//вместо 1 ДОЛЖНОБЫТЬ коэфф. межстрочного интервала!!!
-
 			 if (fontSize < 1)
-				 fontSize = (int)(Context.get_drop_cap_context().FontSize / 7.52);
+                 fontSize = (int)(Context.get_drop_cap_context().FontSize / 10.0);
 		 }
 		 else
 		 {
@@ -1342,6 +1358,30 @@ void text_format_properties_content::docx_convert(oox::docx_conversion_context &
 		if (fontSize >  0)
 		{
             _rPr << L"<w:sz w:val=\"" << fontSize << "\" />";
+		}
+		else if( Context.get_inside_frame() ) // check bug 69510
+		{
+			int fontSize = 0;
+			if( Context.get_current_fontSize() > 0 )
+			{
+				fontSize = static_cast<int>(Context.get_current_fontSize());
+			}
+			else
+			{
+				auto DefaultStyle = Context.root()->odf_context().styleContainer().style_default_by_type(odf_types::style_family::Paragraph);
+				if( DefaultStyle != nullptr )
+				{
+					fontSize = static_cast<int>(2 * (DefaultStyle->content()->get_style_text_properties()->content_.fo_font_size_.has_value() ?
+					DefaultStyle->content()->get_style_text_properties()->content_.fo_font_size_.value().get_length().get_value() : 0.0));
+				}
+			}
+			if( fontSize > 0 )
+			{
+				needProcessFontSize = false;
+				const int scale = Context.get_drop_cap_context().Scale == 1 ? Context.get_scale() : Context.get_drop_cap_context().Scale;
+				_rPr << L"<w:sz w:val=\"" << fontSize * scale << "\"/>";
+				Context.set_inside_frame(false);
+			}
 		}
     }
 
@@ -1457,16 +1497,19 @@ void text_format_properties_content::docx_convert(oox::docx_conversion_context &
 				if (defaultStyle)instances.push_back(defaultStyle);
 				instances.push_back(styleInst);
 			}
-			graphic_format_properties graphicProperties = calc_graphic_properties_content(instances);
-
 			draw_fill fill = draw_fill::solid;
-			if (graphicProperties.common_draw_fill_attlist_.draw_fill_)
-				fill = *graphicProperties.common_draw_fill_attlist_.draw_fill_;
-
-			if (graphicProperties.common_draw_fill_attlist_.draw_fill_color_ &&
-				( fill.get_type() != draw_fill::bitmap &&  fill.get_type() != draw_fill::none ))
+			
+			graphic_format_properties_ptr graphicProperties = calc_graphic_properties_content(instances);
+			if (graphicProperties)
 			{
-				color_text = graphicProperties.common_draw_fill_attlist_.draw_fill_color_;
+				if (graphicProperties->common_draw_fill_attlist_.draw_fill_)
+					fill = *graphicProperties->common_draw_fill_attlist_.draw_fill_;
+
+				if (graphicProperties->common_draw_fill_attlist_.draw_fill_color_ &&
+					(fill.get_type() != draw_fill::bitmap &&  fill.get_type() != draw_fill::none))
+				{
+					color_text = graphicProperties->common_draw_fill_attlist_.draw_fill_color_;
+				}
 			}
 		}
 	}
@@ -1540,7 +1583,7 @@ void text_format_properties_content::docx_convert(oox::docx_conversion_context &
 }
 
 
-void text_format_properties_content::oox_serialize(std::wostream & strm, bool graphic, fonts_container & fonts, bool default_)
+void text_format_properties::oox_serialize(std::wostream & strm, bool graphic, fonts_container & fonts, bool default_)
 {
 	if (graphic)
 	{	
@@ -1570,7 +1613,7 @@ void apply_font_size(optional<font_size>::Type & A, const optional<font_size>::T
 
 
 
-void text_format_properties_content::apply_from(const text_format_properties_content & Other)
+void text_format_properties::apply_from(const text_format_properties & Other)
 {
     _CP_APPLY_PROP(r_style_, Other.r_style_);
 
@@ -1588,20 +1631,65 @@ void text_format_properties_content::apply_from(const text_format_properties_con
     _CP_APPLY_PROP(style_text_line_through_text_, Other.style_text_line_through_text_);
     _CP_APPLY_PROP(style_text_line_through_text_style_, Other.style_text_line_through_text_style_);
     _CP_APPLY_PROP(style_text_position_, Other.style_text_position_);
-    _CP_APPLY_PROP(style_font_name_, Other.style_font_name_);
-    _CP_APPLY_PROP(style_font_name_asian_, Other.style_font_name_asian_);
-    _CP_APPLY_PROP(style_font_name_complex_, Other.style_font_name_complex_);
-    _CP_APPLY_PROP(fo_font_family_, Other.fo_font_family_);
-    _CP_APPLY_PROP(style_font_family_asian_, Other.style_font_family_asian_);
-    _CP_APPLY_PROP(style_font_family_complex_, Other.style_font_family_complex_);
-
+   
     _CP_APPLY_PROP(style_font_family_generic_, Other.style_font_family_generic_);
     _CP_APPLY_PROP(style_font_family_generic_asian_, Other.style_font_family_generic_asian_);
     _CP_APPLY_PROP(style_font_family_generic_complex_, Other.style_font_family_generic_complex_);
 
-    _CP_APPLY_PROP(style_font_style_name_, Other.style_font_style_name_);
-    _CP_APPLY_PROP(style_font_style_name_asian_, Other.style_font_style_name_asian_);
-    _CP_APPLY_PROP(style_font_style_name_complex_, Other.style_font_style_name_complex_);
+	if (Other.style_font_name_)
+	{
+		style_font_name_ = Other.style_font_name_;
+		style_font_style_name_.reset();
+		fo_font_family_.reset();
+	}
+	if (Other.style_font_name_asian_)
+	{
+		style_font_name_asian_ = Other.style_font_name_asian_;
+		style_font_style_name_asian_.reset();
+		style_font_family_asian_.reset();
+	}
+	if (Other.style_font_name_complex_)
+	{
+		style_font_name_complex_ = Other.style_font_name_complex_;
+		style_font_style_name_complex_.reset();
+		style_font_family_complex_.reset();
+	}
+	if (Other.style_font_style_name_)
+	{
+		style_font_style_name_ = Other.style_font_style_name_;
+		style_font_name_.reset();
+		fo_font_family_.reset();
+	}
+	if (Other.style_font_style_name_asian_)
+	{
+		style_font_style_name_asian_ = Other.style_font_style_name_asian_;
+		style_font_name_asian_.reset();
+		style_font_family_asian_.reset();
+	}
+	if (Other.style_font_style_name_complex_)
+	{
+		style_font_style_name_complex_ = Other.style_font_style_name_complex_;
+		style_font_name_complex_.reset();
+		style_font_family_complex_.reset();
+	}
+	if (Other.fo_font_family_)
+	{
+		fo_font_family_ = Other.fo_font_family_;
+		style_font_name_.reset();
+		style_font_style_name_.reset();
+	}
+	if (Other.style_font_family_asian_)
+	{
+		style_font_family_asian_ = Other.style_font_family_asian_;
+		style_font_name_asian_.reset();
+		style_font_style_name_asian_.reset();
+	}
+	if (Other.style_font_family_complex_)
+	{
+		style_font_family_complex_ = Other.style_font_family_complex_;
+		style_font_name_complex_.reset();
+		style_font_style_name_complex_.reset();
+	}
 
     _CP_APPLY_PROP(style_font_pitch_,	Other.style_font_pitch_);
     _CP_APPLY_PROP(style_font_pitch_asian_,		Other.style_font_pitch_asian_);
@@ -1668,20 +1756,9 @@ void text_format_properties_content::apply_from(const text_format_properties_con
     _CP_APPLY_PROP(style_text_overline_style_, Other.style_text_overline_style_);
 
 }
-void text_format_properties_content::set_r_style(const std::wstring & rStyle)
+void text_format_properties::set_r_style(const std::wstring & rStyle)
 { 
 	r_style_ = rStyle; 
-}
-
-void text_format_properties_content::apply_to(std::vector<_property> & properties)
-{
-	if (fo_font_weight_)	properties.push_back(_property(L"font-weight",	fo_font_weight_.get().get_type()) );
-	if (fo_font_family_)	properties.push_back(_property(L"font-family",	fo_font_family_.get()) );
-	if (style_font_name_)	properties.push_back(_property(L"font-name",	style_font_name_.get()) );
-	if (fo_font_size_)		properties.push_back(_property(L"font-size",	fo_font_size_.get().get_length().get_value_unit(length::pt)) );
-	if (fo_font_style_)		properties.push_back(_property(L"font-style",	fo_font_style_.get().get_type()) );
-	if (fo_color_)			properties.push_back(_property(L"font-color",	fo_color_.get().get_hex_value()) );
-
 }
 
 // style:text-properties

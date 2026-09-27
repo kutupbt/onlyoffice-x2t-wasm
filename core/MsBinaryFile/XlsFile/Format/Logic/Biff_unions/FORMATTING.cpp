@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -94,7 +94,8 @@ const bool FORMATTING::loadContent(BinProcessor& proc)
 	count = proc.repeated<Format>(0, 218); // Originally: proc.repeated<Format>(8, 218);
 	while(count > 0)
 	{
-		global_info->m_arNumFormats.insert(global_info->m_arNumFormats.begin(), elements_.back());
+		global_info->RegisterNumFormat(elements_.back());
+
 		elements_.pop_back();
 		count--;
 	}
@@ -153,6 +154,42 @@ const bool FORMATTING::loadContent(BinProcessor& proc)
 
 	return true;
 }
+const bool FORMATTING::saveContent(BinProcessor& proc)
+{
+
+
+	proc.mandatory<Font>();
+	proc.mandatory<Font>();
+	proc.mandatory<Font>();
+	proc.mandatory<Font>();
+	for(auto i : m_arFonts)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	if(m_arFormats.empty())
+		proc.mandatory<Format>();
+	for(auto i:m_arFormats)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	if(m_XFS != nullptr)
+		proc.mandatory(*m_XFS);
+	else
+		proc.mandatory<XFS>();
+	for(auto i : m_arDXF)
+		if(i != nullptr)
+			proc.mandatory(*i);
+	if(m_Styles != nullptr)
+		proc.mandatory(*m_Styles);
+	else
+		proc.mandatory<STYLES>();
+	if(m_TABLESTYLES != nullptr)
+		proc.mandatory(*m_TABLESTYLES);
+	if(m_Palette != nullptr)
+		proc.mandatory(*m_Palette);
+	if(m_ClrtClient != nullptr)
+		proc.mandatory(*m_ClrtClient);
+	return true;
+}
+
 void FORMATTING::update_xfs()
 {
 	STYLES * st = dynamic_cast<STYLES*>(m_Styles.get());
@@ -195,6 +232,9 @@ void FORMATTING::update_xfs()
 		}
 	}
 	xfs->RegisterFillBorder();
+	
+	global_info->cellXfs_count = xfs->m_arCellXFs.size();
+	global_info->cellStyleXfs_count = xfs->m_arCellStyles.size();
 }
 void FORMATTING::concatinate(FORMATTING* ext)
 {

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -36,34 +36,28 @@
 #include "oox_title.h"
 #include "oox_chart_shape.h"
 
+#include "../Format/style_chart_properties.h"
+
 namespace cpdoccore {
 namespace oox {
 
 
-_CP_PTR(oox_axis_content) oox_axis_content::create(int type, unsigned int id)
+_CP_PTR(oox_axis_content) oox_axis_content::create(unsigned int id)
 {
-    return boost::make_shared<oox_axis_content>(type, id);
+    return boost::make_shared<oox_axis_content>(id);
 }
 
-oox_axis_content::oox_axis_content(int type/*,std::wstring name*/, unsigned int id)
+oox_axis_content::oox_axis_content(unsigned int id)
 {
-	if (type == 0)
-	{
-		id_  = 0;
-	}
-	else
-	{
-		id_  = id;
-	}
-	type_ = type;
+	id_  = id;
 }
 void oox_axis_content::oox_serialize(std::wostream & _Wostream)
 {
 	if (id_ < 1 ) return; //not activate, blank axis
- 
+
 	CP_XML_WRITER(_Wostream)
     {
-		switch(type_)
+		switch(content_.type_)
 		{
 		case 1:
 			CP_XML_NODE(L"c:catAx")

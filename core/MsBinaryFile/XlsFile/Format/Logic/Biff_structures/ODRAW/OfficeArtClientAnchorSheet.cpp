@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,8 +31,6 @@
  */
 
 #include "OfficeArtClientAnchorSheet.h"
-
-#include <boost/lexical_cast.hpp>
 
 namespace ODRAW
 {
@@ -72,6 +70,18 @@ void OfficeArtClientAnchorSheet::loadFields(XLS::CFRecord& record)
 	record >> colL >> dxL >> rwT >> dyT >> colR >> dxR >> rwB >> dyB;
 }
 
+void OfficeArtClientAnchorSheet::save(XLS::CFRecord& record)
+{
+	rh_own.recVer = 0;
+	rh_own.recType = 0xF010;
+	rh_own.recLen  = 0x00000012;
+	record << rh_own;
+
+	unsigned short flags = 0;
+	SETBIT(flags, 0, fMove)
+	SETBIT(flags, 1, fSize)
+	record << flags << colL << dxL << rwT << dyT << colR << dxR << rwB << dyB;
+}
 void OfficeArtClientAnchorSheet::calculate()
 {
 	global_info->GetDigitFontSizePixels();
@@ -185,7 +195,7 @@ void OfficeArtClientAnchorSheet::calculate_1()
 		else 
 			_cy += 256 * kfRow * sheet_info.defaultRowHeight;	
 	}
-	_cy += _dyT - _y;
+	_cy += _dyB - _y;
 
 
 }

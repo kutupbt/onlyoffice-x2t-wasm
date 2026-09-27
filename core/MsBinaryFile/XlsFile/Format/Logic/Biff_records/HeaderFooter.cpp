@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -78,6 +78,41 @@ void HeaderFooter::readFields(CFRecord& record)
 	{
 		record >> strFooterFirst;
 	}
+}
+
+void HeaderFooter::writeFields(CFRecord& record)
+{
+    FrtHeader frtHeader(rt_HeaderFooter);
+    frtHeader.grbitFrt.fFrtRef = 0;
+    frtHeader.grbitFrt.fFrtAlert = 0;
+    record << frtHeader;
+	_GUID_ guid_num;
+	STR::bstr2guid(guidSView ,guid_num);
+    record << guid_num;
+    _UINT16 flags = 0;
+    SETBIT(flags, 0, fHFDiffOddEven);
+    SETBIT(flags, 1, fHFDiffFirst);
+    SETBIT(flags, 2, fHFScaleWithDoc);
+    SETBIT(flags, 3, fHFAlignMargins);
+    record << flags;
+    record << cchHeaderEven << cchFooterEven << cchHeaderFirst << cchFooterFirst;
+    if(cchHeaderEven && strHeaderEven.getSize())
+    {
+        record << strHeaderEven;
+    }
+    if(cchFooterEven && strFooterEven.getSize())
+    {
+        record << strFooterEven;
+    }
+    if(cchHeaderFirst && strHeaderFirst.getSize())
+    {
+        record << strHeaderFirst;
+    }
+    if(cchFooterFirst && strFooterFirst.getSize())
+    {
+        record << strFooterFirst;
+    }
+
 }
 
 } // namespace XLS

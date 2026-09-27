@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -32,7 +32,7 @@
 #include "MathParaWrapper.h"
 
 #include "../../../DocxFormat/Math/oMathPara.h"
-#include "../../../Binary/Document/BinWriter/BinWriters.h"
+#include "../../../Binary/Document/BinWriter/BinaryWriterD.h"
 #include "../../../Binary/Document/BinReader/FileWriter.h"
 #include "../../DrawingConverter/ASCOfficeDrawingConverter.h"
 #include "../../../Binary/Presentation/BinaryFileReaderWriter.h"
@@ -160,9 +160,9 @@ xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\">\
 			{
 				pWriter->StartRecord(nRecordType);
 				long lDataSize = 0;
-				if(NULL != pWriter->m_pMainDocument)
+				if(NULL != pWriter->m_pDocxSerializer)
 				{
-					pWriter->m_pMainDocument->getBinaryContentElem(eElemType, pElem, *pWriter, lDataSize);
+					pWriter->m_pDocxSerializer->getBinaryContentElem(eElemType, pElem, *pWriter, lDataSize);
 				}
 				else
 				{
@@ -200,15 +200,15 @@ xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\">\
 			NSBinPptxRW::CDrawingConverter oDrawingConverter;
 
 			NSBinPptxRW::CImageManager2*	pOldImageManager = oDrawingConverter.m_pImageManager;
-			NSBinPptxRW::CBinaryFileReader* pOldReader = oDrawingConverter.m_pReader;
+			NSBinPptxRW::CBinaryFileReader* pOldReader = oDrawingConverter.m_pBinaryReader;
 
 			oDrawingConverter.m_pImageManager = pReader->m_pRels->m_pManager;
-			oDrawingConverter.m_pReader = pReader;
+			oDrawingConverter.m_pBinaryReader = pReader;
 
 			oDocxSerializer.m_pCurFileWriter = new Writers::FileWriter(L"", L"", true, BinDocxRW::g_nFormatVersion, &oDrawingConverter, L"");
 			oDocxSerializer.getXmlContentElem(eType, *pReader, sXml);
 
-			oDrawingConverter.m_pReader = pOldReader;
+			oDrawingConverter.m_pBinaryReader = pOldReader;
 			oDrawingConverter.m_pImageManager = pOldImageManager;
 			RELEASEOBJECT(oDocxSerializer.m_pCurFileWriter);
 

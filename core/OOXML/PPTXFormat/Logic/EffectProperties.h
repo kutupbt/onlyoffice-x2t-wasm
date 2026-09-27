@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -30,8 +30,6 @@
  *
  */
 #pragma once
-#ifndef PPTX_LOGIC_EFFECTPROPERTIES_INCLUDE_H_
-#define PPTX_LOGIC_EFFECTPROPERTIES_INCLUDE_H_
 
 #include "./../WrapperWritingElement.h"
 #include "EffectLst.h"
@@ -44,34 +42,13 @@ namespace PPTX
 		class EffectProperties : public WrapperWritingElement
 		{
 		public:
-			WritingElement_AdditionConstructors(EffectProperties)
+			WritingElement_AdditionMethods(EffectProperties)
 			PPTX_LOGIC_BASE2(EffectProperties)
 
-			EffectProperties& operator=(const EffectProperties& oSrc)
-			{
-				parentFile		= oSrc.parentFile;
-				parentElement	= oSrc.parentElement;
+			EffectProperties& operator=(const EffectProperties& oSrc);
 
-				return *this;
-			}
-
-			virtual OOX::EElementType getType () const
-			{
-				if (List.IsInit())
-					return List->getType();
-				return OOX::et_Unknown;
-			}
-			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader)
-			{
-				std::wstring strName = XmlUtils::GetNameNoNS(oReader.GetName());
-					
-				if (strName == _T("effectLst"))
-					List.reset(new Logic::EffectLst(oReader));
-				else if(strName == _T("effectDag"))
-					List.reset(new Logic::EffectDag(oReader));
-				else 
-					List.reset();
-			}
+			virtual OOX::EElementType getType() const;
+			virtual void fromXML(XmlUtils::CXmlLiteReader& oReader);
 			
 			virtual bool is_init() const {return (List.IsInit());};
 
@@ -79,49 +56,15 @@ namespace PPTX
 			template<class T> T& as() {return static_cast<T&>(*List);}
 			template<class T> const T& as() const {return static_cast<const T&>(*List);}
 
-			virtual void fromXML(XmlUtils::CXmlNode& node)
-			{
-				std::wstring strName = XmlUtils::GetNameNoNS(node.GetName());
+			virtual void fromXML(XmlUtils::CXmlNode& node);
 
-				if (strName == _T("effectLst"))
-					List.reset(new Logic::EffectLst(node));
-				else if(strName == _T("effectDag"))
-					List.reset(new Logic::EffectDag(node));
-				else List.reset();
-			}
+			virtual std::wstring toXML() const;
 
-			virtual void GetEffectListFrom(XmlUtils::CXmlNode& element)
-			{
-				XmlUtils::CXmlNode oNode = element.ReadNodeNoNS(_T("effectLst"));
-				if (oNode.IsValid())
-				{
-					List.reset(new Logic::EffectLst(oNode));
-					return;
-				}
-				oNode = element.ReadNodeNoNS(_T("effectDag"));
-				if (oNode.IsValid())
-					List.reset(new Logic::EffectDag(oNode));
-				else List.reset();
-			}
-
-			virtual std::wstring toXML() const
-			{
-				if (!List.IsInit())
-					return _T("");
-				return List->toXML();
-			}
-
-			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const
-			{
-				if (List.is_init())
-					List->toPPTY(pWriter);
-			}
+			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
 			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
-			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const
-			{
-				if (List.is_init())
-					List->toXmlWriter(pWriter);
-			}
+			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
+
+			void Merge(EffectProperties& effectProperties) const;
 
 			nullable<WrapperWritingElement> List;
 		protected:
@@ -135,5 +78,3 @@ namespace PPTX
 		};
 	} // namespace Logic
 } // namespace PPTX
-
-#endif // PPTX_LOGIC_EFFECTPROPERTIES_INCLUDE_H

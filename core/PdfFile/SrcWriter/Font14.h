@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -46,7 +46,44 @@ namespace PdfWriter
 		{
 			return fontType1;
 		}
+		unsigned int GetWidth(unsigned short ushCode);
+		void         AddWidth(unsigned int nWidth);
+		unsigned short EncodeUnicode(const unsigned int& unGID, const unsigned int& unUnicode, bool& bNew);
+		unsigned short EncodeGID(const unsigned int& unGID, bool& bNew);
 
+	private:
+		unsigned short                         m_ushCodesCount;
+		std::map<unsigned int, unsigned short> m_mUnicodeToCode;
+		std::vector<unsigned int>              m_vCodeToGid;
+		std::vector<unsigned int>              m_vWidths;
+
+	};
+
+	class CFontEmbedded : public CFontDict
+	{
+	public:
+		CFontEmbedded(CXref* pXref, CDocument* pDocument);
+
+		bool LoadFont(const std::string& sFontKey, EFontType eFontType, CObjectBase* pObj,
+					  const std::map<unsigned int, unsigned int>& mCodeToWidth, const std::map<unsigned int, unsigned int>& mCodeToUnicode, const std::map<unsigned int, unsigned int>& mCodeToGID);
+
+		EFontType GetFontType() { return m_eFontType; }
+		unsigned int GetWidth(unsigned short ushCode);
+		unsigned int EncodeUnicode(const unsigned int& unGID, const unsigned int& unUnicode);
+		unsigned int EncodeGID(const unsigned int& unGID);
+		CObjectBase* GetObj();
+		CObjectBase* GetObj2();
+		const char* GetFontKey() const { return m_sFontKey.c_str(); }
+		void UpdateKey(const std::string& sFontKey) { m_sFontKey = sFontKey; }
+
+	private:
+		std::string m_sFontKey;
+		EFontType m_eFontType;
+		CObjectBase* m_pObj;
+
+		std::map<unsigned int, unsigned int> m_mCodeToUnicode;
+		std::map<unsigned int, unsigned int> m_mCodeToGID;
+		std::map<unsigned int, unsigned int> m_mCodeToWidth; // Code -> Width в единицах em
 	};
 }
 

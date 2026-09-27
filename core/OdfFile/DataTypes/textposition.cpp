@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -69,7 +69,7 @@ text_position text_position::parse(const std::wstring & Str)
     std::vector< std::wstring > splitted;
     boost::algorithm::split(splitted, tmp, boost::algorithm::is_any_of(L" \t"), boost::algorithm::token_compress_on);
 
-    text_position::type type_= text_position::Sub;
+    text_position::type type_position_ = text_position::Sub;
     percent position_;
     bool has_font_width_ = false;
     percent font_width_;
@@ -77,13 +77,18 @@ text_position text_position::parse(const std::wstring & Str)
     if (splitted.size() > 0)
     {
         if (splitted[0] == L"sub")
-            type_ = text_position::Sub;
+            type_position_ = text_position::Sub;
         else if (splitted[0] == L"super")
-            type_ = text_position::Super;
+            type_position_ = text_position::Super;
         else if (boost::algorithm::contains(splitted[0], L"%"))
         {
             position_ = percent::parse(splitted[0]);
-            type_ = text_position::Percent;
+            type_position_ = text_position::Percent;
+        }
+        else
+        {
+            position_ = 0;
+            type_position_ = text_position::Percent;
         }
     }
 
@@ -93,12 +98,12 @@ text_position text_position::parse(const std::wstring & Str)
         has_font_width_ = true;
     }
 
-    if (type_ != text_position::Percent)
+    if (type_position_ != text_position::Percent)
     {
         if (!has_font_width_)
-            return text_position(type_);
+            return text_position(type_position_);
         else
-            return text_position(type_, font_width_.get_value());
+            return text_position(type_position_, font_width_.get_value());
     }
     else
     {

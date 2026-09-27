@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -105,7 +105,7 @@ namespace PPTX
 		void GrpSpPr::ReadAttributes(XmlUtils::CXmlLiteReader& oReader)
 		{
 			WritingElement_ReadAttributes_Start( oReader )
-				WritingElement_ReadAttributes_ReadSingle( oReader, _T("bwMode"), bwMode )
+				WritingElement_ReadAttributes_ReadSingle( oReader, L"bwMode", bwMode )
 			WritingElement_ReadAttributes_End( oReader )
 		}
 		void GrpSpPr::fromXML(XmlUtils::CXmlNode& node)
@@ -114,38 +114,48 @@ namespace PPTX
 
 			XmlMacroReadAttributeBase(node, L"bwMode", bwMode);
 
-			XmlUtils::CXmlNodes oNodes;
-			if (node.GetNodes(_T("*"), oNodes))
+			std::vector<XmlUtils::CXmlNode> oNodes;
+			if (node.GetNodes(L"*", oNodes))
 			{
-				int count = oNodes.GetCount();
-				for (int i = 0; i < count; ++i)
+				size_t count = oNodes.size();
+				for (size_t i = 0; i < count; ++i)
 				{
-					XmlUtils::CXmlNode oNode;
-					oNodes.GetAt(i, oNode);
+					XmlUtils::CXmlNode& oNode = oNodes[i];
 
 					std::wstring strName = XmlUtils::GetNameNoNS(oNode.GetName());
-					if (_T("xfrm") == strName)
+					if (L"xfrm" == strName)
 					{
 						if (!xfrm.IsInit())
 							xfrm = oNode;
 					}
-					else if (_T("scene3d") == strName)
+					else if (L"blipFill" == strName ||
+						L"gradFill" == strName ||
+						L"grpFill" == strName ||
+						L"noFill" == strName ||
+						L"pattFill" == strName ||
+						L"solidFill" == strName)
+					{
+						Fill.fromXML(oNode);
+					}
+					else if (L"scene3d" == strName)
 					{
 						if (!scene3d.IsInit())
 							scene3d = oNode;
 					}
+					else if (L"effectDag" == strName ||
+							L"effectLst" == strName)
+					{
+						EffectList.fromXML(oNode);
+					}
 				}
 			}
-
-			Fill.GetFillFrom(node);
-			EffectList.GetEffectListFrom(node);
 
 			FillParentPointersForChilds();
 		}
 		std::wstring GrpSpPr::toXML() const
 		{
 			XmlUtils::CAttribute oAttr;
-			oAttr.WriteLimitNullable(_T("bwMode"), bwMode);
+			oAttr.WriteLimitNullable(L"bwMode", bwMode);
 
 			XmlUtils::CNodeValue oValue;
 			oValue.WriteNullable(xfrm);
@@ -169,7 +179,7 @@ namespace PPTX
 			pWriter->StartNode(namespace_ + L":grpSpPr");
 
 			pWriter->StartAttributes();
-			pWriter->WriteAttribute(_T("bwMode"), bwMode);
+			pWriter->WriteAttribute(L"bwMode", bwMode);
 			pWriter->EndAttributes();
 
 			pWriter->Write(xfrm);

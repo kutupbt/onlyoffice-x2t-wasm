@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -63,6 +63,35 @@ const bool MDTINFO::loadContent(BinProcessor& proc)
 	}
 	m_MDTInfo = elements_.back();	elements_.pop_back();
 	proc.repeated<ContinueFrt12>(0, 0);
+	return true;
+}
+
+const bool MDTINFO::saveContent(BinProcessor& proc)
+{
+	constexpr auto maxStNameLen = 4104;
+	if(m_MDTInfo == nullptr)
+		return false;
+	proc.mandatory(*m_MDTInfo);
+	auto castedPtr = static_cast<MDTInfo*>(m_MDTInfo.get());
+	if(castedPtr->stName.getSize() > maxStNameLen)
+	{	auto NameSize = castedPtr->stName.getSize();
+		auto Stpos = maxStNameLen;
+		while(Stpos+1 < NameSize)
+		{
+			auto tempLen = 0;
+			if(NameSize < Stpos + maxStNameLen)
+				tempLen = NameSize - Stpos;
+			else
+				tempLen = maxStNameLen;
+			{
+				ContinueFrt12 continueRecord;
+				continueRecord.rgb.reserve(tempLen*2);
+				memcpy(continueRecord.rgb.data(), (castedPtr->stName.value().c_str() + Stpos), tempLen*2);
+				proc.mandatory(continueRecord);
+			}
+			Stpos+=tempLen;
+		}
+	}
 	return true;
 }
 

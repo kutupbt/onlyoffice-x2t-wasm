@@ -153,6 +153,7 @@ public:
   // border style, and bounding box (in default user space).
   void drawAnnot(Object *strRef, AnnotBorderStyle *borderStyle,
 		 double xMin, double yMin, double xMax, double yMax);
+  void drawStamp(Object *strRef);
 
   // Save graphics state.
   void saveState();
@@ -176,9 +177,12 @@ public:
   // Gfx constructor, i.e., before processing any content streams with
   // the new Gfx object.
   void takeContentStreamStack(Gfx *oldGfx);
+  Object* getTopContentStreamStack();
 
   // Clear the state stack and the marked content stack.
   void endOfPage();
+
+  PDFDoc *getDoc() { return doc; }
 
 private:
 
@@ -352,6 +356,7 @@ private:
   void opBeginMarkedContent(Object args[], int numArgs);
   void opEndMarkedContent(Object args[], int numArgs);
   void opMarkPoint(Object args[], int numArgs);
+  void SkipBDC();
 
   GfxState *saveStateStack();
   void restoreStateStack(GfxState *oldState);

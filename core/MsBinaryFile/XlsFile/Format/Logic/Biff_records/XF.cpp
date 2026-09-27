@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -74,14 +74,10 @@ namespace XLS
 
 		fill.fls = GETBIT(flags2, 7) ? 1 : 0;
 //---------------------------------------------------------------------------------------------------	
-		if (ifmt_index < global_info->m_arNumFormats.size() && ifmt_index != 0xff)
+		if (ifmt_index != 0xff)
 		{
-			Format* fmt = dynamic_cast<Format*>(global_info->m_arNumFormats[ifmt_index].get());
-			if (fmt)
-				ifmt = fmt->ifmt;
+			ifmt = global_info->RegisterNumFormat(ifmt_index, L""); // return update
 		}
-
-		global_info->mapUsedFormatCode.insert(std::make_pair(ifmt, true));
 
 		if (font_index >= 0 && font_index < global_info->m_arFonts.size())
 		{
@@ -142,14 +138,10 @@ namespace XLS
 		border.dgRight = static_cast<unsigned char>(GETBITS(flags5, 24, 26));
 		border.icvRight = (0 != border.dgRight) ? static_cast<unsigned char>(GETBITS(flags5, 27, 31)) : 0;
 //---------------------------------------------------------------------------------------------------	
-		if (ifmt_index < global_info->m_arNumFormats.size() && ifmt_index != 0xff)
+		if (ifmt_index != 0xff)
 		{
-			Format* fmt = dynamic_cast<Format*>(global_info->m_arNumFormats[ifmt_index].get());
-			if (fmt)
-				ifmt = fmt->ifmt;
+			ifmt = global_info->RegisterNumFormat(ifmt_index, L"");
 		}
-
-		global_info->mapUsedFormatCode.insert(std::make_pair(ifmt, true));
 
 		if (font_index >= 0 && font_index < global_info->m_arFonts.size())
 		{
@@ -180,9 +172,13 @@ namespace XLS
 		font_x_id	= -1;
 		
 		fill.fls	= 0;
+		fill.icvBack = 0x41;
+		fill.icvFore = 0x40;
 
 		ixfParent = 0;
 		font_index = 0xffff;
+		
+		ifmt = 0xffff;
 	}
 	XF::~XF()
 	{
@@ -227,8 +223,8 @@ void XF::readFields(CFRecord& record)
 
 		fill.fls = static_cast<unsigned char>(GETBITS(flags4, 0, 5));
 
-		fill.icvFore = GETBITS(flags4, 0, 6);
-		fill.icvBack = GETBITS(flags4, 7, 13);
+		fill.icvFore = GETBITS(flags4, 6, 10);
+		fill.icvBack = GETBITS(flags4, 11, 15);
 		
 		border.dgTop = static_cast<unsigned char>(GETBITS(flags5, 0, 2));
 		border.icvTop = (0 != border.dgTop) ? static_cast<unsigned char>(GETBITS(flags5, 3, 7)) : 0;
@@ -248,6 +244,8 @@ void XF::readFields(CFRecord& record)
 		FontIndex ifnt;
 		record >> ifnt >> ifmt >> flags1 >> flags2 >> flags3 >> flags4 >> flags5;
 		font_index = ifnt.getValue();
+
+		ifmt = global_info->RegisterNumFormat(ifmt, L""); // return update		
 
 		fLocked = GETBIT(flags1, 0);
 		fHidden = GETBIT(flags1, 1);
@@ -290,7 +288,9 @@ void XF::readFields(CFRecord& record)
 		record >> ifnt >> ifmt >> flags1 >> flags2 >> flags3 >> flags4 >> flags5;
 		font_index = ifnt.getValue();
 
-        fLocked		= GETBIT(flags1, 0);
+		ifmt = global_info->RegisterNumFormat(ifmt, L""); // return update		
+		
+		fLocked		= GETBIT(flags1, 0);
         fHidden		= GETBIT(flags1, 1);
         fStyle		= GETBIT(flags1, 2);
         f123Prefix	= GETBIT(flags1, 3);
@@ -350,7 +350,7 @@ void XF::readFields(CFRecord& record)
         unsigned char	trot_;
         record >> ixfParent >> ifmt >> font_index >> iFill >> ixBorder >> trot_ >> cIndent >> flags;
 
-		global_info->mapUsedFormatCode.insert(std::make_pair(ifmt, true));
+		ifmt = global_info->RegisterNumFormat(ifmt, L""); // return update		
 		
 		trot = trot_;
 
@@ -382,14 +382,10 @@ void XF::readFields(CFRecord& record)
 		case 2: trot = 90;		break;		// Text orientation: 90 deg counterclockwise.
 		case 3: trot = 270;		break;		// Text orientation: 90 deg clockwise.
 	}
-	if (ifmt_index < global_info->m_arNumFormats.size() && ifmt_index != 0xff)
+	if (ifmt_index != 0xff)
 	{
-		Format* fmt = dynamic_cast<Format*>(global_info->m_arNumFormats[ifmt_index].get());
-		if (fmt)
-			ifmt = fmt->ifmt;
+		ifmt = global_info->RegisterNumFormat(ifmt_index, L"");
 	}
-
-	global_info->mapUsedFormatCode.insert(std::make_pair(ifmt, true));
 
 	if (font_index >= 0 && font_index < global_info->m_arFonts.size())
 	{
@@ -398,6 +394,127 @@ void XF::readFields(CFRecord& record)
 		{
 			pFont->set(font);
 		}
+	}
+}
+void XF::writeFields(CFRecord& record)
+{
+	global_info = record.getGlobalWorkbookInfo();
+
+
+    /*if (global_info->Version == 0x0400)
+	{
+		//stub
+	}
+	else if (global_info->Version == 0x0500)
+	{
+		//stub
+	}
+	else if (global_info->Version == 0x0600)
+	{
+		//stub
+    }*/
+    if (global_info->Version < 0x0800)
+    {
+		if(font_index == 0xffff)
+			font_index = 0;
+		if(ifmt == 0xffff)
+			ifmt = 164;
+
+        FontIndex ifnt;
+		ifnt.setValue(font_index + 5);
+        record <<ifnt  << ifmt;
+        _UINT16 flags = 0, flags5 = 0;
+        _UINT32 flags2 = 0, flags3 = 0, flags4 = 0;
+
+        SETBIT(flags, 0, fLocked)
+        SETBIT(flags, 1, fHidden)
+        SETBIT(flags, 2, fStyle)
+        SETBIT(flags, 3, f123Prefix)
+        SETBITS(flags, 4, 15, ixfParent)
+
+        record << flags;
+
+        SETBITS(flags2, 0, 2, alc)
+        SETBIT(flags2, 3, fWrap)
+        SETBITS(flags2, 4, 6, alcV)
+        SETBIT(flags2, 7, fJustLast)
+
+        SETBITS(flags2, 8, 15, trot)
+        SETBITS(flags2, 16, 19, cIndent)
+        SETBIT(flags2, 20, fShrinkToFit)
+        SETBITS(flags2, 22, 23, iReadOrder)
+
+        if (!fStyle)
+        {
+            SETBIT(flags2, 26, fAtrNum);
+            SETBIT(flags2, 27, fAtrFnt);
+            SETBIT(flags2, 28, fAtrAlc);
+            SETBIT(flags2, 29, fAtrBdr);
+            SETBIT(flags2, 30, fAtrPat);
+            SETBIT(flags2, 31, fAtrProt);
+        }
+
+        record << flags2;
+
+        SETBITS(flags3, 0, 3, border.dgLeft)
+        SETBITS(flags3, 4, 7, border.dgRight)
+        SETBITS(flags3, 8, 11, border.dgTop)
+        SETBITS(flags3, 12, 15, border.dgBottom)
+        SETBITS(flags4, 21, 24, border.dgDiag)
+
+        SETBITS(flags3, 16, 22, border.icvLeft)
+        SETBITS(flags3, 23, 29, border.icvRight)
+        SETBITS(flags4, 0, 6, border.icvTop)
+        SETBITS(flags4, 7, 13, border.icvBottom)
+        SETBITS(flags4, 14, 20, border.icvDiag)
+
+        SETBITS(flags3, 30, 31, border.grbitDiag)
+
+        if (!fStyle)
+        {
+            SETBIT(flags4, 25, fHasXFExt)
+        }
+        SETBITS(flags4, 26, 31, fill.fls)
+
+        SETBITS(flags5, 0, 6, fill.icvFore)
+        SETBITS(flags5, 7, 13, fill.icvBack)
+
+        if (!fStyle)
+        {
+            SETBIT(flags5, 14, fsxButton)
+        }
+        record << flags3 << flags4 << flags5;
+
+    }
+	else
+	{
+		_UINT32 flags = 0;
+		xfGrbitAtr = 0;
+		unsigned char	trot_ = trot;
+		record << ixfParent << ifmt << font_index << iFill << ixBorder << trot_ << cIndent;// >> flags;
+
+		SETBITS(flags, 0, 2, alc)
+		SETBITS(flags, 3, 5, alcV)
+		SETBIT(flags, 6, fWrap)
+		SETBIT(flags, 7, fJustLast)
+		SETBIT(flags, 8, fShrinkToFit)
+		SETBIT(flags, 9, fMergeCell)
+		SETBITS(flags, 10, 11, iReadOrder)
+		SETBIT(flags, 12, fLocked)
+		SETBIT(flags, 13, fHidden)
+		SETBIT(flags, 14, fsxButton)
+		SETBIT(flags, 15, f123Prefix)
+
+		SETBIT(xfGrbitAtr, 0, !fAtrNum)
+		SETBIT(xfGrbitAtr, 1, !fAtrFnt)
+		SETBIT(xfGrbitAtr, 2, !fAtrAlc)
+		SETBIT(xfGrbitAtr, 3, !fAtrBdr)
+		SETBIT(xfGrbitAtr, 4, !fAtrPat)
+		SETBIT(xfGrbitAtr, 5, !fAtrProt)
+
+		SETBITS(flags, 16, 21, xfGrbitAtr)
+
+		record << flags;
 	}
 }
 void XF::Update(ExtProp* ext_prop)

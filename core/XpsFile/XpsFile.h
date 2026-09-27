@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -50,9 +50,9 @@ public:
     virtual ~CXpsFile();
 
     virtual bool LoadFromFile(const std::wstring& file, const std::wstring& options = L"",
-                                    const std::wstring& owner_password = L"", const std::wstring& user_password = L"");
+							  const wchar_t* owner_password = NULL, const wchar_t* user_password = NULL);
     virtual bool LoadFromMemory(BYTE* data, DWORD length, const std::wstring& options = L"",
-                                const std::wstring& owner_password = L"", const std::wstring& user_password = L"");
+								const wchar_t* owner_password = NULL, const wchar_t* user_password = NULL);
 
     virtual void Close();
     virtual NSFonts::IApplicationFonts* GetFonts();
@@ -64,7 +64,7 @@ public:
 
     virtual int GetPagesCount();
     virtual void GetPageInfo(int nPageIndex, double* pdWidth, double* pdHeight, double* pdDpiX, double* pdDpiY);
-    virtual void DrawPageOnRenderer(IRenderer* pRenderer, int nPageIndex, bool* pBreak);
+    virtual void DrawPageOnRenderer(IRenderer* pRenderer, int nPageIndex, bool* pBreak, COfficeDrawingPageParams* pParams = NULL);
     virtual std::wstring GetInfo();
 
 #ifndef DISABLE_PDF_CONVERTATION

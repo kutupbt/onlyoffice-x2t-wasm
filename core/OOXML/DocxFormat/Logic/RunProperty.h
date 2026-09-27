@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -34,7 +34,6 @@
 #include "../WritingElement.h"
 
 #include "../../Base/Nullable.h"
-#include "../../Common/SimpleTypes_Shared.h"
 #include "../../Common/ComplexTypes.h"
 
 #include "../../PPTXFormat/Logic/Ln.h"
@@ -53,7 +52,7 @@ namespace OOX
 		class CStylisticSets : public WritingElementWithChilds<ComplexTypes::Word::CStylisticSet>
 		{
 		public:
-			WritingElement_AdditionConstructors(CStylisticSets)
+			WritingElement_AdditionMethods(CStylisticSets)
 			CStylisticSets(OOX::Document *pMain = NULL);
 			virtual ~CStylisticSets();
 
@@ -130,63 +129,63 @@ namespace OOX
 
 			nullable<ComplexTypes::Word::COnOff2>	m_oBold;
 			nullable<ComplexTypes::Word::COnOff2>	m_oBoldCs;
-			nullable<ComplexTypes::Word::CBorder>							m_oBdr;
+			nullable<ComplexTypes::Word::CBorder>	m_oBdr;
 			nullable<ComplexTypes::Word::COnOff2>	m_oCaps;
-			nullable<ComplexTypes::Word::CColor>							m_oColor;
+			nullable<ComplexTypes::Word::CColor>	m_oColor;
 			nullable<ComplexTypes::Word::COnOff2>	m_oCs;
-			nullable<ComplexTypes::Word::CTrackChange>						m_oDel;
+			nullable<ComplexTypes::Word::CTrackChange>	m_oDel;
 			nullable<ComplexTypes::Word::COnOff2>	m_oDStrike;
-			nullable<ComplexTypes::Word::CEastAsianLayout>					m_oEastAsianLayout;
-			nullable<ComplexTypes::Word::CTextEffect>						m_oEffect;
-			nullable<ComplexTypes::Word::CEm>								m_oEm;
+			nullable<ComplexTypes::Word::CEastAsianLayout>	m_oEastAsianLayout;
+			nullable<ComplexTypes::Word::CTextEffect>	m_oEffect;
+			nullable<ComplexTypes::Word::CEm>	m_oEm;
 			nullable<ComplexTypes::Word::COnOff2>	m_oEmboss;
-			nullable<ComplexTypes::Word::CFitText>							m_oFitText;
-			nullable<ComplexTypes::Word::CHighlight>						m_oHighlight;
-			nullable<ComplexTypes::Word::CTrackChange>						m_oIns;
+			nullable<ComplexTypes::Word::CFitText>	m_oFitText;
+			nullable<ComplexTypes::Word::CHighlight>	m_oHighlight;
+			nullable<ComplexTypes::Word::CTrackChange>	m_oIns;
 			nullable<ComplexTypes::Word::COnOff2>	m_oItalic;
 			nullable<ComplexTypes::Word::COnOff2>	m_oItalicCs;
 			nullable<ComplexTypes::Word::COnOff2>	m_oImprint;
-			nullable<ComplexTypes::Word::CHpsMeasure>						m_oKern;
-			nullable<ComplexTypes::Word::CLanguage>							m_oLang;
+			nullable<ComplexTypes::Word::CHpsMeasure>	m_oKern;
+			nullable<ComplexTypes::Word::CLanguage>	m_oLang;
 			nullable<ComplexTypes::Word::COnOff2>	m_oNoProof;
 			nullable<ComplexTypes::Word::COnOff2>	m_oMath;
-			nullable<ComplexTypes::Word::CTrackChange>						m_oMoveFrom;
-			nullable<ComplexTypes::Word::CTrackChange>						m_oMoveTo;
+			nullable<ComplexTypes::Word::CTrackChange>	m_oMoveFrom;
+			nullable<ComplexTypes::Word::CTrackChange>	m_oMoveTo;
 			nullable<ComplexTypes::Word::COnOff2>	m_oOutline;
-			nullable<ComplexTypes::Word::CSignedHpsMeasure>					m_oPosition;
-			nullable<ComplexTypes::Word::CFonts>							m_oRFonts;
-			nullable<OOX::Logic::CRPrChange>								m_oRPrChange;
-            nullable<ComplexTypes::Word::String>							m_oRStyle;
+			nullable<ComplexTypes::Word::CSignedHpsMeasure>	m_oPosition;
+			nullable<ComplexTypes::Word::CFonts>	m_oRFonts;
+			nullable<OOX::Logic::CRPrChange>	m_oRPrChange;
+            nullable<ComplexTypes::Word::String>	m_oRStyle;
 			nullable<ComplexTypes::Word::COnOff2>	m_oRtL;
 			nullable<ComplexTypes::Word::COnOff2>	m_oShadow;
-			nullable<ComplexTypes::Word::CShading>							m_oShd;
+			nullable<ComplexTypes::Word::CShading>	m_oShd;
 			nullable<ComplexTypes::Word::COnOff2>	m_oSmallCaps;
 			nullable<ComplexTypes::Word::COnOff2>	m_oSnapToGrid;
-			nullable<ComplexTypes::Word::CSignedTwipsMeasure>				m_oSpacing;
+			nullable<ComplexTypes::Word::CSignedTwipsMeasure>	m_oSpacing;
 			nullable<ComplexTypes::Word::COnOff2>	m_oSpecVanish;
 			nullable<ComplexTypes::Word::COnOff2>	m_oStrike;
-			nullable<ComplexTypes::Word::CHpsMeasure>						m_oSz;
-			nullable<ComplexTypes::Word::CHpsMeasure>						m_oSzCs;
-			nullable<ComplexTypes::Word::CUnderline>						m_oU;
+			nullable<ComplexTypes::Word::CHpsMeasure>	m_oSz;
+			nullable<ComplexTypes::Word::CHpsMeasure>	m_oSzCs;
+			nullable<ComplexTypes::Word::CUnderline>	m_oU;
 			nullable<ComplexTypes::Word::COnOff2>	m_oVanish;
-			nullable<ComplexTypes::Word::CVerticalAlignRun>					m_oVertAlign;
-			nullable<ComplexTypes::Word::CTextScale>						m_oW;
+			nullable<ComplexTypes::Word::CVerticalAlignRun>	m_oVertAlign;
+			nullable<ComplexTypes::Word::CTextScale>	m_oW;
 			nullable<ComplexTypes::Word::COnOff2>	m_oWebHidden;
 	//ext		
-			PPTX::Logic::UniFill											m_oTextFill;			
-            nullable<PPTX::Logic::Ln>										m_oTextOutline;
-			nullable<ComplexTypes::Word::CLigatures>						m_oLigatures;
-			nullable<ComplexTypes::Word::CNumSpacing>						m_oNumSpacing;
-			nullable<ComplexTypes::Word::CNumForm>							m_oNumForm;
-			nullable<CStylisticSets>										m_oStylisticSets;
+			PPTX::Logic::UniFill					m_oTextFill;			
+            nullable<PPTX::Logic::Ln>				m_oTextOutline;
+			nullable<ComplexTypes::Word::CLigatures>	m_oLigatures;
+			nullable<ComplexTypes::Word::CNumSpacing>	m_oNumSpacing;
+			nullable<ComplexTypes::Word::CNumForm>	m_oNumForm;
+			nullable<CStylisticSets>				m_oStylisticSets;
 			nullable<ComplexTypes::Word::COnOff2>	m_oCntxtAlts;
-			nullable<PPTX::Logic::Reflection>								m_oReflection;
-			nullable<PPTX::Logic::Glow>										m_oGlow;
-			nullable<PPTX::Logic::OuterShdw>								m_oShadowExt;
-			nullable<PPTX::Logic::Sp3d>										m_oProps3d;
-			nullable<PPTX::Logic::Scene3d>									m_oScene3d;
+			nullable<PPTX::Logic::Reflection>		m_oReflection;
+			nullable<PPTX::Logic::Glow>				m_oGlow;
+			nullable<PPTX::Logic::OuterShdw>		m_oShadowExt;
+			nullable<PPTX::Logic::Sp3d>				m_oProps3d;
+			nullable<PPTX::Logic::Scene3d>			m_oScene3d;
 
-			OOX::WritingElement*											m_pText = NULL; //temp ... for Run object -> XpertdocOnlineDemoEn.docx
+			OOX::WritingElement*	m_pText = NULL; //temp ... for Run object -> XpertdocOnlineDemoEn.docx
 		};
 
 	} // namespace Logic

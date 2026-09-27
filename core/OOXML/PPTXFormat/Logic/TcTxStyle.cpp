@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -41,24 +41,24 @@ namespace PPTX
 			XmlMacroReadAttributeBase(node, L"i", i);
 			XmlMacroReadAttributeBase(node, L"b", b);
 
-			fontRef = node.ReadNodeNoNS(_T("fontRef"));
+			fontRef = node.ReadNodeNoNS(L"fontRef");
 			Color.GetColorFrom(node);
 
 			FillParentPointersForChilds();
 		}
 		void TcTxStyle::toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const
 		{
-			pWriter->StartNode(_T("a:tcTxStyle"));
+			pWriter->StartNode(L"a:tcTxStyle");
 
 			pWriter->StartAttributes();
-			pWriter->WriteAttribute(_T("i"), i);
-			pWriter->WriteAttribute(_T("b"), b);
+			pWriter->WriteAttribute(L"i", i);
+			pWriter->WriteAttribute(L"b", b);
 			pWriter->EndAttributes();
 
 			pWriter->Write(fontRef);
 			Color.toXmlWriter(pWriter);
 
-			pWriter->EndNode(_T("a:tcTxStyle"));
+			pWriter->EndNode(L"a:tcTxStyle");
 		}
 		void TcTxStyle::toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const
 		{

@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -43,6 +43,8 @@
 #include "../../OOXML/DocxFormat/App.h"
 #include "../../OOXML/DocxFormat/Core.h"
 
+#include "../../OOXML/Common/SimpleTypes_Shared.h"
+
 namespace NSBinPptxRW
 {
 	class  CDrawingConverter;
@@ -55,37 +57,38 @@ CTxtXmlFile::CTxtXmlFile()
 {
 }
 
-static int ParseTxtOptions(const std::wstring & sXmlOptions)
+static void ParseTxtOptions(const std::wstring & sXmlOptions, int &encoding, int &lcid)
 {
-	int encoding = -1;
-	
-	XmlUtils::CXmlLiteReader xmlReader;
-	
-	if (xmlReader.FromString(sXmlOptions))
+	encoding = -1;
+	lcid = -1;
+
+	XmlUtils::CXmlLiteReader oReader;	
+	if (oReader.FromString(sXmlOptions))
 	{
-		xmlReader.ReadNextNode();//root - <Options>
+		nullable<SimpleTypes::CUnsignedDecimalNumber> codePage;
+		nullable<SimpleTypes::CDecimalNumber> LcidParam;
 
-		int nCurDepth = xmlReader.GetDepth();
-		while ( xmlReader.ReadNextSiblingNode( nCurDepth ) )
+		oReader.ReadNextNode();//root - <Options>
+		int nCurDepth = oReader.GetDepth();
+		while (oReader.ReadNextSiblingNode(nCurDepth))
 		{
-			std::wstring sName = xmlReader.GetName();
-
-			if (sName == _T("TXTOptions"))
+			std::wstring sName = oReader.GetName();
+			if (L"fileOptions" == sName)
 			{
-				int nCurDepth1 = xmlReader.GetDepth();
-				while ( xmlReader.ReadNextSiblingNode( nCurDepth1 ) )
-				{
-					std::wstring sName1 = xmlReader.GetName();
-					if (sName1 == _T("Encoding"))
-					{
-						std::wstring strValue = xmlReader.GetText2();
-						encoding = XmlUtils::GetInteger(strValue);
-					}
-				}
+				WritingElement_ReadAttributes_Start(oReader)
+					WritingElement_ReadAttributes_Read_if(oReader, L"codePage", codePage)
+					WritingElement_ReadAttributes_Read_else_if(oReader, L"Lcid", LcidParam)
+				WritingElement_ReadAttributes_End(oReader)
+
+				if (codePage.IsInit())
+					encoding = (UINT)codePage->GetValue();
+				if (LcidParam.IsInit())
+					lcid = LcidParam->GetValue();
+
+				break;
 			}
 		}
 	}
-	return encoding;
 }
 
 
@@ -98,13 +101,15 @@ _UINT32 CTxtXmlFile::txt_LoadFromFile(const std::wstring & sSrcFileName, const s
 
 	try
 	{
-		int encoding  = ParseTxtOptions(sXMLOptions);
+		int encoding, lcid;
+		ParseTxtOptions(sXMLOptions, encoding, lcid);
 
 		Txt2Docx::Converter converter( encoding);
 		converter.read(sSrcFileName);
-		converter.convert();
-		converter.write(pDocxWriter->get_document_writer().m_oContent);
-	}
+       // converter.convert();
+       // converter.write(pDocxWriter->get_document_writer().m_oContent);
+        converter.write(pDocxWriter->get_document_writer().m_oContentutf8);
+    }
 	catch(...)
 	{
 		return AVS_FILEUTILS_ERROR_CONVERT;
@@ -121,35 +126,41 @@ _UINT32 CTxtXmlFile::txt_LoadFromFile(const std::wstring & sSrcFileName, const s
 
 _UINT32 CTxtXmlFile::txt_SaveToFile(const std::wstring & sDstFileName, const std::wstring & sSrcPath, const std::wstring & sXMLOptions)
 {
+	bool result = true;
+
 	try
 	{
 		Docx2Txt::Converter converter;
-		converter.read(sSrcPath);
-		converter.convert();
-
-		int encoding  = ParseTxtOptions(sXMLOptions);
-		
-		if (encoding == EncodingType::Utf8)
-			converter.writeUtf8(sDstFileName);
-		else if (encoding == EncodingType::Unicode)
-			converter.writeUnicode(sDstFileName);
-		else if (encoding == EncodingType::Ansi)
-			converter.writeAnsi(sDstFileName);
-		else if (encoding == EncodingType::BigEndian)
-			converter.writeBigEndian(sDstFileName);
-		else if (encoding > 0) //code page
+		result = converter.read(sSrcPath);
+		if (result)
 		{
-			converter.write(sDstFileName);
+			converter.convert();
+
+			int encoding, lcid;
+			ParseTxtOptions(sXMLOptions, encoding, lcid);
+
+			if (encoding == EncodingType::Utf8)
+				result = converter.writeUtf8(sDstFileName);
+			else if (encoding == EncodingType::Unicode)
+				result = converter.writeUnicode(sDstFileName);
+			else if (encoding == EncodingType::Ansi)
+				result = converter.writeAnsi(sDstFileName);
+			else if (encoding == EncodingType::BigEndian)
+				result = converter.writeBigEndian(sDstFileName);
+			else if (encoding > 0) //code page
+			{
+				result = converter.write(sDstFileName);
+			}
+			else //auto define
+				result = converter.write(sDstFileName);
 		}
-		else //auto define
-			converter.write(sDstFileName);
 	}
 	catch(...)
 	{
-		return AVS_FILEUTILS_ERROR_CONVERT;
+		result = false;
 	}
 
-	return 0;
+	return result ? 0 : AVS_FILEUTILS_ERROR_CONVERT;
 }
 
 
