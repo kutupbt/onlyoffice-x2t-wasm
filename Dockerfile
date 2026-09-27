@@ -39,7 +39,7 @@ COPY embuild.sh /bin/embuild.sh
 
 
 FROM base AS build-tools
-RUN git clone --depth=1 --branch v9.3.0.140 https://github.com/ONLYOFFICE/build_tools.git
+RUN git clone --depth=1 --branch v9.4.0.131 https://github.com/ONLYOFFICE/build_tools.git
 WORKDIR /build_tools
 RUN python configure.py
 
