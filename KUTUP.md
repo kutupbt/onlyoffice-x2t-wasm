@@ -8,20 +8,16 @@ OnlyOffice's document converter `x2t`, from
 converts documents with it in the browser; the server never sees their
 content.
 
-- **Branch `kutup`** is what Kutup ships. It starts at CryptPad's `v7.3+1`
-  (`a9b92bc0`); Kutup's own changes go on it.
+- **Branch `kutup`** is what Kutup ships: CryptPad's `v9.3.0+0` (ONLYOFFICE
+  core 9.3.0.140), merged in over `v7.3+1`; Kutup's own changes go on it.
 - **`main`** follows CryptPad's `main`, for pulling their updates.
 - **Releases** are tagged `kutup-<CryptPad version>.<n>` (for example
-  `kutup-v7.3+1.1`). Each release notes the exact commit it was built from.
+  `kutup-v9.3.0+0.1`). Each release notes the exact commit it was built from.
 
 ## Build
 
 ```sh
-docker build -t kutup-x2t .
-id=$(docker create kutup-x2t)
-docker cp "$id:/core/build/bin/linux_64/x2t.zip" .
-docker cp "$id:/core/build/bin/linux_64/x2t.zip.sha512" .
-docker rm "$id"
+docker build --target output -o output .   # output/x2t.zip and its .sha512
 ```
 
 The toolchain is pinned in the Dockerfile (emscripten, boost, gumbo,
